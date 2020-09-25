@@ -352,23 +352,21 @@ void opcode_16_ld_offset(uint8_t* dest, uint8_t* source, int8_t offset){
 push rr          x5        16 ---- SP=SP-2  (SP)=rr   (rr may be BC,DE,HL,AF)
 */
 void opcode_16_push(uint8_t* source){
-    uint16_t temp = get_16_from_8(gb_reg_map[GB_REG_SP_1]);
+    uint16_t temp = get_16_from_8(&gb_reg_map[GB_REG_SP_1]);
     temp -=2;
-    if(temp < 0)
-        temp = 0;
-    gb_reg_map[GB_REG_SP_1] = get_16_high(temp);
-    gb_reg_map[GB_REG_SP_2] = get_16_low(temp);
+    gb_reg_map[GB_REG_SP_1] = get_16_high(&temp);
+    gb_reg_map[GB_REG_SP_2] = get_16_low(&temp);
     gb_reg_map[temp] = *source;
 }
 /*
 pop  rr          x1        12 (AF) rr=(SP)  SP=SP+2   (rr may be BC,DE,HL,AF)
 */
 void opcode_16_pop(uint8_t* dest){
-    uint16_t temp = get_16_from_8(gb_reg_map[GB_REG_SP_1]);
+    uint16_t temp = get_16_from_8(&gb_reg_map[GB_REG_SP_1]);
     *dest = gb_reg_map[temp];
     temp +=2;
-    gb_reg_map[GB_REG_SP_1] = get_16_high(temp);
-    gb_reg_map[GB_REG_SP_2] = get_16_low(temp);
+    gb_reg_map[GB_REG_SP_1] = get_16_high(&temp);
+    gb_reg_map[GB_REG_SP_2] = get_16_low(&temp);
 }
 /*
 add  HL,rr     x9           8 -0hc HL = HL+rr     ;rr may be BC,DE,HL,SP
@@ -416,7 +414,7 @@ void opcode_16_add_hl(uint8_t* source){
 add  SP,dd     E8          16 00hc SP = SP +/- dd ;dd is 8bit signed number
 */
 void opcode_16_add_sp(int8_t offset){
-    uint16_t temp = get_16_from_8(gb_reg_map[GB_REG_SP_1]);
+    uint16_t temp = get_16_from_8(&gb_reg_map[GB_REG_SP_1]);
     //uint8_t* source = (*offset) + 1;
     //TODO
     gb_reg_map[GB_REG_SP_1];
