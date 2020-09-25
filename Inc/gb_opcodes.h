@@ -53,17 +53,17 @@ void opcode_stop();
 void opcode_di();
 void opcode_ei();
 
-void opcode_jp();
+void opcode_jp(uint16_t address);
 void opcode_jp_hl();
-void opcode_jp_cnd();
-void opcode_jr();
-void opcode_jr_cnd();
-void opcode_call();
-void opcode_call_cnd();
+void opcode_jp_cnd(uint16_t address, uint8_t condition);
+void opcode_jr(int8_t offset);
+void opcode_jr_cnd(int8_t offset,uint8_t condition);
+void opcode_call(uint16_t address);
+void opcode_call_cnd(uint16_t address, uint8_t condition);
 void opcode_ret();
-void opcode_ret_cnd();
+void opcode_ret_cnd(uint8_t condition);
 void opcode_reti();
-void opcode_rst();
+void opcode_rst(uint16_t address);
 void opcode_CB_prefix();
 void opcode_NA();
 

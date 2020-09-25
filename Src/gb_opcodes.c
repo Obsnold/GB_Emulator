@@ -741,78 +741,116 @@ void opcode_ei(){
 /*
 jp   nn        C3 nn nn    16 ---- jump to nn, PC=nn
 */
-void opcode_jp(){
-
+void opcode_jp(uint16_t address){
+    gb_reg_map[GB_REG_PC_1] = get_16_high(&address);
+    gb_reg_map[GB_REG_PC_2] = get_16_low(&address);
 }
 
 /*
 jp   HL        E9           4 ---- jump to HL, PC=HL
 */
 void opcode_jp_hl(){
-
+    gb_reg_map[GB_REG_PC_1] = gb_reg_map[GB_REG_H];
+    gb_reg_map[GB_REG_PC_2] = gb_reg_map[GB_REG_L];
 }
 
 /*
 jp   f,nn      xx nn nn 16;12 ---- conditional jump if nz,z,nc,c
 */
-void opcode_jp_cnd(){
-
+void opcode_jp_cnd(uint16_t address, uint8_t condition){
+    if((condition == 0 && GET_ZERO_FLAG == 0) || 
+        (condition == 1 && GET_ZERO_FLAG == 1) ||
+        (condition == 2 && GET_CARRY_FLAG == 0) ||
+        (condition == 3 && GET_CARRY_FLAG == 1)){
+        opcode_jp(address);
+    }
 }
 
 /*
 jr   PC+dd     18 dd       12 ---- relative jump to nn (PC=PC+/-7bit)
 */
-void opcode_jr(){
-
+void opcode_jr(int8_t offset){
+    uint16_t temp = get_16_from_8(&gb_reg_map[GB_REG_PC_1]);
+    temp += offset;
+    gb_reg_map[GB_REG_PC_1] = get_16_high(&temp);
+    gb_reg_map[GB_REG_PC_2] = get_16_low(&temp);
 }
 
 /*
 jr   f,PC+dd   xx dd     12;8 ---- conditional relative jump if nz,z,nc,c
 */
-void opcode_jr_cnd(){
-
+void opcode_jr_cnd(int8_t offset,uint8_t condition){
+    if((condition == 0 && GET_ZERO_FLAG == 0) || 
+        (condition == 1 && GET_ZERO_FLAG == 1) ||
+        (condition == 2 && GET_CARRY_FLAG == 0) ||
+        (condition == 3 && GET_CARRY_FLAG == 1)){
+        opcode_jr(offset);
+    }
 }
 
 /*
 call nn        CD nn nn    24 ---- call to nn, SP=SP-2, (SP)=PC, PC=nn
 */
-void opcode_call(){
-
+void opcode_call(uint16_t address){
+    uint16_t temp = get_16_from_8(&gb_reg_map[GB_REG_SP_1]);
+    temp -= 2;
+    gb_reg_map[GB_REG_SP_1] = get_16_high(&temp);
+    gb_reg_map[GB_REG_SP_2] = get_16_low(&temp);
+    gb_mem_map[temp] = gb_reg_map[GB_REG_PC_1];
+    gb_mem_map[temp+1] = gb_reg_map[GB_REG_PC_2];
+    gb_reg_map[GB_REG_PC_1] = get_16_high(&address);
+    gb_reg_map[GB_REG_PC_2] = get_16_low(&address);
 }
 
 /*
 call f,nn      xx nn nn 24;12 ---- conditional call if nz,z,nc,c
 */
-void opcode_call_cnd(){
-
+void opcode_call_cnd(uint16_t address, uint8_t condition){
+    if((condition == 0 && GET_ZERO_FLAG == 0) || 
+        (condition == 1 && GET_ZERO_FLAG == 1) ||
+        (condition == 2 && GET_CARRY_FLAG == 0) ||
+        (condition == 3 && GET_CARRY_FLAG == 1)){
+        opcode_call(address);
+    }
 }
 
 /*
 ret            C9          16 ---- return, PC=(SP), SP=SP+2
 */
 void opcode_ret(){
-
+    uint16_t temp = get_16_from_8(&gb_reg_map[GB_REG_SP_1]);
+    gb_reg_map[GB_REG_PC_1] = gb_reg_map[temp];
+    gb_reg_map[GB_REG_PC_2] = gb_reg_map[temp+1];
+    temp += 2;
+    gb_reg_map[GB_REG_SP_1] = get_16_high(&temp);
+    gb_reg_map[GB_REG_SP_2] = get_16_low(&temp);
 }
 
 /*
 ret  f         xx        20;8 ---- conditional return if nz,z,nc,c
 */
-void opcode_ret_cnd(){
-
+void opcode_ret_cnd(uint8_t condition){
+    if((condition == 0 && GET_ZERO_FLAG == 0) || 
+        (condition == 1 && GET_ZERO_FLAG == 1) ||
+        (condition == 2 && GET_CARRY_FLAG == 0) ||
+        (condition == 3 && GET_CARRY_FLAG == 1)){
+        opcode_ret();
+    }
 }
 
 /*
 reti           D9          16 ---- return and enable interrupts (IME=1)
 */
 void opcode_reti(){
-
+    opcode_ret();
+    opcode_ei();
 }
 
 /*
 rst  n         xx          16 ---- call to 00,08,10,18,20,28,30,38
 */
-void opcode_rst(){
-
+void opcode_rst(uint16_t address){
+    opcode_call(address);
 }
 
 //this hsould never be called
