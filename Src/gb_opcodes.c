@@ -372,10 +372,8 @@ void opcode_16_pop(uint8_t* dest){
 add  HL,rr     x9           8 -0hc HL = HL+rr     ;rr may be BC,DE,HL,SP
 */
 void opcode_16_add_hl(uint8_t* source){
-    /*uint8_t dest = gb_reg_map[GB_REG_A];
-    //TODO^ fix this
     //first part
-    gb_reg_map[GB_REG_A] = *(dest+1);
+    gb_reg_map[GB_REG_A] = gb_reg_map[GB_REG_L];
     if (check_8_overflow(source+1)){
         SET_CARRY_FLAG;
     } else {
@@ -388,10 +386,10 @@ void opcode_16_add_hl(uint8_t* source){
     }
 
     gb_reg_map[GB_REG_A] += *(source+1);
-    *(dest+1) = gb_reg_map[GB_REG_A];
+    gb_reg_map[GB_REG_L] = gb_reg_map[GB_REG_A];
 
     //second part
-    gb_reg_map[GB_REG_A] = *dest;
+    gb_reg_map[GB_REG_A] = gb_reg_map[GB_REG_H];
     if (check_8_overflow(source)){
         SET_CARRY_FLAG;
     } else {
@@ -404,9 +402,9 @@ void opcode_16_add_hl(uint8_t* source){
     }
     gb_reg_map[GB_REG_A] += *source;
     gb_reg_map[GB_REG_A] += GET_CARRY_FLAG;
-    *dest = gb_reg_map[GB_REG_A];
+    gb_reg_map[GB_REG_H] = gb_reg_map[GB_REG_A];
 
-    CLR_ADD_SUB_FLAG;*/
+    CLR_ADD_SUB_FLAG;
 
 }
 
@@ -415,9 +413,9 @@ add  SP,dd     E8          16 00hc SP = SP +/- dd ;dd is 8bit signed number
 */
 void opcode_16_add_sp(int8_t offset){
     uint16_t temp = get_16_from_8(&gb_reg_map[GB_REG_SP_1]);
-    //uint8_t* source = (*offset) + 1;
-    //TODO
-    gb_reg_map[GB_REG_SP_1];
+    temp += offset;
+    gb_reg_map[GB_REG_SP_1] = get_16_high(&temp);
+    gb_reg_map[GB_REG_SP_2] = get_16_low(&temp);
     CLR_ZERO_FLAG;
     CLR_ADD_SUB_FLAG;
 }
