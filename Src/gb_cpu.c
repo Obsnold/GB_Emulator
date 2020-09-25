@@ -1,5 +1,6 @@
 #include "gb_mem_map.h"
 #include "gb_common.h"
+#include "gb_cpu.h"
 
 #define OP_X_MASK 0xC0
 #define OP_Y_MASK 0x38

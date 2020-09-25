@@ -1,6 +1,7 @@
 #include "gb_opcodes.h"
 #include "gb_mem_map.h"
 #include "gb_common.h"
+#include "gb_cpu.h"
 
 int check_16_overflow(uint16_t* a, uint16_t* b){
     return (*a > 0xFFFF - *b);
@@ -709,28 +710,28 @@ void opcode_nop(){
 halt           76         N*4 ---- halt until interrupt occurs (low power)
 */
 void opcode_halt(){
-
+    power_mode = PWR_HALT;
 }
 
 /*
 stop           10 00        ? ---- low power standby mode (VERY low power)
 */
 void opcode_stop(){
-
+    power_mode = PWR_STOP;
 }
 
 /*
 di             F3           4 ---- disable interrupts, IME=0
 */
 void opcode_di(){
-
+    gb_mem_map[INTERUPT_EN_FLAG] = 0x00;
 }
 
 /*
 ei             FB           4 ---- enable interrupts, IME=1
 */
 void opcode_ei(){
-
+    gb_mem_map[INTERUPT_EN_FLAG] = 0x01;
 }
 
 
@@ -853,7 +854,7 @@ void opcode_rst(uint16_t address){
     opcode_call(address);
 }
 
-//this hsould never be called
+//this should never be called
 void opcode_CB_prefix(){
 
 }
