@@ -11,6 +11,8 @@ OUT_FILE_PATH = Out/gb_emu
 #Include Files
 CFLAGS += -I./Inc
 
+LINKER_FLAGS = -lSDL2
+
 #Source Files
 SRC += Src/*.c
 
@@ -18,7 +20,7 @@ SRC += Src/*.c
 all:$(OUT_FILE_PATH)
 
 $(OUT_FILE_PATH): $(SRC)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ $(LINKER_FLAGS) -o $@
 
 # Make clean
 clean:

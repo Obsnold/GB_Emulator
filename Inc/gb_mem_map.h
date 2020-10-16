@@ -36,7 +36,7 @@
 #define CART_RAM            0xA000
 #define BG_MAP_2            0x9C00
 #define BG_MAP_1            0x9800
-#define CHAR_RAM            0x8000
+#define TILE_RAM            0x8000
 #define CART_ROM_1          0x4000
 #define CART_ROM_0          0x0000
 
@@ -152,35 +152,56 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 
 //IO-PORTS
 //LCD
-#define IO_LCD_CONTROL	0xFF40
-#define IO_LCD_STATUS	0xFF41
-#define IO_LCD_SCY		0xFF42
-#define IO_LCD_SCX		0xFF43
-#define IO_LCD_LY		0xFF44
-#define IO_LCD_LYC		0xFF45
-#define IO_LCD_DMA		0xFF46
-#define IO_LCD_BGP		0xFF47
-#define IO_LCD_OBP0		0xFF48
-#define IO_LCD_OBP1		0xFF49
-#define IO_LCD_WY		0xFF4A
+#define LCD_CTRL		0xFF40
+#define LCD_CTRL_ENABLE 				BIT_7
+#define LCD_CTRL_WINDOW_TILE_SELECT		BIT_6
+#define LCD_CTRL_WINDOW_ENABLE			BIT_5
+#define LCD_CTRL_BG_TILE_SELECT			BIT_4
+#define LCD_CTRL_BG_MAP_SELECT			BIT_3
+#define LCD_CTRL_OBJ_SIZE				BIT_2
+#define LCD_CTRL_OBJ_ENABLE				BIT_1
+#define LCD_CTRL_BG_PRIORITY			BIT_0
+
+
+#define LCD_STAT		0xFF41
+#define LCD_STAT_LCY_INTR_EN 			BIT_6
+#define LCD_STAT_OAM_INTR_EN 			BIT_5
+#define LCD_STAT_VBLNK_INTR_EN 			BIT_4
+#define LCD_STAT_HBLNK_INTR_EN 			BIT_3
+#define LCD_STAT_COINC_FLAG 			BIT_2
+#define LCD_STAT_MODE 				 	(BIT_1 | BIT_0)
+#define LCD_STAT_MODE_HBLNK			 	0x00
+#define LCD_STAT_MODE_VBLNK			 	0x01
+#define LCD_STAT_MODE_OAM			 	0x02
+#define LCD_STAT_MODE_PIXEL_TRANS	 	0x03
+
+#define LCD_SCY			0xFF42
+#define LCD_SCX			0xFF43
+#define LCD_LY			0xFF44
+#define LCD_LYC			0xFF45
+#define LCD_DMA			0xFF46
+#define LCD_BGP			0xFF47
+#define LCD_OBP0		0xFF48
+#define LCD_OBP1		0xFF49
+#define LCD_WY			0xFF4A
+#define LCD_WX			0xFF4B
 
 //cgb only
-#define IO_LCD_VBK		0xFF4F
-#define IO_LCD_HDMA1	0xFF51
-#define IO_LCD_HDMA2	0xFF52
-#define IO_LCD_HDMA3	0xFF53
-#define IO_LCD_HDMA4	0xFF54
-#define IO_LCD_HDMA5	0xFF55
-#define IO_LCD_BCPS		0xFF68
-#define IO_LCD_BCPD		0xFF69
-#define IO_LCD_OCPS		0xFF6A
+#define LCD_VBK			0xFF4F
+#define LCD_HDMA1		0xFF51
+#define LCD_HDMA2		0xFF52
+#define LCD_HDMA3		0xFF53
+#define LCD_HDMA4		0xFF54
+#define LCD_HDMA5		0xFF55
+#define LCD_BCPS		0xFF68
+#define LCD_BCPD		0xFF69
+#define LCD_OCPS		0xFF6A
 //---
 
 //VRAM tile data
 #define VRAM_BLOCK_0	0x8000
 #define VRAM_BLOCK_1	0x8800
 #define VRAM_BLOCK_2	0x9000
-
 
 //SOUND
 #define	IO
@@ -214,9 +235,9 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 #define CARRY_FLAG      BIT_4
 
 #define GET_ZERO_FLAG		((gb_reg_map[GB_REG_F] & ZERO_FLAG) >> 0x07)
-#define GET_ADD_SUB_FLAG	((gb_reg_map[GB_REG_F] & ZERO_FLAG) >> 0x06)
-#define GET_HALF_CARRY_FLAG	((gb_reg_map[GB_REG_F] & ZERO_FLAG) >> 0x05)
-#define GET_CARRY_FLAG		((gb_reg_map[GB_REG_F] & ZERO_FLAG) >> 0x04)
+#define GET_ADD_SUB_FLAG	((gb_reg_map[GB_REG_F] & ADD_SUB_FLAG) >> 0x06)
+#define GET_HALF_CARRY_FLAG	((gb_reg_map[GB_REG_F] & HALF_CARRY_FLAG) >> 0x05)
+#define GET_CARRY_FLAG		((gb_reg_map[GB_REG_F] & CARRY_FLAG) >> 0x04)
 
 #define GET_HIGH_NIBBLE x ((x & 0xF0) >> 0x04)
 #define GET_LOW_NIBBLE x (x & 0x0F)
@@ -250,6 +271,15 @@ extern uint8_t addr_00H;
 #define SET_CARRY_FLAG		gb_reg_map[GB_REG_F] |= CARRY_FLAG
 #define CLR_CARRY_FLAG		gb_reg_map[GB_REG_F] &= ~CARRY_FLAG
 
+#define GET_MEM_MAP(REG, BIT) (gb_mem_map[REG] & BIT)
+#define SET_MEM_MAP(REG, BIT) (gb_mem_map[REG] |= BIT)
+#define CLR_MEM_MAP(REG, BIT) (gb_mem_map[REG] &= ~BIT)
+
+#define GET_REG_F(BIT) (gb_reg_map[GB_REG_F] & BIT)
+#define SET_REG_F(BIT) (gb_reg_map[GB_REG_F] |= BIT)
+#define CLR_REG_F(BIT) (gb_reg_map[GB_REG_F] &= ~BIT)
+
+void init_mem_map();
 void parse_header();
 uint16_t get_16_from_8(uint8_t* source);
 uint8_t get_16_low(uint16_t* source);
