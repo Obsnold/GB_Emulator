@@ -39,6 +39,7 @@ and 0 once every 456 dots. Scanlines 144 through 153 are mode 1.*/
 
 #define BG_SIZE 32
 #define TILE_SIZE 8
+#define TILE_MEM_SIZE 0x10
 #define TILE_BYTE_SIZE 16
 
 //uint8_t gb_bg_pixels[BG_SIZE*TILE_SIZE][BG_SIZE*TILE_SIZE];
@@ -121,26 +122,34 @@ void gb_display_sprites(){
 
 void ppu_oam_search(){
     //search for all visible sprites
-
+    for(int i = 0; i < OAM_TABLE_SIZE; i++){
+        //check y
+        gb_mem_map[OAM_TABLE + (i*OAM_SIZE)];
+        //check x
+    }
 }
 
 void ppu_pixel_transfer(){
     uint8_t screen_x = gb_mem_map[LCD_SCX];
     uint8_t screen_y = gb_mem_map[LCD_SCY];
     uint8_t line = gb_mem_map[LCD_LY];
+    int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_TILE_SELECT);
     uint16_t bg_map = BG_MAP_1;
     uint16_t window_map = BG_MAP_1;
     uint16_t bg_window_tile_set = VRAM_BLOCK_0;
-    int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_TILE_SELECT);
-
+    uint16_t input_buffer_1 = 0;
+    uint16_t input_buffer_2 = 0;
+    int buffer_shift_count = 0;
+    int tile_count = 1;
+    
+    //get background map
     if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
-        // BG_MAP_2 9C00-9FFF
         bg_map = BG_MAP_2;
     } else {
-        // BG_MAP_1 9800-9BFF
         bg_map = BG_MAP_1;
     }
 
+    //get tile set
     if(bg_window_tile_mode == 0){
         bg_window_tile_set = VRAM_BLOCK_0;
     } else {
@@ -148,104 +157,87 @@ void ppu_pixel_transfer(){
     }
     
     // work out position of start tile in map
-    int map_x = screen_x/TILE_SIZE;
-    int map_y = (screen_y+line)/TILE_SIZE;
+    int map_tile_x = screen_x/TILE_SIZE;
+    int map_tile_y = (screen_y+line)/TILE_SIZE;
 
-
-    int tile_x = screen_x - (map_x*TILE_SIZE);
-    int tile_y = (screen_y+line) - (map_y*TILE_SIZE);
+    //get start pixels from tile
+    int tile_pixel_x = screen_x - (map_tile_x*TILE_SIZE);
+    int tile_pixel_y = (screen_y+line) - (map_tile_y*TILE_SIZE);
     
-    if(map_y >= BG_SIZE){
-        map_y-=BG_SIZE;
+    //deal with going off the edge of the screen
+    if(map_tile_y >= BG_SIZE){
+        map_tile_y-=BG_SIZE;
     }
     
-    int map_line = map_y*32;
-    int tile_line_offset = tile_y*2;
+    // get offsete for working out tile poition
+    // these wont change as it the line is the same
+    int map_line = map_tile_y*BG_SIZE;
+    int tile_line_offset = tile_pixel_y*2;
 
+    // get first map tile
+    int map_tile_start = map_tile_x + map_line;
 
+    // get first tile from tile set
+    uint16_t tile_line = bg_window_tile_set + (gb_mem_map[bg_map + map_tile_start] * TILE_MEM_SIZE) + tile_line_offset;
+    input_buffer_1 = gb_mem_map[tile_line] << 8;
+    input_buffer_2 = gb_mem_map[tile_line + 1] << 8;
 
-    //printf("gb_display tile_x = %u \n", tile_x);
-    for(int x = 0; x < 21; x++){
-        int x2_offset = 0;
-        int x2_compare = TILE_SIZE;
-        if((map_x + x) >= BG_SIZE){
-            map_x-=BG_SIZE;
+    // get second from tile set
+    tile_line = bg_window_tile_set + (gb_mem_map[bg_map + map_tile_start + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
+    input_buffer_1 |= gb_mem_map[tile_line];
+    input_buffer_2 |= gb_mem_map[tile_line + 1];
+
+    //shift buffers to starting pixel and account for offset
+    buffer_shift_count = tile_pixel_x;
+    input_buffer_1 << buffer_shift_count;
+    input_buffer_2 << buffer_shift_count;
+
+    for(int x = 0; x < GB_SCREEN_WIDTH; x++){
+        //check if we need to load the next tile
+        if(buffer_shift_count == 8){
+            buffer_shift_count = 0;
+            tile_count++;
+            //deal with going off the edge of the screen
+            if((map_tile_start + tile_count) >= BG_SIZE){
+                map_tile_start-=BG_SIZE;
+            }
+            //load next tile
+            tile_line = bg_window_tile_set + (gb_mem_map[bg_map + map_tile_start + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
+            input_buffer_1 |= gb_mem_map[tile_line];
+            input_buffer_2 |= gb_mem_map[tile_line + 1];
+            
+            //printf("map_tile_start = %04x, tile_count = %04x, bg_map = %04x, tile_line = %04x\n", map_tile_start, tile_count,bg_map,tile_line);
+            //printf("gb_mem_map[tile_line] = %04x, gb_mem_map[tile_line+1] =%04x\n", gb_mem_map[tile_line],gb_mem_map[tile_line+1]);
         }
-        int tile = map_x + x + map_line;
-        if(bg_window_tile_mode == 1 && tile >= 128){
-                tile -= 128;
-                bg_window_tile_set = VRAM_BLOCK_1;
-        }
-        uint8_t tile_addr = gb_mem_map[bg_map + tile];
-        //printf("tile_addr = %04x, bg_map =%04x, tile = %04x\n", tile_addr,bg_map,tile);
-        uint16_t tile_line = bg_window_tile_set + (tile_addr*0x10) + tile_line_offset;
-        //printf("tile_line = %04x, bg_window_tile_set =%04x, tile_addr = %04x, tile_line_offset= %04x\n", tile_line,bg_window_tile_set,tile_addr,tile_line_offset);
-        if(x==0){
-            x2_offset = tile_x;
+
+
+        //get latest pixel on to the screen buffer
+        uint32_t colour = bg_pallet[0];
+        if(input_buffer_1 & 0x8000){
+            if(input_buffer_2 & 0x8000){
+                colour = bg_pallet[0];
+            } else {
+                colour = bg_pallet[1];
+            }
+        } else {
+            if(input_buffer_2 & 0x8000){
+                colour = bg_pallet[2];
+            } else {
+                colour = bg_pallet[3];
+            }
         }
         
-        if(x == 20){
-            if(tile_x > 0){
-                x2_compare = tile_x;
-            } else{
-                break;
-            }
-        }
-
-        //printf("gb_display line = %u,x= %d, x2_compare =%d, x2_offset=%d \n", line,x,x2_compare,x2_offset);
-        for(int x2 = 0;x2 < x2_compare;x2++){
-            uint32_t colour = bg_pallet[0];
-            if(gb_mem_map[tile_line] & (0x01 << (x2+x2_offset))){
-                if(gb_mem_map[tile_line+1] & (0x01 <<(x2+x2_offset))){
-                    colour = bg_pallet[0];
-                } else {
-                    colour = bg_pallet[1];
-                }
-            } else {
-                if(gb_mem_map[tile_line+1] & (0x01 <<(x2+x2_offset))){
-                    colour = bg_pallet[2];
-                } else {
-                    colour = bg_pallet[3];
-                }
-            }
-            //printf("gb_display x = %u, line = %u,x= %d, x2 =%d, x2_offset=%d \n", ((x*TILE_SIZE) + x2),line,x,x2,x2_offset);
-            if(x==0){
-                gb_display[(x*TILE_SIZE) + x2][line] = colour;
-            } else {
-                gb_display[(x*TILE_SIZE) + x2 - tile_x][line] = colour;
-            }
-        }
-    }
-
-
-
-    // get the pallet being used
-    /*
-    // draw the line indicated by LCD_LY
-    for(int x = 0; x < GB_SCREEN_WIDTH; x ++){
-        uint16_t colour = green_1;
-        switch(gb_bg_pixels[screen_x + x][screen_y + line]){
-            case 0x00:
-            colour = bg_pallet[0];
-            break;
-            case 0x01:
-            colour = bg_pallet[1];
-            break;
-            case 0x02:
-            colour = bg_pallet[2];
-            break;
-            case 0x03:
-            colour = bg_pallet[3];
-            break;
-        }
+        //draw pixel to display
         gb_display[x][line] = colour;
-    }*/
 
-    // draw window
-
-    // draw sprites
-
+        //shift pixels and increment counter
+        input_buffer_1 = input_buffer_1 << 0x01;
+        input_buffer_2 = input_buffer_2 << 0x01;
+        buffer_shift_count++;
+        //printf("input_buffer_1 = %04x, input_buffer_2 =%04x, buffer_shift_count = %04x\n", input_buffer_1,input_buffer_2,buffer_shift_count);
+    }
 }
+
 
 void ppu_h_blank(){
     //do nothing just stuff
