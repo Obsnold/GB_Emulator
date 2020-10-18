@@ -3,13 +3,14 @@
 
 SDL_Window* window = NULL;
 SDL_Renderer *renderer;
+int screen_size = 3;
 
 void init_screen(){
     if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
         printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
     } else {
-        SDL_CreateWindowAndRenderer(GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT, 0, &window, &renderer);
+        SDL_CreateWindowAndRenderer(GB_SCREEN_WIDTH*screen_size, GB_SCREEN_HEIGHT*screen_size, 0, &window, &renderer);
         //window = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
         if( window == NULL || renderer == NULL)
         {
@@ -38,9 +39,12 @@ void update_screen(){
     for(int x = 0; x < GB_SCREEN_WIDTH; x++){
         for(int y = 0; y < GB_SCREEN_WIDTH; y++){
             SDL_SetRenderDrawColor(renderer, ((gb_display[x][y] & 0xFF0000) >> 0x10), ((gb_display[x][y] & 0xFF00) >> 0x08), (gb_display[x][y] & 0xFF), 0xFF);
-            SDL_RenderDrawPoint(renderer, x, y);
+            SDL_RenderDrawPoint(renderer, x*screen_size, y*screen_size);
+            SDL_RenderDrawPoint(renderer, x*screen_size+1, y*screen_size);
+            SDL_RenderDrawPoint(renderer, x*screen_size, y*screen_size+1);
+            SDL_RenderDrawPoint(renderer, x*screen_size+1, y*screen_size+1);
         }
     }
     SDL_RenderPresent(renderer);
-    SDL_Delay( 2000 );
+    SDL_Delay( 4000 );
 }
