@@ -64,61 +64,6 @@ unsigned long get_ticks(){
     return ((_t.tv_sec*1000000000 + lround(_t.tv_nsec)) / 1000);
 }
 
-/*
-void gb_draw_tile(int x_bg, int y_bg, uint16_t tile){
-    for (int x_tile = 0; x_tile < TILE_SIZE; x_tile++){
-        for (int y_tile = 0; y_tile < TILE_SIZE; y_tile++){
-            if(x_tile > 3){
-                gb_bg_pixels[(x_bg*TILE_SIZE) + x_tile][(y_bg*TILE_SIZE) + y_tile] = 0x00;
-            } else {
-                gb_bg_pixels[(x_bg*TILE_SIZE) + x_tile][(y_bg*TILE_SIZE) + y_tile] = 0x00;
-            }
-            //((gb_mem_map[tile+(y_tile*2)] & (0x01 << x_tile)) << 0x01) + ((gb_mem_map[tile+(y_tile*2)] & (0x01 << x_tile)));
-        }
-    }
-}*/
-/*
-void gb_draw_bg(){
-    //check which map to display
-    uint16_t bg_map = BG_MAP_1;
-    uint16_t window_map = BG_MAP_1;
-    uint16_t bg_window_tile_set = VRAM_BLOCK_0;
-    int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_TILE_SELECT);
-
-    if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
-        // BG_MAP_2 9C00-9FFF
-        bg_map = BG_MAP_2;
-    } else {
-        // BG_MAP_1 9800-9BFF
-        bg_map = BG_MAP_1;
-    }
-
-    if(bg_window_tile_mode == 0){
-        bg_window_tile_set = VRAM_BLOCK_0;
-    } else {
-        bg_window_tile_set = VRAM_BLOCK_2;
-    }
-
-    for(int x = 0; x < BG_SIZE; x++){
-        for(int y = 0; y < BG_SIZE; y++){
-            int tile_1 = gb_mem_map[bg_map + ( x + (y * BG_SIZE))];
-
-            if(bg_window_tile_mode == 1 && tile_1 >= 128){
-                tile_1 -= 128;
-                bg_window_tile_set = VRAM_BLOCK_1;
-            }
-            uint16_t tile = gb_mem_map[bg_window_tile_set + (tile_1 * TILE_BYTE_SIZE)];
-            gb_draw_tile(x,y,tile);
-        }
-    }
-}*/
-
-void gb_display_sprites(){
-
-    
-}
-
-
 
 void ppu_oam_search(){
     //search for all visible sprites
@@ -209,6 +154,12 @@ void ppu_pixel_transfer(){
             //printf("map_tile_start = %04x, tile_count = %04x, bg_map = %04x, tile_line = %04x\n", map_tile_start, tile_count,bg_map,tile_line);
             //printf("gb_mem_map[tile_line] = %04x, gb_mem_map[tile_line+1] =%04x\n", gb_mem_map[tile_line],gb_mem_map[tile_line+1]);
         }
+
+
+        //check to see if we need to apply the window
+
+
+        //check OAM to see if we need to apply a sprite
 
 
         //get latest pixel on to the screen buffer
@@ -321,15 +272,3 @@ uint8_t ppu(){
     return ppu_mode;
 }
 
-
-
-
-/*
-void gb_draw_tile_line(int x_pos, int line, int tile_offset, uint16_t tile){
-    for (int x = 0; x < TILE_SIZE; x++){
-        for (int y = 0; y < TILE_SIZE; y++){
-            gb_bg_pixels[(x_tile*TILE_SIZE) + x][(y_tile*TILE_SIZE) + y] = 
-            ((gb_mem_map[tile+(y*2)] & 0x01 << x) << 0x01) + ((gb_mem_map[tile+(y*2)] & 0x01 << x));
-        }
-    }
-}*/
