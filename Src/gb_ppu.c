@@ -3,7 +3,7 @@
 #include "gb_test_image.h"
 #include <time.h>
 #include <math.h>
-
+#include <stdbool.h>
 
 //background tile data 256 tiles
 //sprtie tiles 
@@ -40,7 +40,6 @@ and 0 once every 456 dots. Scanlines 144 through 153 are mode 1.*/
 #define BG_SIZE 32
 #define TILE_SIZE 8
 #define TILE_MEM_SIZE 0x10
-#define TILE_BYTE_SIZE 16
 
 //uint8_t gb_bg_pixels[BG_SIZE*TILE_SIZE][BG_SIZE*TILE_SIZE];
 uint32_t gb_display[GB_SCREEN_WIDTH][GB_SCREEN_HEIGHT];
@@ -78,7 +77,8 @@ void ppu_pixel_transfer(){
     uint8_t screen_x = gb_mem_map[LCD_SCX];
     uint8_t screen_y = gb_mem_map[LCD_SCY];
     uint8_t line = gb_mem_map[LCD_LY];
-    int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_TILE_SELECT);
+    int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
+    bool window_enabled = false;
     uint16_t bg_map = BG_MAP_1;
     uint16_t window_map = BG_MAP_1;
     uint16_t bg_window_tile_set = VRAM_BLOCK_0;
@@ -86,12 +86,24 @@ void ppu_pixel_transfer(){
     uint16_t input_buffer_2 = 0;
     int buffer_shift_count = 0;
     int tile_count = 1;
+
+    //do we need to display the window on this line?
+    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_WINDOW_ENABLE) && (line >= gb_mem_map[LCD_WY])){
+            window_enabled = true;
+    }
     
     //get background map
     if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
         bg_map = BG_MAP_2;
     } else {
         bg_map = BG_MAP_1;
+    }
+
+    //get window map
+    if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_WINDOW_MAP_SELECT)){
+        window_map = BG_MAP_2;
+    } else {
+        window_map = BG_MAP_1;
     }
 
     //get tile set
@@ -127,6 +139,11 @@ void ppu_pixel_transfer(){
     input_buffer_1 = gb_mem_map[tile_line] << 8;
     input_buffer_2 = gb_mem_map[tile_line + 1] << 8;
 
+    //deal with going off the edge of the screen
+    if((map_tile_x + tile_count) >= BG_SIZE){
+        tile_count-=BG_SIZE;
+    }
+
     // get second from tile set
     tile_line = bg_window_tile_set + (gb_mem_map[bg_map + map_tile_start + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
     input_buffer_1 |= gb_mem_map[tile_line];
@@ -134,8 +151,9 @@ void ppu_pixel_transfer(){
 
     //shift buffers to starting pixel and account for offset
     buffer_shift_count = tile_pixel_x;
-    input_buffer_1 << buffer_shift_count;
-    input_buffer_2 << buffer_shift_count;
+    input_buffer_1 = input_buffer_1 << buffer_shift_count;
+    input_buffer_2 = input_buffer_2 << buffer_shift_count;
+   // printf("buffer_shift_count= %04x \n",buffer_shift_count);
 
     for(int x = 0; x < GB_SCREEN_WIDTH; x++){
         //check if we need to load the next tile
@@ -143,24 +161,52 @@ void ppu_pixel_transfer(){
             buffer_shift_count = 0;
             tile_count++;
             //deal with going off the edge of the screen
-            if((map_tile_start + tile_count) >= BG_SIZE){
-                map_tile_start-=BG_SIZE;
+            if((map_tile_x + tile_count) >= BG_SIZE){
+                tile_count-=BG_SIZE;
             }
+
+            // get address of tile in tile map
+            int tile_map_addr = gb_mem_map[bg_map + map_tile_start + tile_count];
+
+            //need to check correct addresing
+            if(bg_window_tile_mode == 1 && tile_map_addr >= 128){
+                tile_map_addr -= 256;
+                bg_window_tile_set = VRAM_BLOCK_1;
+            }
+
             //load next tile
-            tile_line = bg_window_tile_set + (gb_mem_map[bg_map + map_tile_start + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
+            tile_line = bg_window_tile_set + (tile_map_addr * TILE_MEM_SIZE) + tile_line_offset;
             input_buffer_1 |= gb_mem_map[tile_line];
             input_buffer_2 |= gb_mem_map[tile_line + 1];
-            
-            //printf("map_tile_start = %04x, tile_count = %04x, bg_map = %04x, tile_line = %04x\n", map_tile_start, tile_count,bg_map,tile_line);
-            //printf("gb_mem_map[tile_line] = %04x, gb_mem_map[tile_line+1] =%04x\n", gb_mem_map[tile_line],gb_mem_map[tile_line+1]);
         }
 
 
         //check to see if we need to apply the window
+        if(window_enabled && (x >= gb_mem_map[LCD_WX])){
+            //if window is enabled overwrite whatever is currently in the buffer
+            input_buffer_1 = 0;
+            input_buffer_2 = 0;
+            buffer_shift_count = 0;
+            tile_count = 1;
 
+            //reset tilepointers to window map
+            //window always starts at 0,0 overlayed starting at wx wy 
+
+            // get first tile from tile set
+            uint16_t tile_line = bg_window_tile_set + (gb_mem_map[window_map] * TILE_MEM_SIZE) + tile_line_offset;
+            input_buffer_1 = gb_mem_map[tile_line] << 8;
+            input_buffer_2 = gb_mem_map[tile_line + 1] << 8;
+
+            // get second from tile set
+            tile_line = bg_window_tile_set + (gb_mem_map[window_map + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
+            input_buffer_1 |= gb_mem_map[tile_line];
+            input_buffer_2 |= gb_mem_map[tile_line + 1];
+        }
 
         //check OAM to see if we need to apply a sprite
+        if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_ENABLE)){
 
+        }
 
         //get latest pixel on to the screen buffer
         uint32_t colour = bg_pallet[0];
@@ -185,7 +231,6 @@ void ppu_pixel_transfer(){
         input_buffer_1 = input_buffer_1 << 0x01;
         input_buffer_2 = input_buffer_2 << 0x01;
         buffer_shift_count++;
-        //printf("input_buffer_1 = %04x, input_buffer_2 =%04x, buffer_shift_count = %04x\n", input_buffer_1,input_buffer_2,buffer_shift_count);
     }
 }
 
