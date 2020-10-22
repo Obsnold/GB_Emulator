@@ -80,8 +80,6 @@ void ppu_pixel_transfer(){
     int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
     bool window_enabled = false;
     uint16_t map = BG_MAP_1;
-    uint16_t bg_map = BG_MAP_1;
-    uint16_t window_map = BG_MAP_1;
     uint16_t bg_window_tile_set = VRAM_BLOCK_0;
     uint16_t input_buffer_1 = 0;
     uint16_t input_buffer_2 = 0;
@@ -128,8 +126,21 @@ void ppu_pixel_transfer(){
     // get first map tile
     int map_tile_start = map_tile_x + map_line;
 
+    // get address of tile in tile map
+    int tile_map_addr = gb_mem_map[map + map_tile_start];
+
+    //need to check correct addresing
+    if(bg_window_tile_mode == 1) {
+        if(tile_map_addr >= 0x80){
+            tile_map_addr -= 0x100;
+            bg_window_tile_set = VRAM_BLOCK_1;
+        } else {
+            bg_window_tile_set = VRAM_BLOCK_2;
+        }
+    }
+
     // get first tile from tile set
-    uint16_t tile_line = bg_window_tile_set + (gb_mem_map[bg_map + map_tile_start] * TILE_MEM_SIZE) + tile_line_offset;
+    uint16_t tile_line = bg_window_tile_set + (tile_map_addr * TILE_MEM_SIZE) + tile_line_offset;
     input_buffer_1 = gb_mem_map[tile_line] << 8;
     input_buffer_2 = gb_mem_map[tile_line + 1] << 8;
 
@@ -138,8 +149,21 @@ void ppu_pixel_transfer(){
         tile_count-=BG_SIZE;
     }
 
+    // get address of tile in tile map
+    tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
+
+    //need to check correct addresing
+    if(bg_window_tile_mode == 1) {
+        if(tile_map_addr >= 0x80){
+            tile_map_addr -= 0x100;
+            bg_window_tile_set = VRAM_BLOCK_1;
+        } else {
+            bg_window_tile_set = VRAM_BLOCK_2;
+        }
+    }
+
     // get second from tile set
-    tile_line = bg_window_tile_set + (gb_mem_map[bg_map + map_tile_start + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
+    tile_line = bg_window_tile_set + (gb_mem_map[map + map_tile_start + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
     input_buffer_1 |= gb_mem_map[tile_line];
     input_buffer_2 |= gb_mem_map[tile_line + 1];
 
@@ -160,12 +184,16 @@ void ppu_pixel_transfer(){
             }
 
             // get address of tile in tile map
-            int tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
+            tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
 
             //need to check correct addresing
-            if(bg_window_tile_mode == 1 && tile_map_addr >= 128){
-                tile_map_addr -= 256;
-                bg_window_tile_set = VRAM_BLOCK_1;
+            if(bg_window_tile_mode == 1) {
+                if(tile_map_addr >= 0x80){
+                    tile_map_addr -= 0x100;
+                    bg_window_tile_set = VRAM_BLOCK_1;
+                } else {
+                    bg_window_tile_set = VRAM_BLOCK_2;
+                }
             }
 
             //load next tile
@@ -215,13 +243,39 @@ void ppu_pixel_transfer(){
             // get first map tile
             map_tile_start = map_tile_x + map_line;
 
+            // get address of tile in tile map
+            tile_map_addr = gb_mem_map[map + map_tile_start];
+
+            //need to check correct addresing
+            if(bg_window_tile_mode == 1) {
+                if(tile_map_addr >= 0x80){
+                    tile_map_addr -= 0x100;
+                    bg_window_tile_set = VRAM_BLOCK_1;
+                } else {
+                    bg_window_tile_set = VRAM_BLOCK_2;
+                }
+            }
+
             // get first tile from tile set
-            tile_line = bg_window_tile_set + (gb_mem_map[map + map_tile_start] * TILE_MEM_SIZE) + tile_line_offset;
+            tile_line = bg_window_tile_set + (tile_map_addr * TILE_MEM_SIZE) + tile_line_offset;
             input_buffer_1 = gb_mem_map[tile_line] << 8;
             input_buffer_2 = gb_mem_map[tile_line + 1] << 8;
 
+            // get address of tile in tile map
+            tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
+
+            //need to check correct addresing
+            if(bg_window_tile_mode == 1) {
+                if(tile_map_addr >= 0x80){
+                    tile_map_addr -= 0x100;
+                    bg_window_tile_set = VRAM_BLOCK_1;
+                } else {
+                    bg_window_tile_set = VRAM_BLOCK_2;
+                }
+            }
+
             // get second from tile set
-            tile_line = bg_window_tile_set + (gb_mem_map[map + map_tile_start + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
+            tile_line = bg_window_tile_set + (tile_map_addr * TILE_MEM_SIZE) + tile_line_offset;
             input_buffer_1 |= gb_mem_map[tile_line];
             input_buffer_2 |= gb_mem_map[tile_line + 1];
         }
