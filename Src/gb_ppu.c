@@ -79,6 +79,7 @@ void ppu_pixel_transfer(){
     uint8_t line = gb_mem_map[LCD_LY];
     int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
     bool window_enabled = false;
+    uint16_t map = BG_MAP_1;
     uint16_t bg_map = BG_MAP_1;
     uint16_t window_map = BG_MAP_1;
     uint16_t bg_window_tile_set = VRAM_BLOCK_0;
@@ -94,16 +95,9 @@ void ppu_pixel_transfer(){
     
     //get background map
     if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
-        bg_map = BG_MAP_2;
+        map = BG_MAP_2;
     } else {
-        bg_map = BG_MAP_1;
-    }
-
-    //get window map
-    if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_WINDOW_MAP_SELECT)){
-        window_map = BG_MAP_2;
-    } else {
-        window_map = BG_MAP_1;
+        map = BG_MAP_1;
     }
 
     //get tile set
@@ -166,7 +160,7 @@ void ppu_pixel_transfer(){
             }
 
             // get address of tile in tile map
-            int tile_map_addr = gb_mem_map[bg_map + map_tile_start + tile_count];
+            int tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
 
             //need to check correct addresing
             if(bg_window_tile_mode == 1 && tile_map_addr >= 128){
@@ -182,23 +176,52 @@ void ppu_pixel_transfer(){
 
 
         //check to see if we need to apply the window
-        if(window_enabled && (x >= gb_mem_map[LCD_WX])){
+        if(window_enabled && (x >= gb_mem_map[LCD_WX] - 7)){
+            //disable 
+            window_enabled=false;
             //if window is enabled overwrite whatever is currently in the buffer
             input_buffer_1 = 0;
             input_buffer_2 = 0;
             buffer_shift_count = 0;
             tile_count = 1;
+            
+            //get window map
+            if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_WINDOW_MAP_SELECT)){
+                map = BG_MAP_2;
+            } else {
+                map = BG_MAP_1;
+            }
 
             //reset tilepointers to window map
-            //window always starts at 0,0 overlayed starting at wx wy 
+            //window always starts at 0,0 overlayed starting at wx wy
+            int window_line=(line - gb_mem_map[LCD_WY]);
+            map_tile_x = 0;
+            map_tile_y = window_line/TILE_SIZE;
+
+            //get start pixels from tile
+            tile_pixel_x = 0;
+            tile_pixel_y = window_line - (map_tile_y*TILE_SIZE);
+            
+            //deal with going off the edge of the screen
+            if(map_tile_y >= BG_SIZE){
+                map_tile_y-=BG_SIZE;
+            }
+            
+            // get offsete for working out tile poition
+            // these wont change as it the line is the same
+            map_line = map_tile_y*BG_SIZE;
+            tile_line_offset = tile_pixel_y*2;
+
+            // get first map tile
+            map_tile_start = map_tile_x + map_line;
 
             // get first tile from tile set
-            uint16_t tile_line = bg_window_tile_set + (gb_mem_map[window_map] * TILE_MEM_SIZE) + tile_line_offset;
+            tile_line = bg_window_tile_set + (gb_mem_map[map + map_tile_start] * TILE_MEM_SIZE) + tile_line_offset;
             input_buffer_1 = gb_mem_map[tile_line] << 8;
             input_buffer_2 = gb_mem_map[tile_line + 1] << 8;
 
             // get second from tile set
-            tile_line = bg_window_tile_set + (gb_mem_map[window_map + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
+            tile_line = bg_window_tile_set + (gb_mem_map[map + map_tile_start + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
             input_buffer_1 |= gb_mem_map[tile_line];
             input_buffer_2 |= gb_mem_map[tile_line + 1];
         }
