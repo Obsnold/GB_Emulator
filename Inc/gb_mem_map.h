@@ -2,7 +2,7 @@
 #define __GB_MEM_MAP_H
 #include <stdint.h>
 #include <stdio.h> 
-
+#include "gb_common.h" 
 /*
 
  	$FFFF 	Interrupt Enable Flag
@@ -29,7 +29,7 @@
 #define ZERO_PAGE           0xFF80
 #define IO_PORTS            0xFF00
 #define NA_MEM              0xFEA0
-#define OAM                 0xFE00
+#define OAM_TABLE           0xFE00
 #define ECHO_RAM            0xE000
 #define GB_RAM_2            0xD000
 #define GB_RAM_1            0xC000
@@ -154,9 +154,9 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 //LCD
 #define LCD_CTRL		0xFF40
 #define LCD_CTRL_ENABLE 				BIT_7
-#define LCD_CTRL_WINDOW_TILE_SELECT		BIT_6
+#define LCD_CTRL_WINDOW_MAP_SELECT		BIT_6
 #define LCD_CTRL_WINDOW_ENABLE			BIT_5
-#define LCD_CTRL_BG_TILE_SELECT			BIT_4
+#define LCD_CTRL_BG_W_TILE_SELECT		BIT_4
 #define LCD_CTRL_BG_MAP_SELECT			BIT_3
 #define LCD_CTRL_OBJ_SIZE				BIT_2
 #define LCD_CTRL_OBJ_ENABLE				BIT_1
@@ -202,6 +202,21 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 #define VRAM_BLOCK_0	0x8000
 #define VRAM_BLOCK_1	0x8800
 #define VRAM_BLOCK_2	0x9000
+
+//OAM
+#define OAM_TABLE_SIZE 0x28
+#define OAM_SIZE 0x04
+#define OAM_Y_POS 0x00
+#define OAM_X_POS 0x01
+#define OAM_TILE 0x02
+#define OAM_FLAGS 0x03
+
+#define OAM_FLAGS_OBJ_BG_PRIORITY 	BIT_7
+#define OAM_FLAGS_Y_FLIP			BIT_6
+#define OAM_FLAGS_X_FLIP			BIT_5
+#define OAM_FLAGS_PALETTE_NO		BIT_4
+#define OAM_FLAGS_TILE_VRAM_BANK	BIT_3 // cgb only
+#define OAM_FLAGS_PALETTENO_CGB		BIT_2 // and BIT_1 cgb only
 
 //SOUND
 #define	IO

@@ -24,6 +24,11 @@
 //line + 16 >= oam.y
 //line + 16 < oma.y +h
 
+// OAM layout
+// Byte0 - y position
+// Byte1 - x position
+// Byte2 - tile number
+// Byte3 - flags n stuff
 
 //modes
 // oam search 80clocks/20cycles
@@ -52,6 +57,8 @@ uint32_t gb_display[GB_SCREEN_WIDTH][GB_SCREEN_HEIGHT];
 unsigned long prev_tick = 0;
 unsigned long ppu_cycles = 0;
 unsigned long ppu_cycles_count = OAM_SEARCH_CYCLES;
+uint8_t oam_list[10];
+uint8_t oam_list_size = 0;
 
 uint32_t bg_pallet[4] = {green_1, green_2, green_3, green_4};
 uint32_t sp_pallet_1[4] = {trans, green_1, green_2, green_3};
@@ -65,12 +72,27 @@ unsigned long get_ticks(){
 
 
 void ppu_oam_search(){
+    uint8_t line = gb_mem_map[LCD_LY];
+    oam_list_size = 0;
     //search for all visible sprites
+    //check x > 0
     for(int i = 0; i < OAM_TABLE_SIZE; i++){
-        //check y
-        gb_mem_map[OAM_TABLE + (i*OAM_SIZE)];
-        //check x
+        //check x > 0, check line >= y,  line < y+8
+        if( (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS] > 0) &&
+            (line >= gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] ) &&
+            (line < (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] + TILE_SIZE))){
+                //if sprite is on the line then add to list
+                oam_list[oam_list_size] = i;
+                oam_list_size++;
+        }
     }
+}
+
+unsigned char reverse_bits(unsigned char b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
 }
 
 void ppu_pixel_transfer(){
@@ -79,12 +101,17 @@ void ppu_pixel_transfer(){
     uint8_t line = gb_mem_map[LCD_LY];
     int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
     bool window_enabled = false;
+    bool display_sprite = false;
     uint16_t map = BG_MAP_1;
     uint16_t bg_window_tile_set = VRAM_BLOCK_0;
     uint16_t input_buffer_1 = 0;
     uint16_t input_buffer_2 = 0;
     int buffer_shift_count = 0;
     int tile_count = 1;
+    uint8_t sprite_line_1 = 0;
+    uint8_t sprite_line_2 = 0;
+    uint8_t sprite_list_num = 0;
+    uint8_t sprite_buf_shift_count = 0;
 
     //do we need to display the window on this line?
     if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_WINDOW_ENABLE) && (line >= gb_mem_map[LCD_WY])){
@@ -281,33 +308,123 @@ void ppu_pixel_transfer(){
         }
 
         //check OAM to see if we need to apply a sprite
-        if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_ENABLE)){
+        // also check we are not currently displaying a sprite
+        if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_ENABLE) && (sprite_buf_shift_count == 0)){
+            //printf("check sprites--\n");
+            
+            for(int i = 0; i < oam_list_size; i++){
+                uint16_t oam = OAM_TABLE + (oam_list[i] * OAM_SIZE);
+                //need to check we are in the right x position
+                if((gb_mem_map[oam + OAM_X_POS] > x) && (gb_mem_map[oam + OAM_X_POS] < (x + TILE_SIZE))){
+                    int sprite_line_offset = line - gb_mem_map[oam + OAM_Y_POS];
+                    sprite_line_1 = 0;
+                    sprite_line_2 = 0;
+                    sprite_list_num = i;
+                    sprite_buf_shift_count = 0;
+                    printf("before, %d\n",sprite_line_offset);
+                    //flip y if we need to
+                    if(GET_MEM_MAP((oam + OAM_FLAGS),OAM_FLAGS_Y_FLIP)){
+                        sprite_line_offset = TILE_SIZE - sprite_line_offset -1;
+                    }
+                    printf("after, %d\n",sprite_line_offset);
+                    // get line
+                    tile_line = VRAM_BLOCK_0 + (gb_mem_map[oam + OAM_TILE] * TILE_MEM_SIZE) + (sprite_line_offset*2);
+                    sprite_line_1 = gb_mem_map[tile_line];
+                    sprite_line_2 = gb_mem_map[tile_line+1];
 
+                    //flip x if we need to
+                    if(GET_MEM_MAP((oam + OAM_FLAGS),OAM_FLAGS_X_FLIP)){
+                        sprite_line_1 = reverse_bits(sprite_line_1);
+                        sprite_line_2 = reverse_bits(sprite_line_2);
+                    }
+
+                    // check if we need to shift off the left side of the screen
+                    if(gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS] < TILE_SIZE){
+                        sprite_line_1 = sprite_line_1 << (TILE_SIZE - gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS]);
+                        sprite_line_2 = sprite_line_2 << (TILE_SIZE - gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS]);
+                        sprite_buf_shift_count -= gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS];
+                    } 
+
+                    display_sprite = true;
+
+                    break;
+                }
+            }
         }
 
+
         //get latest pixel on to the screen buffer
-        uint32_t colour = bg_pallet[0];
+        uint32_t bg_colour = bg_pallet[0];
         if(input_buffer_1 & 0x8000){
             if(input_buffer_2 & 0x8000){
-                colour = bg_pallet[0];
+                bg_colour = bg_pallet[0];
             } else {
-                colour = bg_pallet[1];
+                bg_colour = bg_pallet[1];
             }
         } else {
             if(input_buffer_2 & 0x8000){
-                colour = bg_pallet[2];
+                bg_colour = bg_pallet[2];
             } else {
-                colour = bg_pallet[3];
+                bg_colour = bg_pallet[3];
             }
         }
         
         //draw pixel to display
-        gb_display[x][line] = colour;
+        gb_display[x][line] = bg_colour;
+
+        //  do we need to overlay a sprite?
+        if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_ENABLE) && (sprite_buf_shift_count < TILE_SIZE) && display_sprite){
+            uint32_t sprite_colour = 0;
+            uint32_t* pallet;
+            uint16_t oam = OAM_TABLE + (oam_list[sprite_list_num] * OAM_SIZE);
+                //printf("%02x, %02x\n",sprite_line_1,sprite_line_2);
+            if(!(((sprite_line_1 & 0x80) == 0) && ((sprite_line_2 & 0x80) == 0))){
+                //printf("draw sprite, %d, %d\n",x,line);
+                if(GET_MEM_MAP((oam + OAM_FLAGS), OAM_FLAGS_PALETTE_NO) == 0){
+                    pallet = sp_pallet_1;
+                } else {
+                    pallet = sp_pallet_2;
+                }
+
+                //need to check sprite priority
+                int priority = GET_MEM_MAP(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
+                
+                if((priority == 0) || (priority &&
+                ((input_buffer_1 & 0x80) == 0) && ((input_buffer_2 & 0x80) == 0))){
+                    if(sprite_line_1 & 0x80){
+                        if(sprite_line_2 & 0x80){
+                            sprite_colour = pallet[1];
+                        } else {
+                            sprite_colour = pallet[2];
+                        }
+                    } else {
+                        if(sprite_line_2 & 0x80){
+                            sprite_colour = pallet[3];
+                        }
+                    }
+                    
+                    //draw pixel to display
+                    gb_display[x][line] = sprite_colour;
+                }
+            }
+
+
+            //shift pixels and increment counter
+            sprite_line_1 = sprite_line_1 << 0x01;
+            sprite_line_2 = sprite_line_2 << 0x01;
+            sprite_buf_shift_count++;
+        } else {
+            // we have finished displaying the sprite so reset counter
+            sprite_buf_shift_count = 0;
+            display_sprite = false;
+        }
 
         //shift pixels and increment counter
         input_buffer_1 = input_buffer_1 << 0x01;
         input_buffer_2 = input_buffer_2 << 0x01;
         buffer_shift_count++;
+
+        
     }
 }
 
