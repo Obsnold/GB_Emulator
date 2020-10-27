@@ -313,7 +313,7 @@ void ppu_pixel_transfer(){
             for(int i = 0; i < oam_list_size; i++){
                 uint16_t oam = OAM_TABLE + (oam_list[i] * OAM_SIZE);
                 //need to check we are in the right x position
-                if((gb_mem_map[oam + OAM_X_POS] > x) && (gb_mem_map[oam + OAM_X_POS] < (x + TILE_SIZE))){
+                if((x >= (gb_mem_map[oam + OAM_X_POS] - TILE_SIZE)) && (x < gb_mem_map[oam + OAM_X_POS])){
                     int sprite_line_offset = line - gb_mem_map[oam + OAM_Y_POS];
                     sprite_line_1 = 0;
                     sprite_line_2 = 0;
@@ -337,11 +337,11 @@ void ppu_pixel_transfer(){
                     }
 
                     // check if we need to shift off the left side of the screen
-                    if(gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS] < TILE_SIZE){
-                        sprite_line_1 = sprite_line_1 << (TILE_SIZE - gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS]);
-                        sprite_line_2 = sprite_line_2 << (TILE_SIZE - gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS]);
-                        sprite_buf_shift_count -= gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS];
-                    } 
+                    if(gb_mem_map[oam + OAM_X_POS] < TILE_SIZE){
+                        sprite_line_1 = sprite_line_1 << (TILE_SIZE - gb_mem_map[oam + OAM_X_POS]);
+                        sprite_line_2 = sprite_line_2 << (TILE_SIZE - gb_mem_map[oam + OAM_X_POS]);
+                        sprite_buf_shift_count = TILE_SIZE - gb_mem_map[oam + OAM_X_POS];
+                    }
 
                     display_sprite = true;
 
