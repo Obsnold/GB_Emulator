@@ -198,7 +198,6 @@ void ppu_pixel_transfer(){
     buffer_shift_count = tile_pixel_x;
     input_buffer_1 = input_buffer_1 << buffer_shift_count;
     input_buffer_2 = input_buffer_2 << buffer_shift_count;
-   // printf("buffer_shift_count= %04x \n",buffer_shift_count);
 
     for(int x = 0; x < GB_SCREEN_WIDTH; x++){
         //check if we need to load the next tile
@@ -310,7 +309,6 @@ void ppu_pixel_transfer(){
         //check OAM to see if we need to apply a sprite
         // also check we are not currently displaying a sprite
         if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_ENABLE) && (sprite_buf_shift_count == 0)){
-            //printf("check sprites--\n");
             
             for(int i = 0; i < oam_list_size; i++){
                 uint16_t oam = OAM_TABLE + (oam_list[i] * OAM_SIZE);
@@ -321,12 +319,12 @@ void ppu_pixel_transfer(){
                     sprite_line_2 = 0;
                     sprite_list_num = i;
                     sprite_buf_shift_count = 0;
-                    printf("before, %d\n",sprite_line_offset);
+                    
                     //flip y if we need to
                     if(GET_MEM_MAP((oam + OAM_FLAGS),OAM_FLAGS_Y_FLIP)){
                         sprite_line_offset = TILE_SIZE - sprite_line_offset -1;
                     }
-                    printf("after, %d\n",sprite_line_offset);
+                    
                     // get line
                     tile_line = VRAM_BLOCK_0 + (gb_mem_map[oam + OAM_TILE] * TILE_MEM_SIZE) + (sprite_line_offset*2);
                     sprite_line_1 = gb_mem_map[tile_line];
@@ -377,9 +375,11 @@ void ppu_pixel_transfer(){
             uint32_t sprite_colour = 0;
             uint32_t* pallet;
             uint16_t oam = OAM_TABLE + (oam_list[sprite_list_num] * OAM_SIZE);
-                //printf("%02x, %02x\n",sprite_line_1,sprite_line_2);
+            
+            //if the pixel is not transparent
             if(!(((sprite_line_1 & 0x80) == 0) && ((sprite_line_2 & 0x80) == 0))){
-                //printf("draw sprite, %d, %d\n",x,line);
+                
+                //check the apllet to use
                 if(GET_MEM_MAP((oam + OAM_FLAGS), OAM_FLAGS_PALETTE_NO) == 0){
                     pallet = sp_pallet_1;
                 } else {
@@ -388,7 +388,7 @@ void ppu_pixel_transfer(){
 
                 //need to check sprite priority
                 int priority = GET_MEM_MAP(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
-                
+
                 if((priority == 0) || (priority &&
                 ((input_buffer_1 & 0x80) == 0) && ((input_buffer_2 & 0x80) == 0))){
                     if(sprite_line_1 & 0x80){
@@ -407,7 +407,6 @@ void ppu_pixel_transfer(){
                     gb_display[x][line] = sprite_colour;
                 }
             }
-
 
             //shift pixels and increment counter
             sprite_line_1 = sprite_line_1 << 0x01;
@@ -462,29 +461,21 @@ uint8_t ppu(){
     unsigned long tick = get_ticks();
     ppu_cycles += tick - prev_tick;
     prev_tick = tick;
-   /* printf("tick = %lu \n", tick);
-    printf("ppu_cycles = %lu \n", ppu_cycles);
-    printf("LCD_LY = %u \n", gb_mem_map[LCD_LY]);
-    printf("ppu_mode = %u \n", ppu_mode);*/
 
     if (ppu_cycles > ppu_cycles_count){
         ppu_cycles = 0;
         switch (ppu_mode){
             case LCD_STAT_MODE_OAM:
-                //printf("LCD_STAT_MODE_OAM \n");
                 CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
                 SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_PIXEL_TRANS);
                 ppu_cycles_count = PIXEL_TRANSFER_CYCLES;
             break;
             case LCD_STAT_MODE_PIXEL_TRANS:
-                //printf("LCD_STAT_MODE_PIXEL_TRANS \n");
                 CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
                 SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_HBLNK);
                 ppu_cycles_count = H_BLANK_CYCLES;
             break;
             case LCD_STAT_MODE_HBLNK:
-                //printf("LCD_STAT_MODE_HBLNK \n");
-                //printf("LCD_LY = %u \n", gb_mem_map[LCD_LY]);
                 gb_mem_map[LCD_LY]++;
                 if(gb_mem_map[LCD_LY] >= GB_SCREEN_HEIGHT){
                     gb_mem_map[LCD_LY] = 0x00;
@@ -498,7 +489,6 @@ uint8_t ppu(){
                 }
             break;
             case LCD_STAT_MODE_VBLNK:
-                //printf("LCD_STAT_MODE_VBLNK \n");
                 CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
                 SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
                 ppu_cycles_count = OAM_SEARCH_CYCLES;
