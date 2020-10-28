@@ -84,6 +84,9 @@ void ppu_oam_search(){
                 //if sprite is on the line then add to list
                 oam_list[oam_list_size] = i;
                 oam_list_size++;
+                if(oam_list_size == 10){
+                    break;
+                }
         }
     }
 }
@@ -312,8 +315,11 @@ void ppu_pixel_transfer(){
             
             for(int i = 0; i < oam_list_size; i++){
                 uint16_t oam = OAM_TABLE + (oam_list[i] * OAM_SIZE);
+                uint8_t oam_x_pos = gb_mem_map[oam + OAM_X_POS];
+                
                 //need to check we are in the right x position
-                if((x >= (gb_mem_map[oam + OAM_X_POS] - TILE_SIZE)) && (x < gb_mem_map[oam + OAM_X_POS])){
+                if((x >= (oam_x_pos - TILE_SIZE)) && (x < oam_x_pos)){
+                    
                     int sprite_line_offset = line - gb_mem_map[oam + OAM_Y_POS];
                     sprite_line_1 = 0;
                     sprite_line_2 = 0;
@@ -337,10 +343,20 @@ void ppu_pixel_transfer(){
                     }
 
                     // check if we need to shift off the left side of the screen
-                    if(gb_mem_map[oam + OAM_X_POS] < TILE_SIZE){
-                        sprite_line_1 = sprite_line_1 << (TILE_SIZE - gb_mem_map[oam + OAM_X_POS]);
-                        sprite_line_2 = sprite_line_2 << (TILE_SIZE - gb_mem_map[oam + OAM_X_POS]);
-                        sprite_buf_shift_count = TILE_SIZE - gb_mem_map[oam + OAM_X_POS];
+                    if(oam_x_pos < TILE_SIZE){
+                        sprite_line_1 = sprite_line_1 << (TILE_SIZE - oam_x_pos);
+                        sprite_line_2 = sprite_line_2 << (TILE_SIZE - oam_x_pos);
+                        sprite_buf_shift_count = TILE_SIZE - oam_x_pos;
+                        if(x > 0){
+                            sprite_line_1 = sprite_line_1 << x;
+                            sprite_line_2 = sprite_line_2 << x;
+                            sprite_buf_shift_count += x;
+                        }
+                    }else if(x > (oam_x_pos - TILE_SIZE)){ //check if we need to shift due to sprite overlap
+                        int shift = (x + TILE_SIZE) - oam_x_pos;
+                        sprite_line_1 = sprite_line_1 << shift;
+                        sprite_line_2 = sprite_line_2 << shift;
+                        sprite_buf_shift_count += shift;
                     }
 
                     display_sprite = true;
@@ -412,11 +428,13 @@ void ppu_pixel_transfer(){
             sprite_line_1 = sprite_line_1 << 0x01;
             sprite_line_2 = sprite_line_2 << 0x01;
             sprite_buf_shift_count++;
-        } else {
-            // we have finished displaying the sprite so reset counter
-            sprite_buf_shift_count = 0;
-            display_sprite = false;
-        }
+
+            if(sprite_buf_shift_count == TILE_SIZE){
+                // we have finished displaying the sprite so reset counter
+                sprite_buf_shift_count = 0;
+                display_sprite = false;
+            }
+        } 
 
         //shift pixels and increment counter
         input_buffer_1 = input_buffer_1 << 0x01;
