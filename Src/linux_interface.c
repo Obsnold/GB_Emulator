@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include "system_interface.h"
 #include "gb_ppu.h"
 
 SDL_Window* window = NULL;
@@ -73,41 +74,52 @@ void update_screen(uint8_t line){
     //SDL_Delay( 4000 );
 }
 
-uint32_t get_key_press(){
-    uint32_t ret = 0;
-    if (SDL_PollEvent( &e ) !=0){
-        //User requests quit
-        if( e.type == SDL_QUIT )
-        {
-            ret = 1;
-        }
-        //User presses a key
-        else if( e.type == SDL_KEYDOWN )
-        {
-            //Select surfaces based on key press
-            switch( e.key.keysym.sym )
-            {
-                case SDLK_UP:
-                ret = 2;
-                break;
+int get_key_press(){
+    int ret = 0;
+    int numkeys = 0;
 
-                case SDLK_DOWN:
-                ret = 3;
-                break;
+    SDL_PumpEvents();
 
-                case SDLK_LEFT:
-                ret = 4;
-                break;
-
-                case SDLK_RIGHT:
-                ret = 5;
-                break;
-
-                default:
-                ret = 0;
-                break;
-            }
-        }
+    const uint8_t *array = SDL_GetKeyboardState(&numkeys);
+    
+    if( array[SDL_SCANCODE_ESCAPE] == 1 )
+    {
+        ret = -1;
     }
+
+    if( array[SDL_SCANCODE_UP] == 1 )
+    {
+        ret |= KEY_UP;
+    }
+    if( array[SDL_SCANCODE_DOWN] == 1 )
+    {
+        ret |= KEY_DOWN;
+    }
+    if( array[SDL_SCANCODE_LEFT] == 1 )
+    {
+        ret |= KEY_LEFT;
+    }
+    if( array[SDL_SCANCODE_RIGHT] == 1 )
+    {
+        ret |= KEY_RIGHT;
+    }
+    if( array[SDL_SCANCODE_A] == 1 )
+    {
+        ret |= KEY_A;
+    }
+    if( array[SDL_SCANCODE_S] == 1 )
+    {
+        ret |= KEY_B;
+    }
+    if( array[SDL_SCANCODE_RETURN] == 1 )
+    {
+        ret |= KEY_START;
+    }
+    if( array[SDL_SCANCODE_SPACE] == 1 )
+    {
+        ret |= KEY_SELECT;
+    }
+
+    //printf("keypress: %02x\n", ret);
     return ret;
 }

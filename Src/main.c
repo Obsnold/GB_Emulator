@@ -2,7 +2,7 @@
 #include "gb_mem_map.h"
 #include "gb_ppu.h"
 #include "gb_opcode_table.h"
-#include "linux_display.h"
+#include "system_interface.h"
 #include <stdio.h>
 
 
@@ -24,43 +24,31 @@ int main(int argc, char *argv[] )
     parse_header();
     print_opcodes();*/
    init_mem_map();
+   init_vram_test();
    init_screen();
    while(run){
       ppu();
-      //if(gb_mem_map[LCD_LY] == 143){
       update_screen(gb_mem_map[LCD_LY]);
-      //}
       switch(get_key_press()){
-         case 1:
-         run = 0;
+         case -1:
+            run = 0;
          break;
-         case 2:
-            if(gb_mem_map[LCD_SCY] == 0){
-               gb_mem_map[LCD_SCY] = 0xFF;
-            } else {
+         
+         case KEY_UP:
                gb_mem_map[LCD_SCY] -= 1;
-            }
+               //printf("LCD_SCY = %d\n",gb_mem_map[LCD_SCY]);
          break;
-         case 3:
-            if(gb_mem_map[LCD_SCY] == 0xFF){
-               gb_mem_map[LCD_SCY] = 1;
-            } else {
+         case KEY_DOWN:
                gb_mem_map[LCD_SCY] += 1;
-            }
+               //printf("LCD_SCY = %d\n",gb_mem_map[LCD_SCY]);
          break;
-         case 4:
-            if(gb_mem_map[LCD_SCX] == 0){
-               gb_mem_map[LCD_SCX] = 0xFF;
-            } else {
+         case KEY_LEFT:
                gb_mem_map[LCD_SCX] -= 1;
-            }
+              // printf("LCD_SCX = %d\n",gb_mem_map[LCD_SCX]);
          break;
-         case 5:
-            if(gb_mem_map[LCD_SCX] == 0xFF){
-               gb_mem_map[LCD_SCX] = 1;
-            } else {
+         case KEY_RIGHT:
                gb_mem_map[LCD_SCX] += 1;
-            }
+               //printf("LCD_SCX = %d\n",gb_mem_map[LCD_SCX]);
          break;
 
          default:
