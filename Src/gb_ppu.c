@@ -75,7 +75,6 @@ void ppu_oam_search(){
     uint8_t line = gb_mem_map[LCD_LY];
     oam_list_size = 0;
     //search for all visible sprites
-    //check x > 0
     for(int i = 0; i < OAM_TABLE_SIZE; i++){
         //check x > 0, check line >= y,  line < y+8
         if( (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS] > 0) &&
@@ -84,6 +83,7 @@ void ppu_oam_search(){
                 //if sprite is on the line then add to list
                 oam_list[oam_list_size] = i;
                 oam_list_size++;
+                //limit of 10 sprites per line
                 if(oam_list_size == 10){
                     break;
                 }
@@ -91,6 +91,7 @@ void ppu_oam_search(){
     }
 }
 
+//revers bits used for fliping sprite tile x axis
 unsigned char reverse_bits(unsigned char b) {
    b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
    b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
@@ -347,6 +348,7 @@ void ppu_pixel_transfer(){
                         sprite_line_1 = sprite_line_1 << (TILE_SIZE - oam_x_pos);
                         sprite_line_2 = sprite_line_2 << (TILE_SIZE - oam_x_pos);
                         sprite_buf_shift_count = TILE_SIZE - oam_x_pos;
+                        // is the sprite also overlapped?
                         if(x > 0){
                             sprite_line_1 = sprite_line_1 << x;
                             sprite_line_2 = sprite_line_2 << x;
@@ -365,7 +367,6 @@ void ppu_pixel_transfer(){
                 }
             }
         }
-
 
         //get latest pixel on to the screen buffer
         uint32_t bg_colour = bg_pallet[0];
@@ -456,6 +457,8 @@ void ppu_v_blank(){
 
 uint8_t ppu(){
     uint8_t ppu_mode = GET_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+
+    // if we are in a new mode run the appropriate code
     if(ppu_cycles == 0){
         switch(ppu_mode){
             case LCD_STAT_MODE_OAM:
@@ -476,10 +479,12 @@ uint8_t ppu(){
         }
     }
 
+    // get time 
     unsigned long tick = get_ticks();
     ppu_cycles += tick - prev_tick;
     prev_tick = tick;
 
+    // If the cycle time has elapsed set the appropriate flags and change the cycle count
     if (ppu_cycles > ppu_cycles_count){
         ppu_cycles = 0;
         switch (ppu_mode){
