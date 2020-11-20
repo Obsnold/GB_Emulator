@@ -25,7 +25,20 @@
 
 #define GB_MEM_SIZE         0xFFFF
 
-#define INTERUPT_EN_FLAG    0xFFFF
+#define INTERRUPT_EN   		0xFFFF
+#define ZERO_PAGE           0xFF80
+#define IO_PORTS            0xFF00
+#define NA_MEM              0xFEA0
+#define OAM_TABLE           0xFE00
+#define ECHO_RAM            0xE000
+#define GB_RAM_2            0xD000
+#define GB_RAM_1            0xC000
+#define CART_RAM            0xA000
+#define VRAM				0x8000
+#define CART_ROM_1          0x4000
+#define CART_ROM_0          0x0000
+
+#define INTERRUPT_EN   		0xFFFF
 #define ZERO_PAGE           0xFF80
 #define IO_PORTS            0xFF00
 #define NA_MEM              0xFEA0
@@ -52,7 +65,7 @@
 #define RESTART_ADDR_30		0x0030
 #define RESTART_ADDR_38		0x0038
 
-#define VBLANK_INTR					0x0040
+#define VBLANK_INTR_ADDR			0x0040
 #define LCDC_STAT_INTR_ADDR			0x0048
 #define TIMER_OVERFLOW_INTR_ADDR	0x0050
 #define SERIAL_COMPLETE_INTR_ADDR	0x0058
@@ -218,47 +231,36 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 #define OAM_FLAGS_TILE_VRAM_BANK	BIT_3 // cgb only
 #define OAM_FLAGS_PALETTENO_CGB		BIT_2 // and BIT_1 cgb only
 
-//SOUND
-#define	IO
+//Joypad Input
+#define JOYPAD_INPUT 		0xFF00
+#define JOYPAD_BUT 			BIT_5
+#define JOYPAD_DIR		 	BIT_4
+#define JOYPAD_DIR_DOWN		BIT_3	
+#define JOYPAD_DIR_UP		BIT_2	
+#define JOYPAD_DIR_LEFT		BIT_1	
+#define JOYPAD_DIR_RIGHT	BIT_0	
+#define JOYPAD_BUT_START	BIT_3	
+#define JOYPAD_BUT_SELECT	BIT_2	
+#define JOYPAD_BUT_A		BIT_1	
+#define JOYPAD_BUT_B		BIT_0
+
+//Interrupts
+#define	INTERRUPT_ENABLE	0xFFFF
+#define INTERRUPT_FLAGS		0xFF0F
+
+#define INTERRUPT_V_BLANK	BIT_0
+#define INTERRUPT_LCD_STAT	BIT_1
+#define INTERRUPT_TIMER		BIT_2
+#define INTERRUPT_SERIAL	BIT_3
+#define INTERRUPT_JOYPAD	BIT_4
 
 
-//CPU Registers
-#define GB_REG_SIZE 0x0C
 
-#define GB_REG_B	0x00
-#define GB_REG_C	0x01
-#define GB_REG_BC	0x00
-#define GB_REG_D	0x02
-#define GB_REG_E	0x03
-#define GB_REG_DE	0x02
-#define GB_REG_H	0x04
-#define GB_REG_L	0x05
-#define GB_REG_HL	0x04
-#define GB_REG_A	0x06
-#define GB_REG_F	0x07
-#define GB_REG_AF	0x06
-
-#define GB_REG_SP_1	0x08
-#define GB_REG_SP_2	0x09
-#define GB_REG_PC_1	0x0A
-#define GB_REG_PC_2	0x0B
-
-//flags
-#define ZERO_FLAG       BIT_7
-#define ADD_SUB_FLAG    BIT_6
-#define HALF_CARRY_FLAG BIT_5
-#define CARRY_FLAG      BIT_4
-
-#define GET_ZERO_FLAG		((gb_reg_map[GB_REG_F] & ZERO_FLAG) >> 0x07)
-#define GET_ADD_SUB_FLAG	((gb_reg_map[GB_REG_F] & ADD_SUB_FLAG) >> 0x06)
-#define GET_HALF_CARRY_FLAG	((gb_reg_map[GB_REG_F] & HALF_CARRY_FLAG) >> 0x05)
-#define GET_CARRY_FLAG		((gb_reg_map[GB_REG_F] & CARRY_FLAG) >> 0x04)
-
-#define GET_HIGH_NIBBLE x ((x & 0xF0) >> 0x04)
-#define GET_LOW_NIBBLE x (x & 0x0F)
+#define GET_HIGH_NIBBLE(x) ((x & 0xF0) >> 0x04)
+#define GET_LOW_NIBBLE(x) (x & 0x0F)
 
 extern uint8_t gb_mem_map[GB_MEM_SIZE];
-extern uint8_t gb_reg_map[GB_REG_SIZE];
+
 extern uint8_t bc_pointer;
 extern uint8_t de_pointer;
 extern uint8_t hl_pointer;
@@ -277,22 +279,9 @@ extern uint8_t addr_10H;
 extern uint8_t addr_08H;
 extern uint8_t addr_00H;
 
-#define SET_ZERO_FLAG		gb_reg_map[GB_REG_F] |= ZERO_FLAG
-#define CLR_ZERO_FLAG		gb_reg_map[GB_REG_F] &= ~ZERO_FLAG
-#define SET_ADD_SUB_FLAG	gb_reg_map[GB_REG_F] |= ADD_SUB_FLAG
-#define CLR_ADD_SUB_FLAG	gb_reg_map[GB_REG_F] &= ~ADD_SUB_FLAG
-#define SET_HALF_CARRY_FLAG	gb_reg_map[GB_REG_F] |= HALF_CARRY_FLAG
-#define CLR_HALF_CARRY_FLAG	gb_reg_map[GB_REG_F] &= ~HALF_CARRY_FLAG
-#define SET_CARRY_FLAG		gb_reg_map[GB_REG_F] |= CARRY_FLAG
-#define CLR_CARRY_FLAG		gb_reg_map[GB_REG_F] &= ~CARRY_FLAG
-
 #define GET_MEM_MAP(REG, BIT) (gb_mem_map[REG] & BIT)
 #define SET_MEM_MAP(REG, BIT) (gb_mem_map[REG] |= BIT)
 #define CLR_MEM_MAP(REG, BIT) (gb_mem_map[REG] &= ~BIT)
-
-#define GET_REG_F(BIT) (gb_reg_map[GB_REG_F] & BIT)
-#define SET_REG_F(BIT) (gb_reg_map[GB_REG_F] |= BIT)
-#define CLR_REG_F(BIT) (gb_reg_map[GB_REG_F] &= ~BIT)
 
 void init_mem_map();
 void parse_header();

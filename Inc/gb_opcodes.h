@@ -1,7 +1,26 @@
 #ifndef __GB_OPCODES_H
 #define __GB_OPCODES_H
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h> 
+#include "gb_cpu.h"
+#include "gb_common.h"
+#include "gb_mem_map.h"
+#define OPCODE_TABLE_SIZE 0x100
+
+typedef uint8_t (*opcodeFunction)(uint16_t opcode_address);
+
+struct gb_opcode{
+    char* description;
+    uint8_t length;
+    uint8_t cycles;
+    opcodeFunction operation;
+    /*uint8_t* operand_1;
+    uint8_t* operand_2;
+    uint8_t* operand_3;*/
+};
+
+extern struct gb_opcode opcode_table[OPCODE_TABLE_SIZE];
 
 uint8_t opcode_8_ld(uint16_t opcode_address);
 uint8_t opcode_8_ldi(uint16_t opcode_address);
@@ -28,15 +47,12 @@ uint8_t opcode_16_add_sp(uint16_t opcode_address);
 uint8_t opcode_16_inc(uint16_t opcode_address);
 uint8_t opcode_16_dec(uint16_t opcode_address);
 
-uint8_t opcode_rlca(uint16_t opcode_address);
-uint8_t opcode_rla(uint16_t opcode_address);
 uint8_t opcode_rrca(uint16_t opcode_address);
 uint8_t opcode_rra(uint16_t opcode_address);
+uint8_t opcode_rlca(uint16_t opcode_address);
+uint8_t opcode_rla(uint16_t opcode_address);
 uint8_t opcode_cb_prefix(uint16_t opcode_address);
 
-uint8_t opcode_bit(uint8_t* dest, uint8_t bit);
-uint8_t opcode_set(uint8_t* dest, uint8_t bit);
-uint8_t opcode_res(uint8_t* dest, uint8_t bit);
 uint8_t opcode_ccf(uint16_t opcode_address);
 uint8_t opcode_scf(uint16_t opcode_address);
 uint8_t opcode_nop(uint16_t opcode_address);
@@ -47,17 +63,17 @@ uint8_t opcode_ei(uint16_t opcode_address);
 
 
 // jump and call opcodes
-uint8_t opcode_jp(uint16_t address);
+uint8_t opcode_jp(uint16_t opcode_address);
 uint8_t opcode_jp_hl(uint16_t opcode_address);
-uint8_t opcode_jp_cnd(uint16_t address, uint8_t condition);
-uint8_t opcode_jr(int8_t offset);
-uint8_t opcode_jr_cnd(int8_t offset,uint8_t condition);
-uint8_t opcode_call(uint16_t address);
-uint8_t opcode_call_cnd(uint16_t address, uint8_t condition);
+uint8_t opcode_jp_cnd(uint16_t opcode_address);
+uint8_t opcode_jr(uint16_t opcode_address);
+uint8_t opcode_jr_cnd(uint16_t opcode_address);
+uint8_t opcode_call(uint16_t opcode_address);
+uint8_t opcode_call_cnd(uint16_t opcode_address);
 uint8_t opcode_ret(uint16_t opcode_address);
-uint8_t opcode_ret_cnd(uint8_t condition);
+uint8_t opcode_ret_cnd(uint16_t opcode_address);
 uint8_t opcode_reti(uint16_t opcode_address);
-uint8_t opcode_rst(uint16_t address);
+uint8_t opcode_rst(uint16_t opcode_address);
 uint8_t opcode_CB_prefix(uint16_t opcode_address);
 uint8_t opcode_NA(uint16_t opcode_address);
 

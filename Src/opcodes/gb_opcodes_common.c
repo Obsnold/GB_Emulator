@@ -1,3 +1,5 @@
+#include "gb_opcodes.h"
+
 
 int check_16_overflow(uint16_t* a, uint16_t* b){
     return (*a > 0xFFFF - *b);
@@ -34,7 +36,7 @@ void check_zero_flag(){
 
 // gb_cpu_reg functions
 uint8_t* get_reg_8(uint8_t reg){
-    uint8_t* ret = NULL
+    uint8_t* ret = NULL;
     if(reg < GB_REG_SIZE){
         if(reg == 0x06){
             ret = &gb_mem_map[get_reg_16_value(GB_REG_HL)];
@@ -85,7 +87,7 @@ uint8_t* get_reg_16_af(uint8_t reg){
 
 bool get_flag_condition(uint8_t flag){
     bool ret = false;
-    switch(reg){
+    switch(flag){
         case 0: // NZ
             if(GET_ZERO_FLAG == 0){
                 ret = true;

@@ -15,6 +15,7 @@ LINKER_FLAGS = -lSDL2
 
 #Source Files
 SRC += Src/*.c
+SRC += Src/opcodes/*.c
 
 # Make all
 all:$(OUT_FILE_PATH)

@@ -15,6 +15,7 @@ add  A,(HL)      86         8 z0hc A=A+(HL)
 uint8_t opcode_8_add(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
 
     // get value depending on opcode
     switch(opcode){
@@ -22,7 +23,6 @@ uint8_t opcode_8_add(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            uint8_t opcode_y = GET_OPCODE_Y(opcode);
             if(opcode_y == 0x06){
                 value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
             } else {
@@ -61,6 +61,7 @@ adc  A,(HL)      8E         8 z0hc A=A+(HL)+cy
 uint8_t opcode_8_adc(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
 
     // get value depending on opcode
     switch(opcode){
@@ -68,7 +69,6 @@ uint8_t opcode_8_adc(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            uint8_t opcode_y = GET_OPCODE_Y(opcode);
             if(opcode_y == 0x06){
                 value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
             } else {
@@ -108,6 +108,7 @@ sub  (HL)        96         8 z1hc A=A-(HL)
 uint8_t opcode_8_sub(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
 
     // get value depending on opcode
     switch(opcode){
@@ -115,7 +116,6 @@ uint8_t opcode_8_sub(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            uint8_t opcode_y = GET_OPCODE_Y(opcode);
             if(opcode_y == 0x06){
                 value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
             } else {
@@ -154,6 +154,7 @@ sbc  A,(HL)      9E         8 z1hc A=A-(HL)-cy
 uint8_t opcode_8_sbc(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
     switch(opcode){
@@ -161,7 +162,6 @@ uint8_t opcode_8_sbc(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            uint8_t opcode_y = GET_OPCODE_Y(opcode);
             if(opcode_y == 0x06){
                 value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
             } else {
@@ -201,6 +201,7 @@ and  (HL)        A6         8 z010 A=A & (HL)
 uint8_t opcode_8_and(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
     switch(opcode){
@@ -208,7 +209,6 @@ uint8_t opcode_8_and(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            uint8_t opcode_y = GET_OPCODE_Y(opcode);
             if(opcode_y == 0x06){
                 value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
             } else {
@@ -236,6 +236,7 @@ xor  (HL)        AE         8 z000
 uint8_t opcode_8_xor(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
     switch(opcode){
@@ -243,7 +244,6 @@ uint8_t opcode_8_xor(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            uint8_t opcode_y = GET_OPCODE_Y(opcode);
             if(opcode_y == 0x06){
                 value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
             } else {
@@ -271,14 +271,14 @@ or   (HL)        B6         8 z000 A=A | (HL)
 uint8_t opcode_8_or(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
-    
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+
     // get value depending on opcode
     switch(opcode){
         case 0xF6:
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            uint8_t opcode_y = GET_OPCODE_Y(opcode);
             if(opcode_y == 0x06){
                 value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
             } else {
@@ -306,13 +306,14 @@ cp   (HL)        BE         8 z1hc compare A-(HL)
 uint8_t opcode_8_cp(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
     switch(opcode){
         case 0xFE:
             value = gb_mem_map[opcode_address + 1];
+            break;
         default:
-            uint8_t opcode_y = GET_OPCODE_Y(opcode);
             if(opcode_y == 0x06){
                 value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
             } else {
@@ -350,9 +351,9 @@ inc  (HL)        34        12 z0h- (HL)=(HL)+1
 uint8_t opcode_8_inc(uint16_t opcode_address){
     uint8_t* addr = NULL;
     uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
     if(opcode_y == 0x06){
         addr = &gb_mem_map[get_reg_16_value(GB_REG_HL)];
     } else {
@@ -383,9 +384,9 @@ dec  (HL)        35        12 z1h- (HL)=(HL)-1
 uint8_t opcode_8_dec(uint16_t opcode_address){
     uint8_t* addr = NULL;
     uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
     if(opcode_y == 0x06){
         addr = &gb_mem_map[get_reg_16_value(GB_REG_HL)];
     } else {
@@ -428,37 +429,37 @@ uint8_t opcode_8_daa(uint16_t opcode_address){
     if(GET_CARRY_FLAG == 1)
         cf = true;
 
-    if(!c && !h && high <= 8 && low >= 10){
+    if(!cf && !hf && high <= 8 && low >= 10){
         gb_cpu_reg[GB_REG_A] += 0x06;
         CLR_CARRY_FLAG;
-    } else if(!c && h && high <= 9 && low <= 3){
+    } else if(!cf && hf && high <= 9 && low <= 3){
         gb_cpu_reg[GB_REG_A] += 0x06;
         CLR_CARRY_FLAG;
-    } else if(!nf && !c && !h && high >= 10 && low <= 9){
+    } else if(!nf && !cf && !hf && high >= 10 && low <= 9){
         gb_cpu_reg[GB_REG_A] += 0x60;
         SET_CARRY_FLAG;
-    } else if(!nf && !c && !h && high >= 9 && low >= 10){
+    } else if(!nf && !cf && !hf && high >= 9 && low >= 10){
         gb_cpu_reg[GB_REG_A] += 0x66;
         SET_CARRY_FLAG;
-    } else if(!nf && !c && h && high >= 10 && low <= 3){
+    } else if(!nf && !cf && hf && high >= 10 && low <= 3){
         gb_cpu_reg[GB_REG_A] += 0x66;
         SET_CARRY_FLAG;
-    } else if(c && !h && high <= 2 && low <= 9){
+    } else if(cf && !hf && high <= 2 && low <= 9){
         gb_cpu_reg[GB_REG_A] += 0x60;
         SET_CARRY_FLAG;
-    } else if(c && !h && high <= 2 && low >= 10){
+    } else if(cf && !hf && high <= 2 && low >= 10){
         gb_cpu_reg[GB_REG_A] += 0x66;
         SET_CARRY_FLAG;
-    } else if(c && h && high <= 3 && low <= 3){
+    } else if(cf && hf && high <= 3 && low <= 3){
         gb_cpu_reg[GB_REG_A] += 0x66;
         SET_CARRY_FLAG;
-    } else if(nf && !c && h && high <= 8 && low >= 6){
+    } else if(nf && !cf && hf && high <= 8 && low >= 6){
         gb_cpu_reg[GB_REG_A] += 0xFA;
         CLR_CARRY_FLAG;
-    } else if(nf && c && !h && high >= 7 && low <= 9){
+    } else if(nf && cf && !hf && high >= 7 && low <= 9){
         gb_cpu_reg[GB_REG_A] += 0xA0;
         SET_CARRY_FLAG;
-    } else if(nf && c && h && (high == 7 || high == 6) && low >= 6){
+    } else if(nf && cf && hf && (high == 7 || high == 6) && low >= 6){
         gb_cpu_reg[GB_REG_A] += 0x9A;
         SET_CARRY_FLAG;
     }

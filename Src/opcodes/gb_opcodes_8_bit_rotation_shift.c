@@ -11,6 +11,7 @@
 rlca           07           4 000c rotate akku left
 */
 uint8_t opcode_rlca(uint16_t opcode_address){
+    uint8_t opcode = gb_mem_map[opcode_address];
     gb_cpu_reg[GB_REG_A] = (gb_cpu_reg[GB_REG_A] << 1) | (gb_cpu_reg[GB_REG_A] >> 7);
     if (gb_cpu_reg[GB_REG_A] & 0x01){
         SET_CARRY_FLAG;
@@ -21,13 +22,14 @@ uint8_t opcode_rlca(uint16_t opcode_address){
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
 
-    return CYCLE_1;
+    return opcode_table[opcode].cycles;
 }
 
 /*
 rla            17           4 000c rotate akku left through carry
 */
 uint8_t opcode_rla(uint16_t opcode_address){
+    uint8_t opcode = gb_mem_map[opcode_address];
     uint8_t temp = GET_CARRY_FLAG;
     if(gb_cpu_reg[GB_REG_A] & 0x80){
         SET_CARRY_FLAG;
@@ -38,13 +40,14 @@ uint8_t opcode_rla(uint16_t opcode_address){
     CLR_ZERO_FLAG;
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
-    return CYCLE_1;
+    return opcode_table[opcode].cycles;
 }
 
 /*
 rrca           0F           4 000c rotate akku right
 */
 uint8_t opcode_rrca(uint16_t opcode_address){
+    uint8_t opcode = gb_mem_map[opcode_address];
     gb_cpu_reg[GB_REG_A] = (gb_cpu_reg[GB_REG_A] >> 0x01) | (gb_cpu_reg[GB_REG_A] << 0x07);
     if (gb_cpu_reg[GB_REG_A] & 0x80){
         SET_CARRY_FLAG;
@@ -54,13 +57,14 @@ uint8_t opcode_rrca(uint16_t opcode_address){
     CLR_ZERO_FLAG;
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
-    return CYCLE_1;
+    return opcode_table[opcode].cycles;
 }
 
 /*
 rra            1F           4 000c rotate akku right through carry
 */
 uint8_t opcode_rra(uint16_t opcode_address){
+    uint8_t opcode = gb_mem_map[opcode_address];
     uint8_t temp = GET_CARRY_FLAG;
     if(gb_cpu_reg[GB_REG_A] & 0x01){
         SET_CARRY_FLAG;
@@ -71,7 +75,7 @@ uint8_t opcode_rra(uint16_t opcode_address){
     CLR_ZERO_FLAG;
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
-    return CYCLE_1;
+    return opcode_table[opcode].cycles;
 }
 
 /*
@@ -242,9 +246,9 @@ uint8_t opcode_cb_prefix(uint16_t opcode_address){
     uint8_t* addr = NULL;
     uint8_t time = CYCLE_2;
     uint8_t opcode = gb_mem_map[opcode_address+1];
-    uint8_t opcode_x = GET_OPCODE_X(gb_mem_map[opcode_address]);
-    uint8_t opcode_y = GET_OPCODE_Y(gb_mem_map[opcode_address]);
-    uint8_t opcode_z = GET_OPCODE_Z(gb_mem_map[opcode_address]);
+    uint8_t opcode_x = GET_OPCODE_X(opcode);
+    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+    uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
     if(opcode_z == 0x06){
         addr = &gb_mem_map[get_reg_16_value(GB_REG_HL)];

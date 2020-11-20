@@ -20,15 +20,15 @@ uint8_t opcode_16_ld(uint16_t opcode_address){
         case 0xF9:
             dest = &gb_cpu_reg[GB_REG_SP];
             source = &gb_cpu_reg[GB_REG_HL];
-            break:
+            break;
         default:
             dest = get_reg_16_sp(GET_OPCODE_P(opcode));
-            source = gb_mem_map[opcode_address+1];
+            source = &gb_mem_map[opcode_address+1];
             break;
     }
 
     *dest = *source;
-    *dest+1) = *(source+1);
+    *(dest+1) = *(source+1);
     return opcode_table[opcode].cycles;
 }
 
@@ -41,8 +41,8 @@ uint8_t opcode_16_ld_offset(uint16_t opcode_address){
     uint16_t source = get_reg_16_value(GB_REG_SP);
     source += (int8_t) gb_mem_map[opcode_address+1];
 
-    gb_cpu_reg[GB_REG_H] = get_16_high(source);
-    gb_cpu_reg[GB_REG_L] = get_16_low(source);
+    gb_cpu_reg[GB_REG_H] = get_16_high(&source);
+    gb_cpu_reg[GB_REG_L] = get_16_low(&source);
     return opcode_table[opcode].cycles;
 }
 

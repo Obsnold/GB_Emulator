@@ -22,7 +22,7 @@ jp   (HL)        E9           4 ---- jump to HL, PC=(HL)
 */
 uint8_t opcode_jp_hl(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint16_t address = get_16_from_8(gb_cpu_reg[GB_REG_HL]);
+    uint16_t address = get_16_from_8(&gb_cpu_reg[GB_REG_HL]);
     gb_cpu_reg[GB_REG_PC_1] = gb_cpu_reg[address];
     gb_cpu_reg[GB_REG_PC_2] = gb_cpu_reg[address+1];
     return opcode_table[opcode].cycles;
@@ -49,7 +49,7 @@ jr   PC+dd     18 dd       12 ---- relative jump to nn (PC=PC+/-7bit)
 uint8_t opcode_jr(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     uint16_t temp = get_16_from_8(&gb_cpu_reg[GB_REG_PC_1]);
-    temp += (int8_t)offset;
+    temp += (int8_t) gb_mem_map[opcode_address+1];
     gb_cpu_reg[GB_REG_PC_1] = get_16_high(&temp);
     gb_cpu_reg[GB_REG_PC_2] = get_16_low(&temp);
     return opcode_table[opcode].cycles;
@@ -63,8 +63,10 @@ uint8_t opcode_jr_cnd(uint16_t opcode_address){
     uint8_t cycles = CYCLE_2;
 
     if(get_flag_condition(GET_OPCODE_Y(opcode-4))){
-        gb_cpu_reg[GB_REG_PC_1] = gb_mem_map[opcode_address+1];
-        gb_cpu_reg[GB_REG_PC_2] = gb_mem_map[opcode_address+2];
+        uint16_t temp = get_16_from_8(&gb_cpu_reg[GB_REG_PC_1]);
+        temp += (int8_t) gb_mem_map[opcode_address+1];
+        gb_cpu_reg[GB_REG_PC_1] = get_16_high(&temp);
+        gb_cpu_reg[GB_REG_PC_2] = get_16_low(&temp);
         cycles = ALT_CYCLE_3;
     }
     return cycles;
@@ -81,8 +83,8 @@ uint8_t opcode_call(uint16_t opcode_address){
     gb_cpu_reg[GB_REG_SP_2] = get_16_low(&temp);
     gb_mem_map[temp] = gb_cpu_reg[GB_REG_PC_1];
     gb_mem_map[temp+1] = gb_cpu_reg[GB_REG_PC_2];
-    gb_cpu_reg[GB_REG_PC_1] = get_16_high(&address);
-    gb_cpu_reg[GB_REG_PC_2] = get_16_low(&address);
+    gb_cpu_reg[GB_REG_PC_1] = gb_mem_map[opcode_address+1];
+    gb_cpu_reg[GB_REG_PC_2] = gb_mem_map[opcode_address+2];
     return opcode_table[opcode].cycles;
 }
 
@@ -100,8 +102,8 @@ uint8_t opcode_call_cnd(uint16_t opcode_address){
         gb_cpu_reg[GB_REG_SP_2] = get_16_low(&temp);
         gb_mem_map[temp] = gb_cpu_reg[GB_REG_PC_1];
         gb_mem_map[temp+1] = gb_cpu_reg[GB_REG_PC_2];
-        gb_cpu_reg[GB_REG_PC_1] = get_16_high(&address);
-        gb_cpu_reg[GB_REG_PC_2] = get_16_low(&address);
+        gb_cpu_reg[GB_REG_PC_1] = gb_mem_map[opcode_address+1];
+        gb_cpu_reg[GB_REG_PC_2] = gb_mem_map[opcode_address+2];
         cycles = ALT_CYCLE_6;
     }
     return cycles;
@@ -145,8 +147,8 @@ reti           D9          16 ---- return and enable interrupts (IME=1)
 */
 uint8_t opcode_reti(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    opcode_ret();
-    opcode_ei();
+    opcode_ret(opcode_address);
+    opcode_ei(opcode_address);
     return opcode_table[opcode].cycles;
 }
 
