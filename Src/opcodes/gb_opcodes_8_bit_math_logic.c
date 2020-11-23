@@ -23,11 +23,7 @@ uint8_t opcode_8_add(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            if(opcode_y == 0x06){
-                value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
-            } else {
-                value = gb_cpu_reg[opcode_y];
-            }
+            value = *get_reg_8(opcode_y);
             break;
     }
     
@@ -44,7 +40,7 @@ uint8_t opcode_8_add(uint16_t opcode_address){
     }
 
     //do opperartion
-    gb_cpu_reg[GB_REG_A] += value;
+    CPU_REG.A += value;
 
     //check other flags
     CLR_ADD_SUB_FLAG;
@@ -69,11 +65,7 @@ uint8_t opcode_8_adc(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            if(opcode_y == 0x06){
-                value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
-            } else {
-                value = gb_cpu_reg[opcode_y];
-            }
+            value = *get_reg_8(opcode_y);
             break;
     }
 
@@ -90,8 +82,8 @@ uint8_t opcode_8_adc(uint16_t opcode_address){
     }
 
     //do opperartion
-    gb_cpu_reg[GB_REG_A] += value;
-    gb_cpu_reg[GB_REG_A] += GET_CARRY_FLAG;
+    CPU_REG.A += value;
+    CPU_REG.A += GET_CARRY_FLAG;
 
     //check other flags
     CLR_ADD_SUB_FLAG;
@@ -116,11 +108,7 @@ uint8_t opcode_8_sub(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            if(opcode_y == 0x06){
-                value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
-            } else {
-                value = gb_cpu_reg[opcode_y];
-            }
+            value = *get_reg_8(opcode_y);
             break;
     }
 
@@ -137,7 +125,7 @@ uint8_t opcode_8_sub(uint16_t opcode_address){
     }
 
     //do opperartion
-    gb_cpu_reg[GB_REG_A] -= value;
+    CPU_REG.A -= value;
 
     //check other flags
     SET_ADD_SUB_FLAG;
@@ -162,11 +150,7 @@ uint8_t opcode_8_sbc(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            if(opcode_y == 0x06){
-                value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
-            } else {
-                value = gb_cpu_reg[opcode_y];
-            }
+            value = *get_reg_8(opcode_y);
             break;
     }
 
@@ -183,8 +167,8 @@ uint8_t opcode_8_sbc(uint16_t opcode_address){
     }
 
     //do opperartion
-    gb_cpu_reg[GB_REG_A] -= value;
-    gb_cpu_reg[GB_REG_A] -= GET_CARRY_FLAG;
+    CPU_REG.A -= value;
+    CPU_REG.A -= GET_CARRY_FLAG;
 
     //check other flags
     SET_ADD_SUB_FLAG;
@@ -209,15 +193,11 @@ uint8_t opcode_8_and(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            if(opcode_y == 0x06){
-                value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
-            } else {
-                value = gb_cpu_reg[opcode_y];
-            }
+            value = *get_reg_8(opcode_y);
             break;
     }
 
-    gb_cpu_reg[GB_REG_A] &= value;
+    CPU_REG.A &= value;
 
     //check other flags
     CLR_CARRY_FLAG;
@@ -244,15 +224,11 @@ uint8_t opcode_8_xor(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            if(opcode_y == 0x06){
-                value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
-            } else {
-                value = gb_cpu_reg[opcode_y];
-            }
+            value = *get_reg_8(opcode_y);
             break;
     }
 
-    gb_cpu_reg[GB_REG_A] ^= value;
+    CPU_REG.A ^= value;
 
     //check other flags
     CLR_CARRY_FLAG;
@@ -279,15 +255,11 @@ uint8_t opcode_8_or(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            if(opcode_y == 0x06){
-                value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
-            } else {
-                value = gb_cpu_reg[opcode_y];
-            }
+            value = *get_reg_8(opcode_y);
             break;
     }
 
-    gb_cpu_reg[GB_REG_A] |= value;
+    CPU_REG.A |= value;
 
     //check other flags
     CLR_CARRY_FLAG;
@@ -314,15 +286,11 @@ uint8_t opcode_8_cp(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            if(opcode_y == 0x06){
-                value = gb_mem_map[get_reg_16_value(GB_REG_HL)];
-            } else {
-                value = gb_cpu_reg[opcode_y];
-            }
+            value = *get_reg_8(opcode_y);
             break;
     }
 
-    uint8_t temp = gb_cpu_reg[GB_REG_A];
+    uint8_t temp = CPU_REG.A;
 
     if (check_8_underflow(&value)){
         SET_CARRY_FLAG;
@@ -335,12 +303,12 @@ uint8_t opcode_8_cp(uint16_t opcode_address){
         CLR_HALF_CARRY_FLAG;
     }
 
-    gb_cpu_reg[GB_REG_A] -= value;
+    CPU_REG.A -= value;
 
     SET_ADD_SUB_FLAG;
     check_zero_flag();
 
-    gb_cpu_reg[GB_REG_A] = temp;
+    CPU_REG.A = temp;
     return opcode_table[opcode].cycles;
 }
 
@@ -354,12 +322,7 @@ uint8_t opcode_8_inc(uint16_t opcode_address){
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
-    if(opcode_y == 0x06){
-        addr = &gb_mem_map[get_reg_16_value(GB_REG_HL)];
-    } else {
-        addr = &gb_cpu_reg[opcode_y];
-    }
-
+    addr = get_reg_8(opcode_y);
 
     //check carry flags first
     if(check_4_overflow(addr)){
@@ -369,7 +332,7 @@ uint8_t opcode_8_inc(uint16_t opcode_address){
     }
 
     //do opperartion
-    gb_cpu_reg[GB_REG_A] = *addr++;
+    CPU_REG.A = *addr++;
 
     CLR_ADD_SUB_FLAG;
     
@@ -387,11 +350,7 @@ uint8_t opcode_8_dec(uint16_t opcode_address){
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
-    if(opcode_y == 0x06){
-        addr = &gb_mem_map[get_reg_16_value(GB_REG_HL)];
-    } else {
-        addr = &gb_cpu_reg[opcode_y];
-    }
+    addr = get_reg_8(opcode_y);
 
     //check carry flags first
     if(check_4_underflow(addr)){
@@ -401,7 +360,7 @@ uint8_t opcode_8_dec(uint16_t opcode_address){
     }
 
     //do opperartion
-    gb_cpu_reg[GB_REG_A] = *addr--;
+    CPU_REG.A = *addr--;
 
     SET_ADD_SUB_FLAG;
     
@@ -414,8 +373,8 @@ daa              27         4 z-0x decimal adjust akku
 */
 uint8_t opcode_8_daa(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t low = GET_LOW_NIBBLE(gb_cpu_reg[GB_REG_A]);
-    uint8_t high = GET_HIGH_NIBBLE(gb_cpu_reg[GB_REG_A]);
+    uint8_t low = GET_LOW_NIBBLE(CPU_REG.A);
+    uint8_t high = GET_HIGH_NIBBLE(CPU_REG.A);
     bool cf = false;
     bool hf = false;
     bool nf = false;
@@ -430,37 +389,37 @@ uint8_t opcode_8_daa(uint16_t opcode_address){
         cf = true;
 
     if(!cf && !hf && high <= 8 && low >= 10){
-        gb_cpu_reg[GB_REG_A] += 0x06;
+        CPU_REG.A += 0x06;
         CLR_CARRY_FLAG;
     } else if(!cf && hf && high <= 9 && low <= 3){
-        gb_cpu_reg[GB_REG_A] += 0x06;
+        CPU_REG.A += 0x06;
         CLR_CARRY_FLAG;
     } else if(!nf && !cf && !hf && high >= 10 && low <= 9){
-        gb_cpu_reg[GB_REG_A] += 0x60;
+        CPU_REG.A += 0x60;
         SET_CARRY_FLAG;
     } else if(!nf && !cf && !hf && high >= 9 && low >= 10){
-        gb_cpu_reg[GB_REG_A] += 0x66;
+        CPU_REG.A += 0x66;
         SET_CARRY_FLAG;
     } else if(!nf && !cf && hf && high >= 10 && low <= 3){
-        gb_cpu_reg[GB_REG_A] += 0x66;
+        CPU_REG.A += 0x66;
         SET_CARRY_FLAG;
     } else if(cf && !hf && high <= 2 && low <= 9){
-        gb_cpu_reg[GB_REG_A] += 0x60;
+        CPU_REG.A += 0x60;
         SET_CARRY_FLAG;
     } else if(cf && !hf && high <= 2 && low >= 10){
-        gb_cpu_reg[GB_REG_A] += 0x66;
+        CPU_REG.A += 0x66;
         SET_CARRY_FLAG;
     } else if(cf && hf && high <= 3 && low <= 3){
-        gb_cpu_reg[GB_REG_A] += 0x66;
+        CPU_REG.A += 0x66;
         SET_CARRY_FLAG;
     } else if(nf && !cf && hf && high <= 8 && low >= 6){
-        gb_cpu_reg[GB_REG_A] += 0xFA;
+        CPU_REG.A += 0xFA;
         CLR_CARRY_FLAG;
     } else if(nf && cf && !hf && high >= 7 && low <= 9){
-        gb_cpu_reg[GB_REG_A] += 0xA0;
+        CPU_REG.A += 0xA0;
         SET_CARRY_FLAG;
     } else if(nf && cf && hf && (high == 7 || high == 6) && low >= 6){
-        gb_cpu_reg[GB_REG_A] += 0x9A;
+        CPU_REG.A += 0x9A;
         SET_CARRY_FLAG;
     }
 
@@ -475,7 +434,7 @@ cpl              2F         4 -11- A = A xor FF
 uint8_t opcode_8_cpl(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     
-    gb_cpu_reg[GB_REG_A] ^= 0xFF;
+    CPU_REG.A ^= 0xFF;
     SET_ADD_SUB_FLAG;
     SET_HALF_CARRY_FLAG;
     return opcode_table[opcode].cycles;

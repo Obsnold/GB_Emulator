@@ -4,9 +4,9 @@
 #include "gb_cpu.h"
 #include "gb_opcodes.h"
 #include "gb_input.h"
-#include "gb_boot_rom.h"
 #include "system_interface.h"
 #include <stdio.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[] )
 {
@@ -30,8 +30,10 @@ int main(int argc, char *argv[] )
       gb_mem_map[i] = gb_boot_rom[i];
    }*/
    // init_vram_test();
-   init_screen();
+   init_screen(); 
+   //0.00000025s
    while(1){
+      usleep(10000);
       gb_cpu();
       ppu();
       update_screen(gb_mem_map[LCD_LY]);

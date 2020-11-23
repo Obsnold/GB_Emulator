@@ -10,23 +10,23 @@ int check_16_underflow(uint16_t* a, uint16_t* b){
 }
 
 int check_8_overflow(uint8_t* b){
-    return (gb_cpu_reg[GB_REG_A] > 0xFF - *b);
+    return (CPU_REG.A > 0xFF - *b);
 }
 
 int check_8_underflow(uint8_t* b){
-    return (gb_cpu_reg[GB_REG_A] < *b);
+    return (CPU_REG.A < *b);
 }
 
 int check_4_overflow(uint8_t* b){
-    return (((gb_cpu_reg[GB_REG_A] & 0x0F) + (*b & 0x0F)) & 0x10) == 0x10;
+    return (((CPU_REG.A & 0x0F) + (*b & 0x0F)) & 0x10) == 0x10;
 }
 
 int check_4_underflow(uint8_t* b){
-    return ((gb_cpu_reg[GB_REG_A] & 0xF0) < (*b & 0xF0));
+    return ((CPU_REG.A & 0xF0) < (*b & 0xF0));
 }
 
 void check_zero_flag(){
-    if (gb_cpu_reg[GB_REG_A] == 0x00){
+    if (CPU_REG.A == 0x00){
         SET_ZERO_FLAG;
     } else {
         CLR_ZERO_FLAG;
@@ -37,49 +37,68 @@ void check_zero_flag(){
 // gb_cpu_reg functions
 uint8_t* get_reg_8(uint8_t reg){
     uint8_t* ret = NULL;
-    if(reg < GB_REG_SIZE){
-        if(reg == 0x06){
-            ret = &gb_mem_map[get_reg_16_value(GB_REG_HL)];
-        } else {
-            ret = &gb_cpu_reg[reg];
-        }
+    switch(reg){
+        case 0:
+            ret = &CPU_REG.B;
+            break;
+        case 1:
+            ret = &CPU_REG.C;
+            break;
+        case 2:
+            ret = &CPU_REG.D;
+            break;
+        case 3:
+            ret = &CPU_REG.E;
+            break;
+        case 4:
+            ret = &CPU_REG.H;
+            break;
+        case 5:
+            ret = &CPU_REG.L;
+            break;
+        case 6:
+            ret = &gb_mem_map[CPU_REG.HL];
+            break;
+        case 7:
+            ret = &CPU_REG.A;
+            break;
     }
     return ret;
 }
 
-uint8_t* get_reg_16_sp(uint8_t reg){
-    uint8_t* ret = 0;
+uint16_t* get_reg_16_sp(uint8_t reg){
+    uint16_t* ret = 0;
     switch(reg){
         case 0:
-            ret = &gb_cpu_reg[GB_REG_BC];
+            ret = &CPU_REG.BC;
             break;
         case 1:
-            ret = &gb_cpu_reg[GB_REG_DE];
+            ret = &CPU_REG.DE;
             break;
         case 2:
-            ret = &gb_cpu_reg[GB_REG_HL];
+            ret = &CPU_REG.HL;
             break;
         case 3:
-            ret = &gb_cpu_reg[GB_REG_SP];
+            ret = &CPU_REG.SP;
             break;
     }
     return ret;
 }
 
-uint8_t* get_reg_16_af(uint8_t reg){
-    uint8_t* ret = 0;
+uint16_t* get_reg_16_af(uint8_t reg){
+    uint16_t* ret = 0;
     switch(reg){
         case 0:
-            ret = &gb_cpu_reg[GB_REG_BC];
+            ret = &CPU_REG.BC;
             break;
         case 1:
-            ret = &gb_cpu_reg[GB_REG_DE];
+            ret = &CPU_REG.DE;
             break;
         case 2:
-            ret = &gb_cpu_reg[GB_REG_HL];
+            ret = &CPU_REG.HL;
             break;
         case 3:
-            ret = &gb_cpu_reg[GB_REG_AF];
+            ret = &CPU_REG.AF;
             break;
     }
     return ret;
@@ -110,11 +129,4 @@ bool get_flag_condition(uint8_t flag){
             break;
     }
     return ret;
-}
-
-uint16_t get_reg_16_value(uint8_t reg){
-    if(reg+1 < GB_REG_SIZE){
-        return get_16_from_8(&gb_cpu_reg[reg]);
-    }
-    return 0;
 }

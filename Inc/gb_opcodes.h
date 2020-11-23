@@ -74,7 +74,6 @@ uint8_t opcode_ret(uint16_t opcode_address);
 uint8_t opcode_ret_cnd(uint16_t opcode_address);
 uint8_t opcode_reti(uint16_t opcode_address);
 uint8_t opcode_rst(uint16_t opcode_address);
-uint8_t opcode_CB_prefix(uint16_t opcode_address);
 uint8_t opcode_NA(uint16_t opcode_address);
 
 
@@ -92,9 +91,8 @@ void check_zero_flag();
 void print_opcodes();
 
 uint8_t* get_reg_8(uint8_t reg);
-uint8_t* get_reg_16_sp(uint8_t reg);
-uint8_t* get_reg_16_af(uint8_t reg);
-uint16_t get_reg_16_value(uint8_t reg);
+uint16_t* get_reg_16_sp(uint8_t reg);
+uint16_t* get_reg_16_af(uint8_t reg);
 bool get_flag_condition(uint8_t flag);
 
 
@@ -150,6 +148,7 @@ bool get_flag_condition(uint8_t flag);
 #define CYCLE_MASK_2 0xF0
 
 #define NA_CYCLES 0x00
+#define CYCLE_MASK 0x0F
 #define CYCLE_1 0x01 //4 cycles
 #define CYCLE_2 0x02 //8 cycles
 #define CYCLE_3 0x03 //12 cycles
@@ -157,6 +156,7 @@ bool get_flag_condition(uint8_t flag);
 #define CYCLE_5 0x05 //20 cycles
 #define CYCLE_6 0x06 //24 cycles
 
+#define ALT_CYCLE_MASK 0xF0
 #define ALT_CYCLE_1 0x10 //4 cycles
 #define ALT_CYCLE_2 0x20 //8 cycles
 #define ALT_CYCLE_3 0x30 //12 cycles

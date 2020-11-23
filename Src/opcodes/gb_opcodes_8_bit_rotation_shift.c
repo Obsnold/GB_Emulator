@@ -12,8 +12,8 @@ rlca           07           4 000c rotate akku left
 */
 uint8_t opcode_rlca(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    gb_cpu_reg[GB_REG_A] = (gb_cpu_reg[GB_REG_A] << 1) | (gb_cpu_reg[GB_REG_A] >> 7);
-    if (gb_cpu_reg[GB_REG_A] & 0x01){
+    CPU_REG.A = (CPU_REG.A << 1) | (CPU_REG.A >> 7);
+    if (CPU_REG.A & 0x01){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
@@ -31,12 +31,12 @@ rla            17           4 000c rotate akku left through carry
 uint8_t opcode_rla(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     uint8_t temp = GET_CARRY_FLAG;
-    if(gb_cpu_reg[GB_REG_A] & 0x80){
+    if(CPU_REG.A & 0x80){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    gb_cpu_reg[GB_REG_A] = (gb_cpu_reg[GB_REG_A] << 1) | temp;
+    CPU_REG.A = (CPU_REG.A << 1) | temp;
     CLR_ZERO_FLAG;
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
@@ -48,8 +48,8 @@ rrca           0F           4 000c rotate akku right
 */
 uint8_t opcode_rrca(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    gb_cpu_reg[GB_REG_A] = (gb_cpu_reg[GB_REG_A] >> 0x01) | (gb_cpu_reg[GB_REG_A] << 0x07);
-    if (gb_cpu_reg[GB_REG_A] & 0x80){
+    CPU_REG.A = (CPU_REG.A >> 0x01) | (CPU_REG.A << 0x07);
+    if (CPU_REG.A & 0x80){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
@@ -66,12 +66,12 @@ rra            1F           4 000c rotate akku right through carry
 uint8_t opcode_rra(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     uint8_t temp = GET_CARRY_FLAG;
-    if(gb_cpu_reg[GB_REG_A] & 0x01){
+    if(CPU_REG.A & 0x01){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    gb_cpu_reg[GB_REG_A] = (gb_cpu_reg[GB_REG_A] >> 0x01) | (temp << 0x07);
+    CPU_REG.A = (CPU_REG.A >> 0x01) | (temp << 0x07);
     CLR_ZERO_FLAG;
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
@@ -250,11 +250,10 @@ uint8_t opcode_cb_prefix(uint16_t opcode_address){
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
+    addr = get_reg_8(opcode_z);
+
     if(opcode_z == 0x06){
-        addr = &gb_mem_map[get_reg_16_value(GB_REG_HL)];
         time = CYCLE_1;
-    } else {
-        addr = &gb_cpu_reg[opcode_z];
     }
 
     switch(opcode_x){

@@ -33,47 +33,49 @@ uint8_t opcode_8_ld(uint16_t opcode_address){
     //check unique opcodes
     switch(opcode){
         case 0x36: // ld (HL),n
-            gb_mem_map[get_16_from_8(&gb_cpu_reg[GB_REG_HL])] = gb_mem_map[opcode_address+1];
+            gb_mem_map[CPU_REG.HL] = gb_mem_map[opcode_address+1];
             break;
         case 0x0A: // ld A,(BC)
-            gb_cpu_reg[GB_REG_A] = gb_mem_map[get_16_from_8(&gb_cpu_reg[GB_REG_BC])];
+            CPU_REG.A = gb_mem_map[CPU_REG.BC];
             break;
         case 0x1A: // ld A,(DE)
-            gb_cpu_reg[GB_REG_A] = gb_mem_map[get_16_from_8(&gb_cpu_reg[GB_REG_DE])];
+            CPU_REG.A = gb_mem_map[CPU_REG.DE];
             break;
         case 0xFA: // ld A,(nn)
-            gb_cpu_reg[GB_REG_A] = gb_mem_map[get_16_from_8(&gb_mem_map[opcode_address + 1])];
+            CPU_REG.A = gb_mem_map[get_16_from_8(&gb_mem_map[opcode_address + 1])];
             break;
         case 0x02: // ld (BC),A
-            gb_mem_map[get_16_from_8(&gb_cpu_reg[GB_REG_BC])] = gb_cpu_reg[GB_REG_A];
+            gb_mem_map[CPU_REG.BC] = CPU_REG.A;
             break;
         case 0x12: // ld (DE),A
-            gb_mem_map[get_16_from_8(&gb_cpu_reg[GB_REG_DE])] = gb_cpu_reg[GB_REG_A];
+            gb_mem_map[CPU_REG.DE] = CPU_REG.A;
             break;
         case 0xEA: // ld (nn),A
-            gb_mem_map[get_16_from_8(&gb_mem_map[opcode_address + 1])] = gb_cpu_reg[GB_REG_A];
+            gb_mem_map[get_16_from_8(&gb_mem_map[opcode_address + 1])] = CPU_REG.A;
             break;
         case 0xF0: // ld A,(FF00+n)
-            gb_cpu_reg[GB_REG_A] = gb_mem_map[IO_PORTS + gb_mem_map[opcode_address + 1]];
+            CPU_REG.A = gb_mem_map[IO_PORTS + gb_mem_map[opcode_address + 1]];
             break;
         case 0xE0: // ld (FF00+n),A
-            gb_mem_map[IO_PORTS + gb_mem_map[opcode_address + 1]] = gb_cpu_reg[GB_REG_A];
+            gb_mem_map[IO_PORTS + gb_mem_map[opcode_address + 1]] = CPU_REG.A;
             break;
         case 0xF2: // ld A,(FF00+C)
-            gb_cpu_reg[GB_REG_A] = gb_mem_map[IO_PORTS + gb_cpu_reg[GB_REG_C]];
+            CPU_REG.A = gb_mem_map[IO_PORTS + CPU_REG.C];
             break;
         case 0xE2: // ld (FF00+C),A
-            gb_mem_map[IO_PORTS + gb_cpu_reg[GB_REG_C]] = gb_cpu_reg[GB_REG_A];
+            gb_mem_map[IO_PORTS + CPU_REG.C] = CPU_REG.A;
             break;
         default:
             if(opcode_z == 0x06 && opcode_x == 0x00){ // check immediate loads
                 if(opcode_y == 0x06){
-                    gb_mem_map[get_reg_16_value(gb_cpu_reg[GB_REG_HL])] = gb_mem_map[opcode_address + 1];
+                    gb_mem_map[CPU_REG.HL] = gb_mem_map[opcode_address + 1];
                 } else {
-                    gb_cpu_reg[opcode_y] = gb_mem_map[opcode_address + 1];
+                    uint8_t* reg = get_reg_8(opcode_y);
+                    *reg = gb_mem_map[opcode_address + 1];
                 }
             } else if(opcode_x == 0x01){ // check register loads
-                gb_cpu_reg[opcode_y] = gb_cpu_reg[opcode_z];
+                uint8_t* reg = get_reg_8(opcode_y);
+                *reg = *get_reg_8(opcode_z);
             }
 
             break;
@@ -88,17 +90,14 @@ ldi  A,(HL)      2A         8 ---- A=(HL), HL=HL+1
 */
 uint8_t opcode_8_ldi(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint16_t hl_value = get_16_from_8(&gb_cpu_reg[GB_REG_HL]);
 
     if(opcode == 0x22){
-        gb_mem_map[hl_value] = gb_cpu_reg[GB_REG_A];
+        gb_mem_map[CPU_REG.HL] = CPU_REG.A;
     } else {
-        gb_cpu_reg[GB_REG_A] = gb_mem_map[hl_value];
+        CPU_REG.A = gb_mem_map[CPU_REG.HL];
     }
     
-    hl_value++;
-
-    set_16_from_8(&gb_cpu_reg[GB_REG_HL], hl_value);
+    CPU_REG.HL++;
     return opcode_table[opcode].cycles;
 }
 
@@ -109,17 +108,13 @@ ldd  A,(HL)      3A         8 ---- A=(HL), HL=HL-1
 */
 uint8_t opcode_8_ldd(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint16_t hl_value = get_16_from_8(&gb_cpu_reg[GB_REG_HL]);
 
     if(gb_mem_map[opcode_address] == 0x32){
-        gb_mem_map[hl_value] = gb_cpu_reg[GB_REG_A];
+        gb_mem_map[CPU_REG.HL] = CPU_REG.A;
     } else {
-        gb_cpu_reg[GB_REG_A] = gb_mem_map[hl_value];
+        CPU_REG.A = gb_mem_map[CPU_REG.HL];
     }
     
-    hl_value--;
-
-    set_16_from_8(&gb_cpu_reg[GB_REG_HL], hl_value);
-
+    CPU_REG.HL--;
     return opcode_table[opcode].cycles;
 }

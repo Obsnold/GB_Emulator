@@ -2,7 +2,7 @@
 #define __SYSTEM_INTERFACE_H
 
 #include "gb_common.h"
-;
+
 int get_key_press();
 void init_screen();
 void free_screen();
