@@ -13,18 +13,25 @@ CFLAGS += -I./Inc
 
 LINKER_FLAGS = -lSDL2
 
-#Source Files
-SRC += Src/*.c
-SRC += Src/opcodes/*.c
+#Source Folders
+SRC_DIR += Src
+SRC_DIR += Src/opcodes
+
+SRC := $(wildcard $(addsuffix /*.c, $(SRC_DIR)))
+
+OBJECTS := $(patsubst %.c, %.o, $(SRC))
 
 # Make all
-all:$(OUT_FILE_PATH)
+all:$(OBJECTS) $(OUT_FILE_PATH)
 
-$(OUT_FILE_PATH): $(SRC)
+%.o: %.c
+	$(CC) $(CFLAGS) -c $<  -o $@
+
+$(OUT_FILE_PATH): $(OBJECTS)
 	$(CC) $(CFLAGS) $^ $(LINKER_FLAGS) -o $@
 
 # Make clean
 clean:
-	rm -f $(OUT_FILE_PATH)
+	rm -f $(OUT_FILE_PATH) $(OBJECTS)
 
 .PHONY: all clean
