@@ -89,7 +89,7 @@ void opcode_rlc(uint8_t* dest){
     } else {
         CLR_CARRY_FLAG;
     }
-    check_zero_flag();
+    check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
 }
@@ -106,7 +106,7 @@ void opcode_rl(uint8_t* dest){
         CLR_CARRY_FLAG;
     }
     *dest = (*dest << 1) | temp;
-    check_zero_flag();
+    check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
 }
@@ -122,7 +122,7 @@ void opcode_rrc(uint8_t* dest){
     } else {
         CLR_CARRY_FLAG;
     }
-    check_zero_flag();
+    check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
 }
@@ -139,7 +139,7 @@ void opcode_rr(uint8_t* dest){
         CLR_CARRY_FLAG;
     }
     *dest = (*dest >> 0x01) | (temp << 0x07);
-    check_zero_flag();
+    check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
 }
@@ -155,7 +155,7 @@ void opcode_sla(uint8_t* dest){
         CLR_CARRY_FLAG;
     }
     *dest = (*dest << 1);
-    check_zero_flag();
+    check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
 
@@ -167,7 +167,7 @@ swap (HL)      CB 36       16 z000 exchange low/hi-nibble
 */
 void opcode_swap(uint8_t* dest){
     *dest = (*dest << 0x04) & (*dest >> 0x04);
-    check_zero_flag();
+    check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
     CLR_CARRY_FLAG;
@@ -185,7 +185,7 @@ void opcode_sra(uint8_t* dest){
         CLR_CARRY_FLAG;
     }
     *dest = (*dest >> 1) & temp;
-    check_zero_flag();
+    check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
 }
@@ -201,7 +201,7 @@ void opcode_srl(uint8_t* dest){
         CLR_CARRY_FLAG;
     }
     *dest = (*dest >> 1);
-    check_zero_flag();
+    check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
 }

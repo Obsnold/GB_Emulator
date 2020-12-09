@@ -43,6 +43,8 @@ void free_screen(){
 #define rgb888_green_3 0x306230
 #define rgb888_green_4 0x0F380F
 
+int print = 1;
+
 void update_screen(uint8_t line){
     for(int x = 0; x < GB_SCREEN_WIDTH; x++){
         //for(int i = 0; i < 2; i++){
@@ -53,7 +55,9 @@ void update_screen(uint8_t line){
         //}
     }
 
-    if(line == 0){
+    if(line == 0 && print == 1){
+        print = 0;
+        //printf("Print screen\n");
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
         SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)pixel_screen,
@@ -70,6 +74,8 @@ void update_screen(uint8_t line){
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         
         SDL_RenderPresent(renderer);
+    } else if(line !=0){
+        print = 1;
     }
     //SDL_Delay( 4000 );
 }
@@ -118,6 +124,10 @@ int get_key_press(){
     if( array[SDL_SCANCODE_SPACE] == 1 )
     {
         ret |= KEY_SELECT;
+    }
+    if( array[SDL_SCANCODE_BACKSPACE] == 1 )
+    {
+        ret |= KEY_DEBUG;
     }
 
     //printf("keypress: %02x\n", ret);

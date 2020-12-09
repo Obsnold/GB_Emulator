@@ -9,10 +9,9 @@ enum cpu_power{
 
 void cpu_set_power_mode(enum cpu_power mode );
 void gb_cpu();
+void cpu_init();
 
-
-
-typedef struct cpu_reg {
+struct cpu_reg {
     union {
         struct {
             uint8_t C;
@@ -55,9 +54,8 @@ typedef struct cpu_reg {
         };
         uint16_t SP;
     };
-}gb_cpu_reg;
+}CPU_REG;// = {{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}}};
 
-extern gb_cpu_reg CPU_REG;
 
 //flags
 #define ZERO_FLAG       BIT_7

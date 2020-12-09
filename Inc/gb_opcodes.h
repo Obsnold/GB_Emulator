@@ -84,11 +84,7 @@ int check_8_overflow(uint8_t* b);
 int check_8_underflow(uint8_t* b);
 int check_4_overflow(uint8_t* b);
 int check_4_underflow(uint8_t* b);
-void check_zero_flag();
-
-
-// debug functions
-void print_opcodes();
+void check_zero_flag(uint8_t val);
 
 uint8_t* get_reg_8(uint8_t reg);
 uint16_t* get_reg_16_sp(uint8_t reg);
@@ -134,11 +130,11 @@ bool get_flag_condition(uint8_t flag);
 #define OP_Q_1  0x08
 
 
-#define GET_OPCODE_X(x) ((x && OP_X_MASK) >> 6)
-#define GET_OPCODE_Y(x) ((x && OP_Y_MASK) >> 3)
-#define GET_OPCODE_Z(x) (x && OP_Z_MASK)
-#define GET_OPCODE_P(x) ((x && OP_P_MASK) >> 4)
-#define GET_OPCODE_Q(x) ((x && OP_Q_MASK) >> 3)
+#define GET_OPCODE_X(x) (((x) & OP_X_MASK) >> 6)
+#define GET_OPCODE_Y(x) (((x) & OP_Y_MASK) >> 3)
+#define GET_OPCODE_Z(x) ((x) & OP_Z_MASK)
+#define GET_OPCODE_P(x) (((x) & OP_P_MASK) >> 4)
+#define GET_OPCODE_Q(x) (((x) & OP_Q_MASK) >> 3)
 
 //cycles
 //some opcodes have vairable cycle lengths 

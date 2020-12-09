@@ -18,4 +18,6 @@ void update_screen(uint8_t line);
 #define KEY_B       BIT_5
 #define KEY_A       BIT_4
 
+#define KEY_DEBUG   0xF00
+
 #endif

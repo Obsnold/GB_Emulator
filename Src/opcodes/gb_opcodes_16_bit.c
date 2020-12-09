@@ -47,8 +47,8 @@ uint8_t opcode_16_push(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     CPU_REG.SP -=2;
     uint16_t* reg = get_reg_16_af(GET_OPCODE_P(opcode));
-    gb_mem_map[CPU_REG.SP] = get_16_high(reg);
-    gb_mem_map[CPU_REG.SP + 1] = get_16_low(reg);
+    gb_mem_map[CPU_REG.SP] = get_16_low(reg);
+    gb_mem_map[CPU_REG.SP + 1] = get_16_high(reg);
     return opcode_table[opcode].cycles;
 }
 /*

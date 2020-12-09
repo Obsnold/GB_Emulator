@@ -1,8 +1,6 @@
 #include "gb_ppu.h"
 #include "gb_mem_map.h"
 #include "gb_test_image.h"
-#include <time.h>
-#include <math.h>
 #include <stdbool.h>
 
 //background tile data 256 tiles
@@ -64,11 +62,7 @@ uint32_t bg_pallet[4] = {green_1, green_2, green_3, green_4};
 uint32_t sp_pallet_1[4] = {trans, green_1, green_2, green_3};
 uint32_t sp_pallet_2[4] = {trans, green_1, green_2, green_3};
 
-unsigned long get_ticks(){
-    struct timespec _t;
-    clock_gettime(CLOCK_REALTIME, &_t);
-    return ((_t.tv_sec*1000000000 + lround(_t.tv_nsec)) / 1000);
-}
+
 
 
 void ppu_oam_search(){
@@ -485,7 +479,8 @@ uint8_t ppu(){
     prev_tick = tick;
 
     // If the cycle time has elapsed set the appropriate flags and change the cycle count
-    if (ppu_cycles > ppu_cycles_count){
+    if (ppu_cycles > (ppu_cycles_count* 250)){
+        //printf("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
         ppu_cycles = 0;
         switch (ppu_mode){
             case LCD_STAT_MODE_OAM:
@@ -500,7 +495,7 @@ uint8_t ppu(){
             break;
             case LCD_STAT_MODE_HBLNK:
                 gb_mem_map[LCD_LY]++;
-                if(gb_mem_map[LCD_LY] >= GB_SCREEN_HEIGHT){
+                if(gb_mem_map[LCD_LY] > GB_SCREEN_HEIGHT){
                     gb_mem_map[LCD_LY] = 0x00;
                     CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
                     SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_VBLNK);

@@ -37,7 +37,7 @@ uint8_t opcode_jp_cnd(uint16_t opcode_address){
     if(get_flag_condition(GET_OPCODE_Y(opcode))){
         CPU_REG.PC_1 = gb_mem_map[opcode_address+1];
         CPU_REG.PC_2 = gb_mem_map[opcode_address+2];
-        cycles = ALT_CYCLE_4;
+        cycles =CYCLE_4;
     }
     return cycles;
 }
@@ -47,10 +47,8 @@ jr   PC+dd     18 dd       12 ---- relative jump to nn (PC=PC+/-7bit)
 */
 uint8_t opcode_jr(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint16_t temp = get_16_from_8(&CPU_REG.PC_1);
-    temp += (int8_t) gb_mem_map[opcode_address+1];
-    CPU_REG.PC_1 = get_16_high(&temp);
-    CPU_REG.PC_2 = get_16_low(&temp);
+    int8_t temp = (int8_t)gb_mem_map[opcode_address+1];
+    CPU_REG.PC += temp;
     return opcode_table[opcode].cycles;
 }
 
@@ -60,13 +58,10 @@ jr   f,PC+dd   xx dd     12;8 ---- conditional relative jump if nz,z,nc,c
 uint8_t opcode_jr_cnd(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     uint8_t cycles = CYCLE_2;
-
-    if(get_flag_condition(GET_OPCODE_Y(opcode-4))){
-        uint16_t temp = get_16_from_8(&CPU_REG.PC_1);
-        temp += (int8_t) gb_mem_map[opcode_address+1];
-        CPU_REG.PC_1 = get_16_high(&temp);
-        CPU_REG.PC_2 = get_16_low(&temp);
-        cycles = ALT_CYCLE_3;
+    if(get_flag_condition(GET_OPCODE_Y(opcode)-4) == true){
+        int8_t temp = (int8_t)gb_mem_map[opcode_address+1];
+        CPU_REG.PC += temp;
+        cycles = CYCLE_3;
     }
     return cycles;
 }
@@ -76,12 +71,9 @@ call nn        CD nn nn    24 ---- call to nn, SP=SP-2, (SP)=PC, PC=nn
 */
 uint8_t opcode_call(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint16_t temp = get_16_from_8(&CPU_REG.SP_1);
-    temp -= 2;
-    CPU_REG.SP_1 = get_16_high(&temp);
-    CPU_REG.SP_2 = get_16_low(&temp);
-    gb_mem_map[temp] = CPU_REG.PC_1;
-    gb_mem_map[temp+1] = CPU_REG.PC_2;
+    CPU_REG.SP -= 2;
+    gb_mem_map[CPU_REG.SP] = CPU_REG.PC_1;
+    gb_mem_map[CPU_REG.SP+1] = CPU_REG.PC_2;
     CPU_REG.PC_1 = gb_mem_map[opcode_address+1];
     CPU_REG.PC_2 = gb_mem_map[opcode_address+2];
     return opcode_table[opcode].cycles;
@@ -95,15 +87,13 @@ uint8_t opcode_call_cnd(uint16_t opcode_address){
     uint8_t cycles = CYCLE_3;
 
     if(get_flag_condition(GET_OPCODE_Y(opcode))){
-        uint16_t temp = get_16_from_8(&CPU_REG.SP_1);
-        temp -= 2;
-        CPU_REG.SP_1 = get_16_high(&temp);
-        CPU_REG.SP_2 = get_16_low(&temp);
-        gb_mem_map[temp] = CPU_REG.PC_1;
-        gb_mem_map[temp+1] = CPU_REG.PC_2;
+        printf("----------------");
+        CPU_REG.SP -= 2;
+        gb_mem_map[CPU_REG.SP] = CPU_REG.PC_1;
+        gb_mem_map[CPU_REG.SP+1] = CPU_REG.PC_2;
         CPU_REG.PC_1 = gb_mem_map[opcode_address+1];
         CPU_REG.PC_2 = gb_mem_map[opcode_address+2];
-        cycles = ALT_CYCLE_6;
+        cycles =CYCLE_6;
     }
     return cycles;
 }
@@ -113,12 +103,9 @@ ret            C9          16 ---- return, PC=(SP), SP=SP+2
 */
 uint8_t opcode_ret(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint16_t temp = get_16_from_8(&CPU_REG.SP_1);
-    CPU_REG.PC_1 = gb_mem_map[temp];
-    CPU_REG.PC_2 = gb_mem_map[temp+1];
-    temp += 2;
-    CPU_REG.SP_1 = get_16_high(&temp);
-    CPU_REG.SP_2 = get_16_low(&temp);
+    CPU_REG.PC_1 = gb_mem_map[CPU_REG.SP];
+    CPU_REG.PC_2 = gb_mem_map[CPU_REG.SP+1];
+    CPU_REG.SP += 2;
     return opcode_table[opcode].cycles;
 }
 
@@ -130,13 +117,10 @@ uint8_t opcode_ret_cnd(uint16_t opcode_address){
     uint8_t cycles = CYCLE_2;
 
     if(get_flag_condition(GET_OPCODE_Y(opcode-4))){
-        uint16_t temp = get_16_from_8(&CPU_REG.SP_1);
-        CPU_REG.PC_1 = gb_mem_map[temp];
-        CPU_REG.PC_2 = gb_mem_map[temp+1];
-        temp += 2;
-        CPU_REG.SP_1 = get_16_high(&temp);
-        CPU_REG.SP_2 = get_16_low(&temp);
-        cycles = ALT_CYCLE_5;
+        CPU_REG.PC_1 = gb_mem_map[CPU_REG.SP];
+        CPU_REG.PC_2 = gb_mem_map[CPU_REG.SP+1];
+        CPU_REG.SP += 2;
+        cycles =CYCLE_5;
     }
     return cycles;
 }
@@ -157,6 +141,10 @@ rst  n         xx          16 ---- call to 00,08,10,18,20,28,30,38
 uint8_t opcode_rst(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
-    opcode_call(opcode_y*8);
+    CPU_REG.SP -= 2;
+    gb_mem_map[CPU_REG.SP] = CPU_REG.PC_1;
+    gb_mem_map[CPU_REG.SP+1] = CPU_REG.PC_2;
+    CPU_REG.PC = opcode_y*8;
+    //opcode_call(opcode_y*8);
     return opcode_table[opcode].cycles;
 }

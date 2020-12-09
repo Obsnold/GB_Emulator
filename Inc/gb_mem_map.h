@@ -284,7 +284,6 @@ extern uint8_t addr_00H;
 #define CLR_MEM_MAP(REG, BIT) (gb_mem_map[REG] &= ~BIT)
 
 void init_mem_map();
-void parse_header();
 uint16_t get_16_from_8(uint8_t* source);
 uint8_t get_16_low(uint16_t* source);
 uint8_t get_16_high(uint16_t* source);

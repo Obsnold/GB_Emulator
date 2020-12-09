@@ -25,8 +25,8 @@ int check_4_underflow(uint8_t* b){
     return ((CPU_REG.A & 0xF0) < (*b & 0xF0));
 }
 
-void check_zero_flag(){
-    if (CPU_REG.A == 0x00){
+void check_zero_flag(uint8_t val){
+    if (val == 0x00){
         SET_ZERO_FLAG;
     } else {
         CLR_ZERO_FLAG;

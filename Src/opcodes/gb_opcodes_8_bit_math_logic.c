@@ -15,7 +15,7 @@ add  A,(HL)      86         8 z0hc A=A+(HL)
 uint8_t opcode_8_add(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+    uint8_t opcode_z = GET_OPCODE_Z(opcode);
 
     // get value depending on opcode
     switch(opcode){
@@ -23,10 +23,12 @@ uint8_t opcode_8_add(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            value = *get_reg_8(opcode_y);
+            value = *get_reg_8(opcode_z);
             break;
     }
-    
+        if(CPU_REG.PC > 0xF3){          
+        printf("value %02x\n",value);
+    }   
     //check carry flags first
     if (check_8_overflow(&value)){
         SET_CARRY_FLAG;
@@ -38,14 +40,16 @@ uint8_t opcode_8_add(uint16_t opcode_address){
     } else {
         CLR_HALF_CARRY_FLAG;
     }
-
+    if(CPU_REG.PC > 0xF3){          
+        printf("value %02x\n",value);
+    }    
     //do opperartion
     CPU_REG.A += value;
 
     //check other flags
     CLR_ADD_SUB_FLAG;
     
-    check_zero_flag();
+    check_zero_flag(CPU_REG.A);
     return opcode_table[opcode].cycles;
 }
 
@@ -57,7 +61,7 @@ adc  A,(HL)      8E         8 z0hc A=A+(HL)+cy
 uint8_t opcode_8_adc(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+    uint8_t opcode_z = GET_OPCODE_Z(opcode);
 
     // get value depending on opcode
     switch(opcode){
@@ -65,7 +69,7 @@ uint8_t opcode_8_adc(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            value = *get_reg_8(opcode_y);
+            value = *get_reg_8(opcode_z);
             break;
     }
 
@@ -88,7 +92,7 @@ uint8_t opcode_8_adc(uint16_t opcode_address){
     //check other flags
     CLR_ADD_SUB_FLAG;
     
-    check_zero_flag();
+    check_zero_flag(CPU_REG.A);
     return opcode_table[opcode].cycles;
 }
 
@@ -100,7 +104,7 @@ sub  (HL)        96         8 z1hc A=A-(HL)
 uint8_t opcode_8_sub(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+    uint8_t opcode_z = GET_OPCODE_Z(opcode);
 
     // get value depending on opcode
     switch(opcode){
@@ -108,7 +112,7 @@ uint8_t opcode_8_sub(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            value = *get_reg_8(opcode_y);
+            value = *get_reg_8(opcode_z);
             break;
     }
 
@@ -130,7 +134,7 @@ uint8_t opcode_8_sub(uint16_t opcode_address){
     //check other flags
     SET_ADD_SUB_FLAG;
     
-    check_zero_flag();
+    check_zero_flag(CPU_REG.A);
     return opcode_table[opcode].cycles;
 }
 
@@ -142,7 +146,7 @@ sbc  A,(HL)      9E         8 z1hc A=A-(HL)-cy
 uint8_t opcode_8_sbc(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+    uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
     // get value depending on opcode
     switch(opcode){
@@ -150,7 +154,7 @@ uint8_t opcode_8_sbc(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            value = *get_reg_8(opcode_y);
+            value = *get_reg_8(opcode_z);
             break;
     }
 
@@ -173,7 +177,7 @@ uint8_t opcode_8_sbc(uint16_t opcode_address){
     //check other flags
     SET_ADD_SUB_FLAG;
     
-    check_zero_flag();
+    check_zero_flag(CPU_REG.A);
     return opcode_table[opcode].cycles;
 }
 
@@ -185,7 +189,7 @@ and  (HL)        A6         8 z010 A=A & (HL)
 uint8_t opcode_8_and(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+    uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
     // get value depending on opcode
     switch(opcode){
@@ -193,7 +197,7 @@ uint8_t opcode_8_and(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            value = *get_reg_8(opcode_y);
+            value = *get_reg_8(opcode_z);
             break;
     }
 
@@ -204,7 +208,7 @@ uint8_t opcode_8_and(uint16_t opcode_address){
     SET_HALF_CARRY_FLAG;
     CLR_ADD_SUB_FLAG;
 
-    check_zero_flag();
+    check_zero_flag(CPU_REG.A);
     return opcode_table[opcode].cycles;
 }
 
@@ -216,7 +220,7 @@ xor  (HL)        AE         8 z000
 uint8_t opcode_8_xor(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+    uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
     // get value depending on opcode
     switch(opcode){
@@ -224,7 +228,7 @@ uint8_t opcode_8_xor(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            value = *get_reg_8(opcode_y);
+            value = *get_reg_8(opcode_z);
             break;
     }
 
@@ -235,7 +239,7 @@ uint8_t opcode_8_xor(uint16_t opcode_address){
     CLR_HALF_CARRY_FLAG;
     CLR_ADD_SUB_FLAG;
     
-    check_zero_flag();
+    check_zero_flag(CPU_REG.A);
     return opcode_table[opcode].cycles;
 }
 
@@ -247,7 +251,7 @@ or   (HL)        B6         8 z000 A=A | (HL)
 uint8_t opcode_8_or(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+    uint8_t opcode_z = GET_OPCODE_Z(opcode);
 
     // get value depending on opcode
     switch(opcode){
@@ -255,7 +259,7 @@ uint8_t opcode_8_or(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            value = *get_reg_8(opcode_y);
+            value = *get_reg_8(opcode_z);
             break;
     }
 
@@ -266,7 +270,7 @@ uint8_t opcode_8_or(uint16_t opcode_address){
     CLR_HALF_CARRY_FLAG;
     CLR_ADD_SUB_FLAG;
     
-    check_zero_flag();
+    check_zero_flag(CPU_REG.A);
     return opcode_table[opcode].cycles;
 }
 
@@ -278,7 +282,7 @@ cp   (HL)        BE         8 z1hc compare A-(HL)
 uint8_t opcode_8_cp(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t opcode_y = GET_OPCODE_Y(opcode);
+    uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
     // get value depending on opcode
     switch(opcode){
@@ -286,7 +290,7 @@ uint8_t opcode_8_cp(uint16_t opcode_address){
             value = gb_mem_map[opcode_address + 1];
             break;
         default:
-            value = *get_reg_8(opcode_y);
+            value = *get_reg_8(opcode_z);
             break;
     }
 
@@ -306,7 +310,7 @@ uint8_t opcode_8_cp(uint16_t opcode_address){
     CPU_REG.A -= value;
 
     SET_ADD_SUB_FLAG;
-    check_zero_flag();
+    check_zero_flag(CPU_REG.A);
 
     CPU_REG.A = temp;
     return opcode_table[opcode].cycles;
@@ -332,11 +336,12 @@ uint8_t opcode_8_inc(uint16_t opcode_address){
     }
 
     //do opperartion
-    CPU_REG.A = *addr++;
+    //CPU_REG.A = 
+    ++*addr;
 
     CLR_ADD_SUB_FLAG;
     
-    check_zero_flag();
+    check_zero_flag(*addr);
     return opcode_table[opcode].cycles;
 }
 
@@ -360,11 +365,12 @@ uint8_t opcode_8_dec(uint16_t opcode_address){
     }
 
     //do opperartion
-    CPU_REG.A = *addr--;
+    //CPU_REG.A = 
+    --*addr;
 
     SET_ADD_SUB_FLAG;
     
-    check_zero_flag();
+    check_zero_flag(*addr);
     return opcode_table[opcode].cycles;
 }
 
@@ -424,7 +430,7 @@ uint8_t opcode_8_daa(uint16_t opcode_address){
     }
 
     CLR_HALF_CARRY_FLAG;
-    check_zero_flag();
+    check_zero_flag(CPU_REG.A);
     return opcode_table[opcode].cycles;
 }
 

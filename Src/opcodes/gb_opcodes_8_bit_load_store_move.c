@@ -26,7 +26,7 @@ ld   (FF00+C),A  E2         8 ---- write to io-port C (memory FF00+C)
 */
 uint8_t opcode_8_ld(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    uint8_t opcode_x = GET_OPCODE_Z(opcode);
+    uint8_t opcode_x = GET_OPCODE_X(opcode);
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
