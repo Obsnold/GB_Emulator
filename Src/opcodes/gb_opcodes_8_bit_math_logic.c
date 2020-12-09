@@ -26,9 +26,7 @@ uint8_t opcode_8_add(uint16_t opcode_address){
             value = *get_reg_8(opcode_z);
             break;
     }
-        if(CPU_REG.PC > 0xF3){          
-        printf("value %02x\n",value);
-    }   
+    
     //check carry flags first
     if (check_8_overflow(&value)){
         SET_CARRY_FLAG;
@@ -40,9 +38,7 @@ uint8_t opcode_8_add(uint16_t opcode_address){
     } else {
         CLR_HALF_CARRY_FLAG;
     }
-    if(CPU_REG.PC > 0xF3){          
-        printf("value %02x\n",value);
-    }    
+
     //do opperartion
     CPU_REG.A += value;
 
