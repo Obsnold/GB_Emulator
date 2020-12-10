@@ -43,7 +43,6 @@ void free_screen(){
 #define rgb888_green_3 0x306230
 #define rgb888_green_4 0x0F380F
 
-int gPrint = 1;
 int gLine = 0;
 
 void update_screen(uint8_t line){
@@ -56,8 +55,7 @@ void update_screen(uint8_t line){
                 pixel_screen[pixel+2] = (gb_display[x][line] & 0xFF);
         }
 
-        if(line == 0 && gPrint == 1){
-            gPrint = 0;
+        if(line == 0){
             //printf("Print screen\n");
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
@@ -75,10 +73,7 @@ void update_screen(uint8_t line){
             SDL_RenderCopy(renderer, texture, NULL, NULL);
             
             SDL_RenderPresent(renderer);
-        } else if(line !=0){
-            gPrint = 1;
         }
-
     }
 }
 
