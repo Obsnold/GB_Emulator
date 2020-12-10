@@ -85,6 +85,26 @@ void print_opcode(){
     printf("]\n");
 }
 
+void print_lcd(){
+    printf("=================LCD=================\n");
+    printf("LCD_STAT_LCY_INTR_EN=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_LCY_INTR_EN);
+    printf("LCD_STAT_OAM_INTR_EN=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_OAM_INTR_EN);
+    printf("LCD_STAT_VBLNK_INTR_EN=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_VBLNK_INTR_EN);
+    printf("LCD_STAT_HBLNK_INTR_EN=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_COINC_FLAG);
+    printf("LCD_STAT_COINC_FLAG=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_COINC_FLAG);
+    printf("LCD_STAT_MODE=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_MODE);
+    printf("LCD_SCY=%02x \n",gb_mem_map[LCD_SCY]);
+    printf("LCD_SCX=%02x \n",gb_mem_map[LCD_SCX]);
+    printf("LCD_LY=%02x \n",gb_mem_map[LCD_LY]);
+    printf("LCD_LYC=%02x \n",gb_mem_map[LCD_LYC]);
+    printf("LCD_DMA=%02x \n",gb_mem_map[LCD_DMA]);
+    printf("LCD_BGP=%02x \n",gb_mem_map[LCD_BGP]);
+    printf("LCD_OBP0=%02x \n",gb_mem_map[LCD_OBP0]);
+    printf("LCD_OBP1=%02x \n",gb_mem_map[LCD_OBP1]);
+    printf("LCD_WY=%02x \n",gb_mem_map[LCD_WY]);
+    printf("LCD_WX=%02x \n",gb_mem_map[LCD_WX]);
+}
+
 void print_memory(uint16_t start_pos, uint16_t end_pos){
     for (int i = start_pos; i < end_pos; i++){
         if((i - start_pos)%16 ==0){
