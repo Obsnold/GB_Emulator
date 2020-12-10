@@ -43,41 +43,43 @@ void free_screen(){
 #define rgb888_green_3 0x306230
 #define rgb888_green_4 0x0F380F
 
-int print = 1;
+int gPrint = 1;
+int gLine = 0;
 
 void update_screen(uint8_t line){
-    for(int x = 0; x < GB_SCREEN_WIDTH; x++){
-        //for(int i = 0; i < 2; i++){
-            int pixel = (line * GB_SCREEN_WIDTH * RGB_CHANNELS)+(x*RGB_CHANNELS);
-            pixel_screen[pixel] = ((gb_display[x][line] & 0xFF0000) >> 0x10);
-            pixel_screen[pixel+1] = ((gb_display[x][line] & 0xFF00) >> 0x08);
-            pixel_screen[pixel+2] = (gb_display[x][line] & 0xFF);
-        //}
-    }
+    if(line != gLine){
+        gLine = line;
+        for(int x = 0; x < GB_SCREEN_WIDTH; x++){
+                int pixel = (line * GB_SCREEN_WIDTH * RGB_CHANNELS)+(x*RGB_CHANNELS);
+                pixel_screen[pixel] = ((gb_display[x][line] & 0xFF0000) >> 0x10);
+                pixel_screen[pixel+1] = ((gb_display[x][line] & 0xFF00) >> 0x08);
+                pixel_screen[pixel+2] = (gb_display[x][line] & 0xFF);
+        }
 
-    if(line == 0 && print == 1){
-        print = 0;
-        //printf("Print screen\n");
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
-        SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)pixel_screen,
-                    GB_SCREEN_WIDTH,
-                    GB_SCREEN_HEIGHT,
-                    RGB_CHANNELS * 8,          // bits per pixel = 24
-                    GB_SCREEN_WIDTH * RGB_CHANNELS,  // pitch
-                    0x0000FF,              // red mask
-                    0x00FF00,              // green mask
-                    0xFF0000,              // blue mask
-                    0);
-        texture = SDL_CreateTextureFromSurface(renderer, surface);
-        SDL_FreeSurface(surface);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
-        
-        SDL_RenderPresent(renderer);
-    } else if(line !=0){
-        print = 1;
+        if(line == 0 && gPrint == 1){
+            gPrint = 0;
+            //printf("Print screen\n");
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+            SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)pixel_screen,
+                        GB_SCREEN_WIDTH,
+                        GB_SCREEN_HEIGHT,
+                        RGB_CHANNELS * 8,          // bits per pixel = 24
+                        GB_SCREEN_WIDTH * RGB_CHANNELS,  // pitch
+                        0x0000FF,              // red mask
+                        0x00FF00,              // green mask
+                        0xFF0000,              // blue mask
+                        0);
+            texture = SDL_CreateTextureFromSurface(renderer, surface);
+            SDL_FreeSurface(surface);
+            SDL_RenderCopy(renderer, texture, NULL, NULL);
+            
+            SDL_RenderPresent(renderer);
+        } else if(line !=0){
+            gPrint = 1;
+        }
+
     }
-    //SDL_Delay( 4000 );
 }
 
 int get_key_press(){
