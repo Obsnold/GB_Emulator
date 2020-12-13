@@ -125,9 +125,9 @@ void ppu_pixel_transfer(){
 
     //get tile set
     if(bg_window_tile_mode == 0){
-        bg_window_tile_set = VRAM_BLOCK_0;
-    } else {
         bg_window_tile_set = VRAM_BLOCK_2;
+    } else {
+        bg_window_tile_set = VRAM_BLOCK_0;
     }
     
     // work out position of start tile in map
@@ -155,7 +155,7 @@ void ppu_pixel_transfer(){
     int tile_map_addr = gb_mem_map[map + map_tile_start];
 
     //need to check correct addresing
-    if(bg_window_tile_mode == 1) {
+    if(bg_window_tile_mode == 0) {
         if(tile_map_addr >= 0x80){
             tile_map_addr -= 0x100;
             bg_window_tile_set = VRAM_BLOCK_1;
@@ -178,7 +178,7 @@ void ppu_pixel_transfer(){
     tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
 
     //need to check correct addresing
-    if(bg_window_tile_mode == 1) {
+    if(bg_window_tile_mode == 0) {
         if(tile_map_addr >= 0x80){
             tile_map_addr -= 0x100;
             bg_window_tile_set = VRAM_BLOCK_1;
@@ -211,7 +211,7 @@ void ppu_pixel_transfer(){
             tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
 
             //need to check correct addresing
-            if(bg_window_tile_mode == 1) {
+            if(bg_window_tile_mode == 0) {
                 if(tile_map_addr >= 0x80){
                     tile_map_addr -= 0x100;
                     bg_window_tile_set = VRAM_BLOCK_1;
@@ -271,7 +271,7 @@ void ppu_pixel_transfer(){
             tile_map_addr = gb_mem_map[map + map_tile_start];
 
             //need to check correct addresing
-            if(bg_window_tile_mode == 1) {
+            if(bg_window_tile_mode == 0) {
                 if(tile_map_addr >= 0x80){
                     tile_map_addr -= 0x100;
                     bg_window_tile_set = VRAM_BLOCK_1;
@@ -289,7 +289,7 @@ void ppu_pixel_transfer(){
             tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
 
             //need to check correct addresing
-            if(bg_window_tile_mode == 1) {
+            if(bg_window_tile_mode == 0) {
                 if(tile_map_addr >= 0x80){
                     tile_map_addr -= 0x100;
                     bg_window_tile_set = VRAM_BLOCK_1;
