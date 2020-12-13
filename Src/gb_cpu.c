@@ -26,6 +26,7 @@ void cpu_set_power_mode(enum cpu_power mode ){
 }
 
 #define clear() printf("\033[H\033[J")
+uint8_t temp_LCDY = 0;
 
 void gb_cpu(){
     // get time 
@@ -51,23 +52,16 @@ void gb_cpu(){
 
     //if no interrupts then process normally
     if(cpu_cycles > (current_cycle_time * 250)){
-        if(CPU_REG.PC == 0x100 || CPU_REG.PC == 0x00){
-            print_memory(TILE_RAM,0x8200);
-            print_memory(0x134,0x14E);
-        }
-        //clear();
-        //if(CPU_REG.PC != 0x60 && CPU_REG.PC != 0x62 && CPU_REG.PC != 0x64 && CPU_REG.PC != 0x66 && CPU_REG.PC != 0x68 && CPU_REG.PC != 0x6A && CPU_REG.PC != 0x6B){
-          if(CPU_REG.PC > 0xF3){          
-                    print_cpu_reg();
-                   // printf("LCD_SCY=%02x, LCD_SCX=%02x\n",gb_mem_map[LCD_SCY],gb_mem_map[LCD_SCX]);
-                   //printf("HL=%04x, %02x\n",CPU_REG.HL,gb_mem_map[CPU_REG.HL]);
-                    print_opcode();
-                   // print_memory(0x104,0x133);
-        }    
-        uint8_t opcode = gb_mem_map[CPU_REG.PC];
-        uint16_t temp_pc = CPU_REG.PC;
-        CPU_REG.PC += opcode_table[opcode].length;
-        current_cycle_time = opcode_table[opcode].operation(temp_pc);
+        /*if(CPU_REG.PC<0x235){
+            if(CPU_REG.PC>0x230){
+                print_opcode();
+                print_cpu_reg();
+            }*/
+            uint8_t opcode = gb_mem_map[CPU_REG.PC];
+            uint16_t temp_pc = CPU_REG.PC;
+            CPU_REG.PC += opcode_table[opcode].length;
+            current_cycle_time = opcode_table[opcode].operation(temp_pc);
+        //}
     }
 }
 

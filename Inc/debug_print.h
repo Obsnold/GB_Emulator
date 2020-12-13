@@ -9,5 +9,6 @@ void print_opcode_table();
 void print_opcode();
 void print_memory(uint16_t start_pos, uint16_t end_pos);
 void print_lcd();
+void print_display_buffer();
 
 #endif

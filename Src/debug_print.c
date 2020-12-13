@@ -2,6 +2,7 @@
 #include "gb_mem_map.h"
 #include "gb_cpu.h"
 #include "gb_opcodes.h"
+#include "gb_ppu.h"
 
 
 void print_cpu_reg(){
@@ -87,12 +88,23 @@ void print_opcode(){
 
 void print_lcd(){
     printf("=================LCD=================\n");
+
+    printf("LCD_CTRL_ENABLE=%02x \n",gb_mem_map[LCD_CTRL]&LCD_CTRL_ENABLE);
+    printf("LCD_CTRL_WINDOW_MAP_SELECT=%02x \n",gb_mem_map[LCD_CTRL]&LCD_CTRL_WINDOW_MAP_SELECT);
+    printf("LCD_CTRL_WINDOW_ENABLE=%02x \n",gb_mem_map[LCD_CTRL]&LCD_CTRL_WINDOW_ENABLE);
+    printf("LCD_CTRL_BG_W_TILE_SELECT=%02x \n",gb_mem_map[LCD_CTRL]&LCD_CTRL_BG_W_TILE_SELECT);
+    printf("LCD_CTRL_BG_MAP_SELECT=%02x \n",gb_mem_map[LCD_CTRL]&LCD_CTRL_BG_MAP_SELECT);
+    printf("LCD_CTRL_OBJ_SIZE=%02x \n",gb_mem_map[LCD_CTRL]&LCD_CTRL_OBJ_SIZE);
+    printf("LCD_CTRL_OBJ_ENABLE=%02x \n",gb_mem_map[LCD_CTRL]&LCD_CTRL_OBJ_ENABLE);
+    printf("LCD_CTRL_BG_PRIORITY=%02x \n",gb_mem_map[LCD_CTRL]&LCD_CTRL_BG_PRIORITY);
+
     printf("LCD_STAT_LCY_INTR_EN=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_LCY_INTR_EN);
     printf("LCD_STAT_OAM_INTR_EN=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_OAM_INTR_EN);
     printf("LCD_STAT_VBLNK_INTR_EN=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_VBLNK_INTR_EN);
     printf("LCD_STAT_HBLNK_INTR_EN=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_COINC_FLAG);
     printf("LCD_STAT_COINC_FLAG=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_COINC_FLAG);
     printf("LCD_STAT_MODE=%02x \n",gb_mem_map[LCD_STAT]&LCD_STAT_MODE);
+
     printf("LCD_SCY=%02x \n",gb_mem_map[LCD_SCY]);
     printf("LCD_SCX=%02x \n",gb_mem_map[LCD_SCX]);
     printf("LCD_LY=%02x \n",gb_mem_map[LCD_LY]);
@@ -116,4 +128,29 @@ void print_memory(uint16_t start_pos, uint16_t end_pos){
         printf("%02x ", gb_mem_map[i]);
     }
     printf("\n");
+}
+
+void print_display_buffer(){
+
+    for(int i =0; i <GB_SCREEN_HEIGHT;i++){
+        for(int j =0; j < GB_SCREEN_WIDTH; j++){
+            int val = 0;
+            switch(gb_display[j][i]){
+                case green_1:
+                    val = 0;
+                break;
+                case green_2:
+                    val = 1;
+                break;
+                case green_3:
+                    val = 2;
+                break;
+                case green_4:
+                    val = 3;
+                break;
+            }
+            printf("%d", val);
+        }
+        printf("\n");
+    }
 }
