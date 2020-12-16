@@ -3,7 +3,7 @@
 
 
 #include <stdint.h>
-
+#include <stdbool.h>
 //BIT_DEFINES
 #define BIT_0	0x01
 #define BIT_1	0x02

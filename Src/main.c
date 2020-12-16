@@ -12,6 +12,8 @@
 bool debug_mode =false;
 bool debug_step = false;
 unsigned long long step_count = 0;
+bool boot_rom = true;
+
 
 int main(int argc, char *argv[] )
 {
@@ -26,7 +28,6 @@ int main(int argc, char *argv[] )
    
    cpu_init();
    init_screen(); 
-
 
    if(!load_gb_cart(argv[1])){
        printf("Cannot load cart\n");
@@ -43,29 +44,14 @@ int main(int argc, char *argv[] )
       if(keys == -1){
          break;
       }
-      if(!debug_mode || (debug_mode && debug_step)){
-         gb_cpu();
-         ppu();
-         update_screen(gb_mem_map[LCD_LY]);
-         gb_input(keys);
-
-         debug_step = false;
+      if(boot_rom && CPU_REG.PC >= 0x100){
+         load_initial_membanks();
+         boot_rom = false;
       }
-      if(debug_mode && getchar()){
-         debug_step = true;
-      }
-      
-      //check if we need to handle debug keys
-      if(keys & KEY_DEBUG){
-         usleep(1000);
-         if(debug_mode){
-            debug_mode = false;
-         } else {
-            debug_mode = true;
-         }
-      } 
-      
-      step_count++;
+      gb_cpu();
+      ppu();
+      update_screen(gb_mem_map[LCD_LY]);
+      gb_input(keys);
    }
    free_screen();
 }

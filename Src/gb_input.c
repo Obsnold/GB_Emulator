@@ -4,7 +4,9 @@ uint8_t previous_keys = 0;
 
 void gb_input(uint8_t keys){
     //need to check for key interrupt
-    //if(keys != previous_keys)
+    if(keys != previous_keys){
+        SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_JOYPAD);
+    }
     
     if(gb_mem_map[JOYPAD_INPUT] & JOYPAD_BUT){
         gb_mem_map[JOYPAD_INPUT] |= (keys & 0x0F);

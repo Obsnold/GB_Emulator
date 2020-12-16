@@ -1,7 +1,6 @@
 #ifndef __GB_OPCODES_H
 #define __GB_OPCODES_H
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h> 
 #include "gb_cpu.h"
 #include "gb_common.h"

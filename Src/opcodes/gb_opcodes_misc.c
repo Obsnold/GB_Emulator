@@ -65,7 +65,8 @@ di             F3           4 ---- disable interrupts, IME=0
 */
 uint8_t opcode_di(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    gb_mem_map[INTERRUPT_EN] = 0x00;
+    //gb_mem_map[INTERRUPT_EN] = 0x00;
+    set_interrupts(false);
     return opcode_table[opcode].cycles;
 }
 
@@ -74,7 +75,8 @@ ei             FB           4 ---- enable interrupts, IME=1
 */
 uint8_t opcode_ei(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
-    gb_mem_map[INTERRUPT_EN] = 0x01;
+    //gb_mem_map[INTERRUPT_EN] = 0x01;
+    set_interrupts(true);
     return opcode_table[opcode].cycles;
 }
 

@@ -446,7 +446,8 @@ void ppu_h_blank(){
 }
 
 void ppu_v_blank(){
-    //do nothing just stuff
+    //set interrupt
+    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
 }
 
 uint8_t ppu(){
@@ -504,6 +505,9 @@ uint8_t ppu(){
                     CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
                     SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
                     ppu_cycles_count = OAM_SEARCH_CYCLES;
+                }
+                if(gb_mem_map[LCD_LY] == gb_mem_map[LCD_LYC]){
+                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
                 }
             break;
             case LCD_STAT_MODE_VBLNK:

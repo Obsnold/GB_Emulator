@@ -1,5 +1,6 @@
 #ifndef __GB_CPU_H
 #define __GB_CPU_H
+#include "gb_common.h"
 
 enum cpu_power{
     PWR_NORMAL,
@@ -8,6 +9,7 @@ enum cpu_power{
 };
 
 void cpu_set_power_mode(enum cpu_power mode );
+void set_interrupts(bool set);
 void gb_cpu();
 void cpu_init();
 
