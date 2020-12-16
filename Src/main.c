@@ -3,7 +3,7 @@
 #include "gb_ppu.h"
 #include "gb_cpu.h"
 #include "gb_opcodes.h"
-#include "gb_input.h"
+#include "gb_joypad_input.h"
 #include "system_interface.h"
 #include "debug_print.h"
 #include <stdio.h>

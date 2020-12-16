@@ -16,6 +16,8 @@ LINKER_FLAGS = -lSDL2
 #Source Folders
 SRC_DIR += Src
 SRC_DIR += Src/opcodes
+SRC_DIR += Src/io_ports
+SRC_DIR += Src/os
 
 SRC := $(wildcard $(addsuffix /*.c, $(SRC_DIR)))
 

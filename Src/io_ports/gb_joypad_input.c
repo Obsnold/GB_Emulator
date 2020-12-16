@@ -1,3 +1,4 @@
+#include "gb_joypad_input.h"
 #include "gb_mem_map.h"
 
 uint8_t previous_keys = 0;
