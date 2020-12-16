@@ -39,9 +39,8 @@ void init_mem_map(){
     memcpy(gb_mem_map,gb_bootrom, 0x100);
 }
 
-
-
-/*
+// the following functions should only be used by cpu instructions
+// the system itself should directly access memory
 uint8_t get_mem_map_8(uint16_t reg){
     uint8_t data = 0;
     if(reg >= CART_ROM_0 && reg < CART_ROM_1 ){
@@ -87,6 +86,7 @@ uint8_t get_mem_map_8(uint16_t reg){
     } else if(reg >= NA_MEM && reg < IO_PORTS){
         // NA MEMORY
         // unusable memory for now return 0
+        // should cause bug if accessed when OAM in not accessible
         data = 0;
     } else if(reg >= IO_PORTS && reg < ZERO_PAGE){
         // IO_PORTS
@@ -104,11 +104,22 @@ uint8_t get_mem_map_8(uint16_t reg){
         data = gb_mem_map[reg];
 
     } 
-
-
     return data;
 }
 
 bool set_mem_map_8(uint16_t reg, uint8_t data){
+    gb_mem_map[reg] = data;
+    return true;
+}
 
-}*/
+uint16_t get_mem_map_16(uint16_t reg, uint8_t data){
+    uint8_t high = get_mem_map_8(reg);
+    uint8_t low = get_mem_map_8(reg+1);
+    return uint16_t(high<<8 && low);
+}
+
+bool set_mem_map_16(uint16_t reg, uint16_t data){
+    set_mem_map_8(reg,uint8_t(data>>8));
+    set_mem_map_8(reg+1,uint8_t(data&0xFF));
+    return true;
+}
