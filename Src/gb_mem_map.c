@@ -43,7 +43,7 @@ void init_mem_map(){
 // the system itself should directly access memory
 uint8_t get_mem_map_8(uint16_t reg){
     uint8_t data = 0;
-    if(reg >= CART_ROM_0 && reg < CART_ROM_1 ){
+    if(reg < CART_ROM_1 ){
         // fixed rom bank
         data = gb_mem_map[reg];
 
@@ -112,10 +112,10 @@ bool set_mem_map_8(uint16_t reg, uint8_t data){
     return true;
 }
 
-uint16_t get_mem_map_16(uint16_t reg, uint8_t data){
+uint16_t get_mem_map_16(uint16_t reg){
     uint8_t high = get_mem_map_8(reg);
     uint8_t low = get_mem_map_8(reg+1);
-    return (uint16_t)(high<<8 && low);
+    return (uint16_t)(high<<8 & low);
 }
 
 bool set_mem_map_16(uint16_t reg, uint16_t data){
