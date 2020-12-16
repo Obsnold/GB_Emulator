@@ -115,11 +115,11 @@ bool set_mem_map_8(uint16_t reg, uint8_t data){
 uint16_t get_mem_map_16(uint16_t reg, uint8_t data){
     uint8_t high = get_mem_map_8(reg);
     uint8_t low = get_mem_map_8(reg+1);
-    return uint16_t(high<<8 && low);
+    return (uint16_t)(high<<8 && low);
 }
 
 bool set_mem_map_16(uint16_t reg, uint16_t data){
-    set_mem_map_8(reg,uint8_t(data>>8));
-    set_mem_map_8(reg+1,uint8_t(data&0xFF));
+    set_mem_map_8(reg,(uint8_t)(data>>8));
+    set_mem_map_8(reg+1,(uint8_t)(data&0xFF));
     return true;
 }
