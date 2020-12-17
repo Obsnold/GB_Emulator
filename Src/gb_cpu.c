@@ -33,7 +33,7 @@ uint8_t temp_LCDY = 0;
 
 void gb_cpu(){
     // get time 
-    unsigned long tick = get_ticks();
+    unsigned long tick = get_ns();
     cpu_cycles += tick - cpu_prev_tick;
     cpu_prev_tick = tick;
 

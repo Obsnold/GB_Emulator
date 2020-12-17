@@ -244,6 +244,19 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 #define JOYPAD_BUT_A		BIT_1	
 #define JOYPAD_BUT_B		BIT_0
 
+//Timer / Divider
+#define TIMER_DIV			0xFF04
+#define TIMER_TIMA			0xFF05
+#define TIMER_TMA			0xFF06
+#define TIMER_TAC			0xFF07
+
+#define TAC_ENABLE		BIT_2
+#define TAC_CLOCK_SELECT 	(BIT_1 | BIT_0)
+#define TAC_CLOCK_1024		0x00
+#define TAC_CLOCK_16		0x01
+#define TAC_CLOCK_64		0x02
+#define TAC_CLOCK_256		0x03
+
 //Interrupts
 #define	INTERRUPT_ENABLE	0xFFFF
 #define INTERRUPT_FLAGS		0xFF0F

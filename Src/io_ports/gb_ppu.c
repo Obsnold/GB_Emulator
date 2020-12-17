@@ -475,7 +475,7 @@ uint8_t ppu(){
     }
 
     // get time 
-    unsigned long tick = get_ticks();
+    unsigned long tick = get_ns();
     ppu_cycles += tick - prev_tick;
     prev_tick = tick;
 
