@@ -4,6 +4,7 @@
 #include "gb_cpu.h"
 #include "gb_opcodes.h"
 #include "gb_joypad_input.h"
+#include "gb_timer.h"
 #include "system_interface.h"
 #include "debug_print.h"
 #include <stdio.h>
@@ -50,6 +51,7 @@ int main(int argc, char *argv[] )
       }
       gb_cpu();
       ppu();
+      gb_timer();
       update_screen(gb_mem_map[LCD_LY]);
       gb_input(keys);
    }
