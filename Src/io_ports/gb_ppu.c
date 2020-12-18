@@ -59,9 +59,9 @@ unsigned long ppu_cycles_count = OAM_SEARCH_CYCLES;
 uint8_t oam_list[10];
 uint8_t oam_list_size = 0;
 
-uint32_t bg_pallet[4] = {green_1, green_2, green_3, green_4};
-uint32_t sp_pallet_1[4] = {trans, green_1, green_2, green_3};
-uint32_t sp_pallet_2[4] = {trans, green_1, green_2, green_3};
+uint32_t bg_pallet[4] = {PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY, PAL_BLACK};
+uint32_t sp_pallet_1[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
+uint32_t sp_pallet_2[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
 
 
 
