@@ -50,6 +50,7 @@ uint32_t gb_display[GB_SCREEN_WIDTH][GB_SCREEN_HEIGHT];
 #define OAM_SEARCH_CYCLES 20
 #define PIXEL_TRANSFER_CYCLES 43
 #define H_BLANK_CYCLES 51
+#define V_BLANK_STEP_CYCLES 114  //1140/10ish
 #define V_BLANK_CYCLES 1140
 
 unsigned long prev_tick = 0;
@@ -497,10 +498,9 @@ uint8_t ppu(){
             case LCD_STAT_MODE_HBLNK:
                 gb_mem_map[LCD_LY]++;
                 if(gb_mem_map[LCD_LY] > GB_SCREEN_HEIGHT){
-                    gb_mem_map[LCD_LY] = 0x00;
                     CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
                     SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_VBLNK);
-                    ppu_cycles_count = V_BLANK_CYCLES;
+                    ppu_cycles_count = V_BLANK_STEP_CYCLES;
                 } else {
                     CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
                     SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
@@ -511,9 +511,13 @@ uint8_t ppu(){
                 }
             break;
             case LCD_STAT_MODE_VBLNK:
-                CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
-                ppu_cycles_count = OAM_SEARCH_CYCLES;
+                gb_mem_map[LCD_LY]++;
+                if(gb_mem_map[LCD_LY] > (GB_SCREEN_HEIGHT + GB_SCREEN_HEIGHT_V_BLANK)){
+                    gb_mem_map[LCD_LY] = 0;
+                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
+                    ppu_cycles_count = OAM_SEARCH_CYCLES;
+                }
             break;
             default:
             //error

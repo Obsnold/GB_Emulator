@@ -6,6 +6,7 @@
 
 #define GB_SCREEN_WIDTH 160
 #define GB_SCREEN_HEIGHT 144
+#define GB_SCREEN_HEIGHT_V_BLANK 9
 
 #define green_1 0x9BBC0F
 #define green_2 0x8BAC0F
