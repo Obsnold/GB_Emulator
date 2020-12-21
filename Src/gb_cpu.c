@@ -28,7 +28,7 @@ void set_interrupts(bool set){
     interrupts_enabled = set;
 }
 
-#define clear() printf("\033[H\033[J")
+#define clear() DEBUG_PRINT("\033[H\033[J")
 uint8_t temp_LCDY = 0;
 
 void gb_cpu(){

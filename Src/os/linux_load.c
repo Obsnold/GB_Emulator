@@ -1,5 +1,6 @@
 #include "gb_load.h"
 #include "gb_mem_map.h"
+#include "debug_print.h"
 #include <string.h>
 #include <stdio.h> 
 #include <stdlib.h>
@@ -41,6 +42,6 @@ void load_membank(uint8_t bank){
                 (gb_cart + (bank * CART_MB_SIZE)),
                 CART_MB_SIZE);
     } else {
-        printf("Error! trying to load membank from outside cart");
+        DEBUG_PRINT("Error! trying to load membank from outside cart");
     }
 }

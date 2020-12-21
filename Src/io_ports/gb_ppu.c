@@ -1,6 +1,7 @@
 #include "gb_ppu.h"
 #include "gb_mem_map.h"
 #include "gb_test_image.h"
+#include "debug_print.h"
 #include <stdbool.h>
 
 //background tile data 256 tiles
@@ -98,7 +99,7 @@ void ppu_pixel_transfer(){
     uint8_t screen_x = gb_mem_map[LCD_SCX];
     uint8_t screen_y = gb_mem_map[LCD_SCY];
     uint8_t line = gb_mem_map[LCD_LY];
-    int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
+    int bg_window_tile_mode = 1;//GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
     bool window_enabled = false;
     bool display_sprite = false;
     uint16_t map = BG_MAP_1;
@@ -443,12 +444,13 @@ void ppu_pixel_transfer(){
 
 
 void ppu_h_blank(){
-    //do nothing just stuff
+    gb_mem_map[LCD_LY]++;
 }
 
 void ppu_v_blank(){
     //set interrupt
     SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
+    gb_mem_map[LCD_LY]++;
 }
 
 uint8_t ppu(){
@@ -482,7 +484,7 @@ uint8_t ppu(){
 
     // If the cycle time has elapsed set the appropriate flags and change the cycle count
     if (ppu_cycles > (ppu_cycles_count* 250)){
-        //printf("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
+        DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
         ppu_cycles = 0;
         switch (ppu_mode){
             case LCD_STAT_MODE_OAM:
@@ -496,7 +498,6 @@ uint8_t ppu(){
                 ppu_cycles_count = H_BLANK_CYCLES;
             break;
             case LCD_STAT_MODE_HBLNK:
-                gb_mem_map[LCD_LY]++;
                 if(gb_mem_map[LCD_LY] > GB_SCREEN_HEIGHT){
                     CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
                     SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_VBLNK);
@@ -511,7 +512,6 @@ uint8_t ppu(){
                 }
             break;
             case LCD_STAT_MODE_VBLNK:
-                gb_mem_map[LCD_LY]++;
                 if(gb_mem_map[LCD_LY] > (GB_SCREEN_HEIGHT + GB_SCREEN_HEIGHT_V_BLANK)){
                     gb_mem_map[LCD_LY] = 0;
                     CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);

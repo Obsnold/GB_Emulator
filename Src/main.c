@@ -19,10 +19,10 @@ bool boot_rom = true;
 int main(int argc, char *argv[] )
 {
    if( argc == 2 ) {
-      printf("starting %s with %s\n",  argv[0], argv[1]);
+      DEBUG_PRINT("starting %s with %s\n",  argv[0], argv[1]);
    }
    else {
-      printf("Incorrect arguments\n");
+      DEBUG_PRINT("Incorrect arguments\n");
       return 0;
    }
 
@@ -31,7 +31,7 @@ int main(int argc, char *argv[] )
    init_screen(); 
 
    if(!load_gb_cart(argv[1])){
-       printf("Cannot load cart\n");
+       DEBUG_PRINT("Cannot load cart\n");
    }
 
    load_initial_membanks();
@@ -52,8 +52,9 @@ int main(int argc, char *argv[] )
       gb_cpu();
       ppu();
       gb_timer();
-      update_screen(gb_mem_map[LCD_LY]);
       gb_input(keys);
+      
+      update_screen(gb_mem_map[LCD_LY]);
    }
    free_screen();
 }

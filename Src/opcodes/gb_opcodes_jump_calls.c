@@ -2,7 +2,9 @@
 #include "gb_mem_map.h"
 #include "gb_common.h"
 #include "gb_cpu.h"
+#include "debug_print.h"
 
+#define DEBUG
 
 //******************************************************
 //jump commands
@@ -14,6 +16,7 @@ uint8_t opcode_jp(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     CPU_REG.PC_1 = gb_mem_map[opcode_address+1];
     CPU_REG.PC_2 = gb_mem_map[opcode_address+2];
+    DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     return opcode_table[opcode].cycles;
 }
 
@@ -24,6 +27,7 @@ uint8_t opcode_jp_hl(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     CPU_REG.PC_1 = gb_mem_map[CPU_REG.HL];
     CPU_REG.PC_2 = gb_mem_map[CPU_REG.HL+1];
+    DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     return opcode_table[opcode].cycles;
 }
 
@@ -38,6 +42,7 @@ uint8_t opcode_jp_cnd(uint16_t opcode_address){
         CPU_REG.PC_1 = gb_mem_map[opcode_address+1];
         CPU_REG.PC_2 = gb_mem_map[opcode_address+2];
         cycles =CYCLE_4;
+        DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     }
     return cycles;
 }
@@ -49,6 +54,7 @@ uint8_t opcode_jr(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     int8_t temp = (int8_t)gb_mem_map[opcode_address+1];
     CPU_REG.PC += temp;
+    DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     return opcode_table[opcode].cycles;
 }
 
@@ -62,6 +68,7 @@ uint8_t opcode_jr_cnd(uint16_t opcode_address){
         int8_t temp = (int8_t)gb_mem_map[opcode_address+1];
         CPU_REG.PC += temp;
         cycles = CYCLE_3;
+        DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     }
     return cycles;
 }
@@ -76,6 +83,7 @@ uint8_t opcode_call(uint16_t opcode_address){
     gb_mem_map[CPU_REG.SP+1] = CPU_REG.PC_2;
     CPU_REG.PC_1 = gb_mem_map[opcode_address+1];
     CPU_REG.PC_2 = gb_mem_map[opcode_address+2];
+    DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     return opcode_table[opcode].cycles;
 }
 
@@ -87,13 +95,14 @@ uint8_t opcode_call_cnd(uint16_t opcode_address){
     uint8_t cycles = CYCLE_3;
 
     if(get_flag_condition(GET_OPCODE_Y(opcode))){
-        printf("----------------");
+        DEBUG_PRINT("----------------");
         CPU_REG.SP -= 2;
         gb_mem_map[CPU_REG.SP] = CPU_REG.PC_1;
         gb_mem_map[CPU_REG.SP+1] = CPU_REG.PC_2;
         CPU_REG.PC_1 = gb_mem_map[opcode_address+1];
         CPU_REG.PC_2 = gb_mem_map[opcode_address+2];
         cycles =CYCLE_6;
+        DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     }
     return cycles;
 }
@@ -106,6 +115,7 @@ uint8_t opcode_ret(uint16_t opcode_address){
     CPU_REG.PC_1 = gb_mem_map[CPU_REG.SP];
     CPU_REG.PC_2 = gb_mem_map[CPU_REG.SP+1];
     CPU_REG.SP += 2;
+    DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     return opcode_table[opcode].cycles;
 }
 
@@ -121,6 +131,7 @@ uint8_t opcode_ret_cnd(uint16_t opcode_address){
         CPU_REG.PC_2 = gb_mem_map[CPU_REG.SP+1];
         CPU_REG.SP += 2;
         cycles =CYCLE_5;
+        DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     }
     return cycles;
 }
@@ -132,6 +143,7 @@ uint8_t opcode_reti(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     opcode_ret(opcode_address);
     opcode_ei(opcode_address);
+    DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     return opcode_table[opcode].cycles;
 }
 
@@ -145,6 +157,7 @@ uint8_t opcode_rst(uint16_t opcode_address){
     gb_mem_map[CPU_REG.SP] = CPU_REG.PC_1;
     gb_mem_map[CPU_REG.SP+1] = CPU_REG.PC_2;
     CPU_REG.PC = opcode_y*8;
+    DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     //opcode_call(opcode_y*8);
     return opcode_table[opcode].cycles;
 }

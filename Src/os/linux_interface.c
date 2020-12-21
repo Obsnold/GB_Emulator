@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include "system_interface.h"
 #include "gb_ppu.h"
+#include "debug_print.h"
 
 SDL_Window* window = NULL;
 SDL_Renderer *renderer;
@@ -15,14 +16,14 @@ void init_screen(){
     memset(pixel_screen,0,GB_SCREEN_HEIGHT * GB_SCREEN_WIDTH * RGB_CHANNELS);
     if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
-        printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
+        DEBUG_PRINT( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
     } else {
         SDL_CreateWindowAndRenderer(GB_SCREEN_WIDTH*SCREEN_MULT, GB_SCREEN_HEIGHT*SCREEN_MULT, 0, &window, &renderer);
         //window = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
         //mTexture = SDL_CreateTexture( gRenderer, SDL_PIXELFORMAT_RGB565 SDL_TEXTUREACCESS_STREAMING, width, height );
         if( window == NULL || renderer == NULL)
         {
-            printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
+            DEBUG_PRINT( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
         } else{
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
             SDL_RenderClear(renderer);
@@ -56,7 +57,7 @@ void update_screen(uint8_t line){
         }
 
         if(line == 0){
-            //printf("Print screen\n");
+            DEBUG_PRINT("Print screen\n");
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
             SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)pixel_screen,
@@ -127,6 +128,6 @@ int get_key_press(){
         ret |= KEY_DEBUG;
     }
 
-    //printf("keypress: %02x\n", ret);
+    DEBUG_PRINT("keypress: %02x\n", ret);
     return ret;
 }
