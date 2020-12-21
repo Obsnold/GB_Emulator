@@ -12,7 +12,7 @@ ld   rr,nn       x1 nn nn  12 ---- rr=nn (rr may be BC,DE,HL or SP)
 ld   SP,HL       F9         8 ---- SP=HL
 */
 uint8_t opcode_16_ld(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     uint16_t* dest = NULL;
     uint16_t value = 0;
 
@@ -23,7 +23,7 @@ uint8_t opcode_16_ld(uint16_t opcode_address){
             break;
         default:
             dest = get_reg_16_sp(GET_OPCODE_P(opcode));
-            value = get_16_from_8(&gb_mem_map[opcode_address+1]);
+            value = get_mem_map_16(opcode_address+1);
             break;
     }
 
@@ -35,8 +35,8 @@ uint8_t opcode_16_ld(uint16_t opcode_address){
 ld   HL,SP+dd  F8 dd         12 00hc HL = SP +/- dd ;dd is 8bit signed number
 */
 uint8_t opcode_16_ld_offset(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
-    CPU_REG.HL = CPU_REG.SP + (int8_t) gb_mem_map[opcode_address+1];
+    uint8_t opcode = get_mem_map_8(opcode_address);
+    CPU_REG.HL = CPU_REG.SP + (int8_t) get_mem_map_8(opcode_address+1);
     return opcode_table[opcode].cycles;
 }
 
@@ -44,20 +44,20 @@ uint8_t opcode_16_ld_offset(uint16_t opcode_address){
 push rr          x5        16 ---- SP=SP-2  (SP)=rr   (rr may be BC,DE,HL,AF)
 */
 uint8_t opcode_16_push(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     CPU_REG.SP -=2;
     uint16_t* reg = get_reg_16_af(GET_OPCODE_P(opcode));
-    gb_mem_map[CPU_REG.SP] = get_16_low(reg);
-    gb_mem_map[CPU_REG.SP + 1] = get_16_high(reg);
+    set_mem_map_16(CPU_REG.SP, *reg);
+
     return opcode_table[opcode].cycles;
 }
 /*
 pop  rr          x1        12 (AF) rr=(SP)  SP=SP+2   (rr may be BC,DE,HL,AF)
 */
 uint8_t opcode_16_pop(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     uint16_t* dest = get_reg_16_af(GET_OPCODE_P(opcode));
-    *dest = get_16_from_8(&gb_mem_map[CPU_REG.SP]);
+    *dest = get_mem_map_16(CPU_REG.SP);
     CPU_REG.SP +=2;
     return opcode_table[opcode].cycles;
 }
@@ -65,7 +65,7 @@ uint8_t opcode_16_pop(uint16_t opcode_address){
 add  HL,rr     x9           8 -0hc HL = HL+rr     ;rr may be BC,DE,HL,SP
 */
 uint8_t opcode_16_add_hl(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     uint16_t *reg = get_reg_16_sp(GET_OPCODE_P(opcode));
     uint8_t high_nibble = get_16_high(reg);
     uint8_t low_nibble = get_16_low(reg);
@@ -110,8 +110,8 @@ uint8_t opcode_16_add_hl(uint16_t opcode_address){
 add  SP,dd     E8 dd         16 00hc SP = SP +/- dd ;dd is 8bit signed number
 */
 uint8_t opcode_16_add_sp(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
-    CPU_REG.SP += (int8_t)gb_mem_map[opcode_address+1];
+    uint8_t opcode = get_mem_map_8(opcode_address);
+    CPU_REG.SP += (int8_t)get_mem_map_8(opcode_address+1);
     CLR_ZERO_FLAG;
     CLR_ADD_SUB_FLAG;
     return opcode_table[opcode].cycles;
@@ -121,7 +121,7 @@ uint8_t opcode_16_add_sp(uint16_t opcode_address){
 inc  rr        x3           8 ---- rr = rr+1      ;rr may be BC,DE,HL,SP
 */
 uint8_t opcode_16_inc(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     uint16_t* dest =  get_reg_16_af(GET_OPCODE_P(opcode));
     *dest += 1;
     return opcode_table[opcode].cycles;
@@ -131,7 +131,7 @@ uint8_t opcode_16_inc(uint16_t opcode_address){
 dec  rr        xB           8 ---- rr = rr-1      ;rr may be BC,DE,HL,SP
 */
 uint8_t opcode_16_dec(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     uint16_t* dest =  get_reg_16_af(GET_OPCODE_P(opcode));
     *dest -= 1;
     return opcode_table[opcode].cycles;

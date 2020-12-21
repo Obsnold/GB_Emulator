@@ -11,7 +11,7 @@
 rlca           07           4 000c rotate akku left
 */
 uint8_t opcode_rlca(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     CPU_REG.A = (CPU_REG.A << 1) | (CPU_REG.A >> 7);
     if (CPU_REG.A & 0x01){
         SET_CARRY_FLAG;
@@ -29,7 +29,7 @@ uint8_t opcode_rlca(uint16_t opcode_address){
 rla            17           4 000c rotate akku left through carry
 */
 uint8_t opcode_rla(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     uint8_t temp = GET_CARRY_FLAG;
     if(CPU_REG.A & 0x80){
         SET_CARRY_FLAG;
@@ -47,7 +47,7 @@ uint8_t opcode_rla(uint16_t opcode_address){
 rrca           0F           4 000c rotate akku right
 */
 uint8_t opcode_rrca(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     CPU_REG.A = (CPU_REG.A >> 0x01) | (CPU_REG.A << 0x07);
     if (CPU_REG.A & 0x80){
         SET_CARRY_FLAG;
@@ -64,7 +64,7 @@ uint8_t opcode_rrca(uint16_t opcode_address){
 rra            1F           4 000c rotate akku right through carry
 */
 uint8_t opcode_rra(uint16_t opcode_address){
-    uint8_t opcode = gb_mem_map[opcode_address];
+    uint8_t opcode = get_mem_map_8(opcode_address);
     uint8_t temp = GET_CARRY_FLAG;
     if(CPU_REG.A & 0x01){
         SET_CARRY_FLAG;
@@ -245,7 +245,7 @@ void opcode_res(uint8_t* dest, uint8_t bit){
 uint8_t opcode_cb_prefix(uint16_t opcode_address){
     uint8_t* addr = NULL;
     uint8_t time = CYCLE_2;
-    uint8_t opcode = gb_mem_map[opcode_address+1];
+    uint8_t opcode = get_mem_map_8(opcode_address+1);
     uint8_t opcode_x = GET_OPCODE_X(opcode);
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);

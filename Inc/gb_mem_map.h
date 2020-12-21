@@ -297,6 +297,7 @@ extern uint8_t addr_00H;
 #define CLR_MEM_MAP(REG, BIT) (gb_mem_map[REG] &= ~BIT)
 
 void init_mem_map();
+uint8_t* get_mem_map_pointer(uint16_t reg);
 uint8_t get_mem_map_8(uint16_t reg);
 bool set_mem_map_8(uint16_t reg, uint8_t data);
 uint16_t get_mem_map_16(uint16_t reg);

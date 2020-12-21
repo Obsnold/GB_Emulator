@@ -57,7 +57,7 @@ uint8_t* get_reg_8(uint8_t reg){
             ret = &CPU_REG.L;
             break;
         case 6:
-            ret = &gb_mem_map[CPU_REG.HL];
+            ret = get_mem_map_pointer(CPU_REG.HL);
             break;
         case 7:
             ret = &CPU_REG.A;
