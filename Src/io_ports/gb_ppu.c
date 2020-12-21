@@ -4,6 +4,12 @@
 #include "debug_print.h"
 #include <stdbool.h>
 
+#ifdef DEBUG
+#define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
+#else
+#define DEBUG_PRINT(fmt, args...)
+#endif
+
 //background tile data 256 tiles
 //sprtie tiles 
 

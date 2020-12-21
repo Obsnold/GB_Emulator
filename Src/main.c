@@ -10,6 +10,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#ifdef DEBUG
+#define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
+#else
+#define DEBUG_PRINT(fmt, args...)
+#endif
+
 bool debug_mode =false;
 bool debug_step = false;
 unsigned long long step_count = 0;

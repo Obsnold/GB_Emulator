@@ -5,6 +5,12 @@
 #include <stdio.h> 
 #include <stdlib.h>
 
+#ifdef DEBUG
+#define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
+#else
+#define DEBUG_PRINT(fmt, args...)
+#endif
+
 uint8_t* gb_cart;
 unsigned int gb_cart_size = 0;
 

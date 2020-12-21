@@ -4,7 +4,11 @@
 #include "gb_cpu.h"
 #include "debug_print.h"
 
-#define DEBUG
+#ifdef DEBUG
+#define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
+#else
+#define DEBUG_PRINT(fmt, args...)
+#endif
 
 //******************************************************
 //jump commands

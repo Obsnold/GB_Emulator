@@ -11,12 +11,6 @@ void print_memory(uint16_t start_pos, uint16_t end_pos);
 void print_lcd();
 void print_display_buffer();
 
-#ifdef DEBUG
-#define DEBUG_PRINT(fmt, args...)    printf(fmt, ## args)
-#else
-#define DEBUG_PRINT(fmt, args...)    /* Don't do anything in release builds */
-#endif
-
 #define PRINT(fmt, args...)    printf(fmt, ## args)
 
 #endif //__DEBUG_PRINT_H

@@ -3,6 +3,12 @@
 #include "gb_ppu.h"
 #include "debug_print.h"
 
+#ifdef DEBUG
+#define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
+#else
+#define DEBUG_PRINT(fmt, args...)
+#endif
+
 SDL_Window* window = NULL;
 SDL_Renderer *renderer;
 SDL_Texture* texture;

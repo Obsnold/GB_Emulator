@@ -1,6 +1,13 @@
 #include "gb_mem_map.h"
 #include "gb_test_video_ram.h"
+#include "debug_print.h"
 #include <string.h>
+
+#ifdef DEBUG
+#define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
+#else
+#define DEBUG_PRINT(fmt, args...)
+#endif
 
 uint8_t gb_mem_map[GB_MEM_SIZE];
 
@@ -92,6 +99,7 @@ uint8_t get_mem_map_8(uint16_t reg){
         // IO_PORTS
         // lots of stuff going on here 
         // for now just return data
+        DEBUG_PRINT("IO_PORTS\n");
         data = gb_mem_map[reg];
 
     } else if(reg >= ZERO_PAGE && reg < INTERRUPT_EN){
@@ -101,6 +109,7 @@ uint8_t get_mem_map_8(uint16_t reg){
 
     } if(reg == INTERRUPT_EN){
         // Interrupt enable
+        DEBUG_PRINT("INTERRUPT_EN\n");
         data = gb_mem_map[reg];
 
     } 
