@@ -57,6 +57,8 @@ stop           10 00        ? ---- low power standby mode (VERY low power)
 uint8_t opcode_stop(uint16_t opcode_address){
     uint8_t opcode = gb_mem_map[opcode_address];
     cpu_set_power_mode(PWR_STOP);
+    //need to do something else for stop here.
+    // maybe turn lcd off or something
     return opcode_table[opcode].cycles;
 }
 

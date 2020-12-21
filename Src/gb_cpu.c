@@ -61,6 +61,7 @@ void gb_cpu(){
 
 
         if(interrupt_address > 0){
+            cpu_set_power_mode(PWR_NORMAL);
             interrupts_enabled = false;
             CPU_REG.SP -= 2;
             gb_mem_map[CPU_REG.SP] = CPU_REG.PC_1;
@@ -70,17 +71,19 @@ void gb_cpu(){
     }
 
     //if no interrupts then process normally
-    if(cpu_cycles > (current_cycle_time * 250)){
-        /*if(CPU_REG.PC<0x235){
-            if(CPU_REG.PC>0x230){
-                print_opcode();
-                print_cpu_reg();
-            }*/
-            uint8_t opcode = gb_mem_map[CPU_REG.PC];
-            uint16_t temp_pc = CPU_REG.PC;
-            CPU_REG.PC += opcode_table[opcode].length;
-            current_cycle_time = opcode_table[opcode].operation(temp_pc);
-        //}
+    if(power_mode == PWR_NORMAL){
+        if(cpu_cycles > (current_cycle_time * 250)){
+            //if(CPU_REG.PC<0x235){
+                /*if(CPU_REG.PC>0x100){
+                    print_opcode();
+                    print_cpu_reg();
+                }*/
+                uint8_t opcode = gb_mem_map[CPU_REG.PC];
+                uint16_t temp_pc = CPU_REG.PC;
+                CPU_REG.PC += opcode_table[opcode].length;
+                current_cycle_time = opcode_table[opcode].operation(temp_pc);
+            //}
+        }
     }
 }
 
