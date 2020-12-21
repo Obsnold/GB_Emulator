@@ -28,7 +28,7 @@ jp   (HL)        E9           4 ---- jump to HL, PC=(HL)
 */
 uint8_t opcode_jp_hl(uint16_t opcode_address){
     uint8_t opcode = get_mem_map_8(opcode_address);
-    CPU_REG.PC = get_mem_map_16(CPU_REG.HL);
+    CPU_REG.PC = CPU_REG.HL;//get_mem_map_16(CPU_REG.HL);
     DEBUG_PRINT("%s: CPU_REG.PC = %04x\n",__func__,CPU_REG.PC);
     return opcode_table[opcode].cycles;
 }
