@@ -106,7 +106,7 @@ void ppu_pixel_transfer(){
     uint8_t screen_x = gb_mem_map[LCD_SCX];
     uint8_t screen_y = gb_mem_map[LCD_SCY];
     uint8_t line = gb_mem_map[LCD_LY];
-    int bg_window_tile_mode = 1;//GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
+    int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
     bool window_enabled = false;
     bool display_sprite = false;
     uint16_t map = BG_MAP_1;
