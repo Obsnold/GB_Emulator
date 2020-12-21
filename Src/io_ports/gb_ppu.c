@@ -2,6 +2,7 @@
 #include "gb_mem_map.h"
 #include "gb_test_image.h"
 #include "debug_print.h"
+#include <string.h>
 #include <stdbool.h>
 
 #ifdef DEBUG
@@ -459,8 +460,18 @@ void ppu_v_blank(){
     gb_mem_map[LCD_LY]++;
 }
 
+void oam_dma(){
+    uint16_t source = gb_mem_map[LCD_DMA] * 0x100;
+    memcpy(&gb_mem_map[OAM_TABLE],&gb_mem_map[source],0x100);
+}
+
 uint8_t ppu(){
     uint8_t ppu_mode = GET_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+
+    //have we received a oma dma request?
+    if(gb_mem_map[LCD_DMA] != 0){
+        oam_dma();
+    }
 
     // if we are in a new mode run the appropriate code
     if(ppu_cycles == 0){
