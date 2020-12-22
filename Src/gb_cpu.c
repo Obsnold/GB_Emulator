@@ -37,7 +37,11 @@ void gb_cpu(){
     cpu_cycles += tick - cpu_prev_tick;
     cpu_prev_tick = tick;
 
-    //cpu_reg_print();
+    //dirty trick for now
+    //if CPU_REG.F has been written to make sure the bottom 4 bits are 0
+    CPU_REG.F &= 0xF0;
+
+    
 
     //check interrupts
     if(interrupts_enabled){
@@ -64,8 +68,7 @@ void gb_cpu(){
             cpu_set_power_mode(PWR_NORMAL);
             interrupts_enabled = false;
             CPU_REG.SP -= 2;
-            gb_mem_map[CPU_REG.SP] = CPU_REG.PC_1;
-            gb_mem_map[CPU_REG.SP+1] = CPU_REG.PC_2;
+            set_mem_map_16(CPU_REG.SP, CPU_REG.PC);
             CPU_REG.PC = interrupt_address;
         }
     }
@@ -74,10 +77,11 @@ void gb_cpu(){
     if(power_mode == PWR_NORMAL){
         if(cpu_cycles > (current_cycle_time * 250)){
             //if(CPU_REG.PC<0x235){
-                /*if(CPU_REG.PC>0x100){
-                    print_opcode();
-                    print_cpu_reg();
-                }*/
+                //if(CPU_REG.PC>=0x0600 && CPU_REG.PC<=0x060f){
+                    //print_cpu_reg();
+                    //print_indirect_reg();
+                    //print_opcode();
+                //}
                 uint8_t opcode = gb_mem_map[CPU_REG.PC];
                 uint16_t temp_pc = CPU_REG.PC;
                 CPU_REG.PC += opcode_table[opcode].length;
