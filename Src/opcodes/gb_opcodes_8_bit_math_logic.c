@@ -375,8 +375,6 @@ daa              27         4 z-0x decimal adjust akku
 */
 uint8_t opcode_8_daa(uint16_t opcode_address){
     uint8_t opcode = get_mem_map_8(opcode_address);
-    uint8_t low = GET_LOW_NIBBLE(CPU_REG.A);
-    uint8_t high = GET_HIGH_NIBBLE(CPU_REG.A);
     bool cf = false;
     bool hf = false;
     bool nf = false;
@@ -390,41 +388,22 @@ uint8_t opcode_8_daa(uint16_t opcode_address){
     if(GET_CARRY_FLAG == 1)
         cf = true;
 
-    if(!cf && !hf && high <= 8 && low >= 10){
-        CPU_REG.A += 0x06;
-        CLR_CARRY_FLAG;
-    } else if(!cf && hf && high <= 9 && low <= 3){
-        CPU_REG.A += 0x06;
-        CLR_CARRY_FLAG;
-    } else if(!nf && !cf && !hf && high >= 10 && low <= 9){
-        CPU_REG.A += 0x60;
-        SET_CARRY_FLAG;
-    } else if(!nf && !cf && !hf && high >= 9 && low >= 10){
-        CPU_REG.A += 0x66;
-        SET_CARRY_FLAG;
-    } else if(!nf && !cf && hf && high >= 10 && low <= 3){
-        CPU_REG.A += 0x66;
-        SET_CARRY_FLAG;
-    } else if(cf && !hf && high <= 2 && low <= 9){
-        CPU_REG.A += 0x60;
-        SET_CARRY_FLAG;
-    } else if(cf && !hf && high <= 2 && low >= 10){
-        CPU_REG.A += 0x66;
-        SET_CARRY_FLAG;
-    } else if(cf && hf && high <= 3 && low <= 3){
-        CPU_REG.A += 0x66;
-        SET_CARRY_FLAG;
-    } else if(nf && !cf && hf && high <= 8 && low >= 6){
-        CPU_REG.A += 0xFA;
-        CLR_CARRY_FLAG;
-    } else if(nf && cf && !hf && high >= 7 && low <= 9){
-        CPU_REG.A += 0xA0;
-        SET_CARRY_FLAG;
-    } else if(nf && cf && hf && (high == 7 || high == 6) && low >= 6){
-        CPU_REG.A += 0x9A;
-        SET_CARRY_FLAG;
+    if (!nf) {  // after an addition, adjust if (half-)carry occurred or if result is out of bounds
+        if (cf || CPU_REG.A > 0x99) { 
+            CPU_REG.A += 0x60; 
+            SET_CARRY_FLAG;
+        }
+        if (hf || (CPU_REG.A & 0x0f) > 0x09) { 
+            CPU_REG.A += 0x6; 
+        }
+    } else {  // after a subtraction, only adjust if (half-)carry occurred
+        if (cf) { 
+            CPU_REG.A -= 0x60; 
+        }
+        if (hf) { 
+            CPU_REG.A -= 0x6; 
+        }
     }
-
     CLR_HALF_CARRY_FLAG;
     check_zero_flag(CPU_REG.A);
     return opcode_table[opcode].cycles;
