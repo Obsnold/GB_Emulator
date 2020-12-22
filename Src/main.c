@@ -20,41 +20,72 @@ bool debug_mode =false;
 bool debug_step = false;
 unsigned long long step_count = 0;
 bool boot_rom = true;
-
+uint16_t breakpoint;
+bool run = true;
 
 int main(int argc, char *argv[] )
 {
-   if( argc == 2 ) {
-      DEBUG_PRINT("starting %s with %s\n",  argv[0], argv[1]);
-   }
-   else {
-      DEBUG_PRINT("Incorrect arguments\n");
+   if( argc < 2 ) {
+      PRINT("Incorrect arguments\n");
       return 0;
+      
    }
-
+   PRINT("%s loading %s\n",  argv[0], argv[1]);
+   
    
    cpu_init();
    init_screen(); 
 
    if(!load_gb_cart(argv[1])){
-       DEBUG_PRINT("Cannot load cart\n");
+       PRINT("Cannot load cart\n");
    }
 
-   load_initial_membanks();
    print_cart_header();
-    //print_opcodes();
+
    init_mem_map();
    //0.00000025s
-   while(1){
+   while(run){
       
       int keys = get_key_press();
+
+      //if escape pressed then exit
       if(keys == -1){
-         break;
+         print_lcd();
+         print_cpu_reg();
+         print_opcode();
+         print_memory(TILE_RAM_0,BG_MAP_1);
+         print_memory(BG_MAP_1,BG_MAP_2);
+         print_memory(BG_MAP_2,CART_RAM);
+         run = false;
       }
+
+      // if debug key pressed or breakpoint reached then enable
+      // debug mode
+      if(keys == KEY_DEBUG || CPU_REG.PC == breakpoint){
+         debug_mode = true;
+      }
+
+      // debug mode
+      if(debug_mode){
+         char c = getchar();
+         switch (c){
+            case 'r':
+               debug_mode = false;
+            break;
+            case 'q':
+               run = false;
+            break;
+         }
+      }
+
+      // TODO change this later so it is handled in the 
+      // mem map or cartidge layer 
       if(boot_rom && CPU_REG.PC >= 0x100){
          load_initial_membanks();
          boot_rom = false;
       }
+
+      // main loop
       gb_cpu();
       ppu();
       gb_timer();
