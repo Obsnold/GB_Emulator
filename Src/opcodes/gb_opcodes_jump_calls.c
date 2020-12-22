@@ -122,7 +122,7 @@ uint8_t opcode_ret_cnd(uint16_t opcode_address){
     uint8_t opcode = get_mem_map_8(opcode_address);
     uint8_t cycles = CYCLE_2;
 
-    if(get_flag_condition(GET_OPCODE_Y(opcode-4))){
+    if(get_flag_condition(GET_OPCODE_Y(opcode))){
         CPU_REG.PC = get_mem_map_16(CPU_REG.SP);
         CPU_REG.SP += 2;
         cycles =CYCLE_5;
