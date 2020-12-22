@@ -42,8 +42,8 @@ uint8_t* get_cart(){
 	return gb_cart;
 }
 
-void load_membank(uint8_t bank){
-    if((bank * CART_MB_SIZE) < gb_cart_size){
+void load_membank(unsigned int bank){
+    if(((bank + 1) * CART_MB_SIZE) < gb_cart_size){
         memcpy(&gb_mem_map[CART_ROM_1],
                 (gb_cart + (bank * CART_MB_SIZE)),
                 CART_MB_SIZE);

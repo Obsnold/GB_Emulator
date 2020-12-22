@@ -7,6 +7,6 @@
 int load_gb_cart(char* filename);
 void load_initial_membanks();
 uint8_t* get_cart();
-void load_membank(uint8_t bank);
+void load_membank(unsigned int bank);
 
 #endif
