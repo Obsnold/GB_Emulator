@@ -4,6 +4,7 @@
 #include "gb_common.h"
 
 void print_cpu_reg();
+void print_indirect_reg();
 void print_cart_header();
 void print_opcode_table();
 void print_opcode();

@@ -9,8 +9,16 @@
 void print_cpu_reg(){
 #ifdef DEBUG
     //PRINT("BB-CC-DD-EE-HH-LL-AA-FF-#PC#-#SP#\n");
-    PRINT("%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%04x-%04x\n",
+    PRINT("%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%04x-%04x  -  ",
     CPU_REG.B,CPU_REG.C,CPU_REG.D,CPU_REG.E,CPU_REG.H,CPU_REG.L,CPU_REG.A,CPU_REG.F,CPU_REG.PC,CPU_REG.SP);
+#endif
+}
+
+void print_indirect_reg(){
+#ifdef DEBUG
+    //PRINT("BB-CC-DD-EE-HH-LL-AA-FF-#PC#-#SP#\n");
+    PRINT("%02x-%02x-%02x-%02x-%02x-%02x  -  ",
+    gb_mem_map[CPU_REG.BC],gb_mem_map[CPU_REG.DE],gb_mem_map[CPU_REG.HL],gb_mem_map[CPU_REG.AF],gb_mem_map[CPU_REG.PC],gb_mem_map[CPU_REG.SP]);
 #endif
 }
 
