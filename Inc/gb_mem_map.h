@@ -34,22 +34,11 @@
 #define GB_RAM_2            0xD000
 #define GB_RAM_1            0xC000
 #define CART_RAM            0xA000
-#define VRAM				0x8000
-#define CART_ROM_1          0x4000
-#define CART_ROM_0          0x0000
-
-#define INTERRUPT_EN   		0xFFFF
-#define ZERO_PAGE           0xFF80
-#define IO_PORTS            0xFF00
-#define NA_MEM              0xFEA0
-#define OAM_TABLE           0xFE00
-#define ECHO_RAM            0xE000
-#define GB_RAM_2            0xD000
-#define GB_RAM_1            0xC000
-#define CART_RAM            0xA000
 #define BG_MAP_2            0x9C00
 #define BG_MAP_1            0x9800
-#define TILE_RAM            0x8000
+#define TILE_RAM_2	 		0x9000
+#define TILE_RAM_1			0x8800
+#define TILE_RAM_0          0x8000
 #define CART_ROM_1          0x4000
 #define CART_ROM_0          0x0000
 
@@ -211,10 +200,7 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 #define LCD_OCPS		0xFF6A
 //---
 
-//VRAM tile data
-#define VRAM_BLOCK_0	0x8000
-#define VRAM_BLOCK_1	0x8800
-#define VRAM_BLOCK_2	0x9000
+#define DISABLE_BOOT_ROM 	0xFF50
 
 //OAM
 #define OAM_TABLE_SIZE 0x28

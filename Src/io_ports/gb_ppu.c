@@ -110,7 +110,7 @@ void ppu_pixel_transfer(){
     bool window_enabled = false;
     bool display_sprite = false;
     uint16_t map = BG_MAP_1;
-    uint16_t bg_window_tile_set = VRAM_BLOCK_0;
+    uint16_t bg_window_tile_set = TILE_RAM_0;
     uint16_t input_buffer_1 = 0;
     uint16_t input_buffer_2 = 0;
     int buffer_shift_count = 0;
@@ -134,9 +134,9 @@ void ppu_pixel_transfer(){
 
     //get tile set
     if(bg_window_tile_mode == 0){
-        bg_window_tile_set = VRAM_BLOCK_2;
+        bg_window_tile_set = TILE_RAM_2;
     } else {
-        bg_window_tile_set = VRAM_BLOCK_0;
+        bg_window_tile_set = TILE_RAM_0;
     }
     
     // work out position of start tile in map
@@ -167,9 +167,6 @@ void ppu_pixel_transfer(){
     if(bg_window_tile_mode == 0) {
         if(tile_map_addr >= 0x80){
             tile_map_addr -= 0x100;
-            bg_window_tile_set = VRAM_BLOCK_1;
-        } else {
-            bg_window_tile_set = VRAM_BLOCK_2;
         }
     }
 
@@ -190,9 +187,6 @@ void ppu_pixel_transfer(){
     if(bg_window_tile_mode == 0) {
         if(tile_map_addr >= 0x80){
             tile_map_addr -= 0x100;
-            bg_window_tile_set = VRAM_BLOCK_1;
-        } else {
-            bg_window_tile_set = VRAM_BLOCK_2;
         }
     }
 
@@ -223,9 +217,6 @@ void ppu_pixel_transfer(){
             if(bg_window_tile_mode == 0) {
                 if(tile_map_addr >= 0x80){
                     tile_map_addr -= 0x100;
-                    bg_window_tile_set = VRAM_BLOCK_1;
-                } else {
-                    bg_window_tile_set = VRAM_BLOCK_2;
                 }
             }
 
@@ -283,9 +274,6 @@ void ppu_pixel_transfer(){
             if(bg_window_tile_mode == 0) {
                 if(tile_map_addr >= 0x80){
                     tile_map_addr -= 0x100;
-                    bg_window_tile_set = VRAM_BLOCK_1;
-                } else {
-                    bg_window_tile_set = VRAM_BLOCK_2;
                 }
             }
 
@@ -301,9 +289,6 @@ void ppu_pixel_transfer(){
             if(bg_window_tile_mode == 0) {
                 if(tile_map_addr >= 0x80){
                     tile_map_addr -= 0x100;
-                    bg_window_tile_set = VRAM_BLOCK_1;
-                } else {
-                    bg_window_tile_set = VRAM_BLOCK_2;
                 }
             }
 
@@ -336,7 +321,7 @@ void ppu_pixel_transfer(){
                     }
                     
                     // get line
-                    tile_line = VRAM_BLOCK_0 + (gb_mem_map[oam + OAM_TILE] * TILE_MEM_SIZE) + (sprite_line_offset*2);
+                    tile_line = TILE_RAM_0 + (gb_mem_map[oam + OAM_TILE] * TILE_MEM_SIZE) + (sprite_line_offset*2);
                     sprite_line_1 = gb_mem_map[tile_line];
                     sprite_line_2 = gb_mem_map[tile_line+1];
 
