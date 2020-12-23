@@ -85,18 +85,14 @@ void update_screen(uint8_t line){
 }
 
 int get_key_press(){
-    int ret = 0;
+    int ret = 0xFF;
     int numkeys = 0;
 
     SDL_PumpEvents();
 
     const uint8_t *array = SDL_GetKeyboardState(&numkeys);
     
-    if( array[SDL_SCANCODE_ESCAPE] == 1 )
-    {
-        ret = -1;
-    }
-
+    // handle normal key presses
     if( array[SDL_SCANCODE_UP] == 1 )
     {
         ret |= KEY_UP;
@@ -129,11 +125,20 @@ int get_key_press(){
     {
         ret |= KEY_SELECT;
     }
+
+    // invert selection as 0 is pressed on the gameboy
+    ret= ~ret & 0xFF;
+
+    // hanlde special key presses
     if( array[SDL_SCANCODE_BACKSPACE] == 1 )
     {
-        ret |= KEY_DEBUG;
+        ret = KEY_DEBUG;
+    }
+    if( array[SDL_SCANCODE_ESCAPE] == 1 )
+    {
+        ret = KEY_EXIT;
     }
 
-    DEBUG_PRINT("keypress: %02x\n", ret);
+    DEBUG_PRINT("keypress: %d\n", ret);
     return ret;
 }
