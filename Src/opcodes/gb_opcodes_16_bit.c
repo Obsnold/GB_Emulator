@@ -88,6 +88,7 @@ uint8_t opcode_16_add_hl(uint16_t opcode_address){
 
     //second part
     CPU_REG.A = CPU_REG.H;
+    uint8_t temp =GET_CARRY_FLAG;
     if (check_8_overflow(&high_nibble)){
         SET_CARRY_FLAG;
     } else {
@@ -99,7 +100,7 @@ uint8_t opcode_16_add_hl(uint16_t opcode_address){
         CLR_HALF_CARRY_FLAG;
     }
     CPU_REG.A += high_nibble;
-    CPU_REG.A += GET_CARRY_FLAG;
+    CPU_REG.A += temp;
     CPU_REG.H = CPU_REG.A;
 
     CLR_ADD_SUB_FLAG;
