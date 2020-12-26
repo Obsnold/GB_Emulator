@@ -123,7 +123,7 @@ inc  rr        x3           8 ---- rr = rr+1      ;rr may be BC,DE,HL,SP
 */
 uint8_t opcode_16_inc(uint16_t opcode_address){
     uint8_t opcode = get_mem_map_8(opcode_address);
-    uint16_t* dest =  get_reg_16_af(GET_OPCODE_P(opcode));
+    uint16_t* dest =  get_reg_16_sp(GET_OPCODE_P(opcode));
     *dest += 1;
     return opcode_table[opcode].cycles;
 }
@@ -133,7 +133,7 @@ dec  rr        xB           8 ---- rr = rr-1      ;rr may be BC,DE,HL,SP
 */
 uint8_t opcode_16_dec(uint16_t opcode_address){
     uint8_t opcode = get_mem_map_8(opcode_address);
-    uint16_t* dest =  get_reg_16_af(GET_OPCODE_P(opcode));
+    uint16_t* dest =  get_reg_16_sp(GET_OPCODE_P(opcode));
     *dest -= 1;
     return opcode_table[opcode].cycles;
 }
