@@ -178,13 +178,12 @@ sra  r         CB 2x        8 z00c shift right arithmetic (b7=b7)
 sra  (HL)      CB 2E       16 z00c shift right arithmetic (b7=b7)
 */
 void opcode_sra(uint8_t* dest){
-    uint8_t temp = *dest & 0x08;
     if(*dest & 0x01){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    *dest = (*dest >> 1) & temp;
+    *dest = (*dest >> 1) & (*dest & 0x80);
     check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
