@@ -253,37 +253,16 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 #define INTERRUPT_SERIAL	BIT_3
 #define INTERRUPT_JOYPAD	BIT_4
 
-
-
 #define GET_HIGH_NIBBLE(x) ((x & 0xF0) >> 0x04)
 #define GET_LOW_NIBBLE(x) (x & 0x0F)
 
 extern uint8_t gb_mem_map[GB_MEM_SIZE];
-
-extern uint8_t bc_pointer;
-extern uint8_t de_pointer;
-extern uint8_t hl_pointer;
-
-extern uint8_t u8_pointer;
-extern uint8_t u16_pointer_1;
-extern uint8_t u16_pointer_2;
-extern uint8_t s8_pointer;
-
-extern uint8_t addr_38H;
-extern uint8_t addr_30H;
-extern uint8_t addr_28H;
-extern uint8_t addr_20H;
-extern uint8_t addr_18H;
-extern uint8_t addr_10H;
-extern uint8_t addr_08H;
-extern uint8_t addr_00H;
 
 #define GET_MEM_MAP(REG, BIT) (gb_mem_map[REG] & BIT)
 #define SET_MEM_MAP(REG, BIT) (gb_mem_map[REG] |= BIT)
 #define CLR_MEM_MAP(REG, BIT) (gb_mem_map[REG] &= ~BIT)
 
 void init_mem_map();
-uint8_t* get_mem_map_pointer(uint16_t reg);
 uint8_t get_mem_map_8(uint16_t reg);
 bool set_mem_map_8(uint16_t reg, uint8_t data);
 uint16_t get_mem_map_16(uint16_t reg);

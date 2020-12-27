@@ -116,10 +116,6 @@ uint8_t get_mem_map_8(uint16_t reg){
     return data;
 }
 
-uint8_t* get_mem_map_pointer(uint16_t reg){
-    return &gb_mem_map[reg];
-}
-
 bool set_mem_map_8(uint16_t reg, uint8_t data){
     gb_mem_map[reg] = data;
     return true;

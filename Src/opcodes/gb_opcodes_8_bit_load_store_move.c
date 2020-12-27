@@ -2,6 +2,7 @@
 #include "gb_mem_map.h"
 #include "gb_common.h"
 #include "gb_cpu.h"
+#include "debug_print.h"
 
 
 //******************************************************
@@ -74,8 +75,22 @@ uint8_t opcode_8_ld(uint16_t opcode_address){
                     *reg = get_mem_map_8(opcode_address + 1);
                 }
             } else if(opcode_x == 0x01){ // check register loads
-                uint8_t* reg = get_reg_8(opcode_y);
-                *reg = *get_reg_8(opcode_z);
+                if(opcode_y == 0x06){
+                    if(opcode_z == 0x06){
+                        //should never get here
+                        PRINT("Error should be halt command!!!");
+                    } else {
+                        set_mem_map_8(CPU_REG.HL,*get_reg_8(opcode_z));
+                    }
+                } else {
+                    if(opcode_z == 0x06){
+                        uint8_t* reg = get_reg_8(opcode_y);
+                        *reg = get_mem_map_8(CPU_REG.HL);
+                    } else {
+                        uint8_t* reg = get_reg_8(opcode_y);
+                        *reg = *get_reg_8(opcode_z);
+                    }
+                }
             }
 
             break;
@@ -109,7 +124,7 @@ ldd  A,(HL)      3A         8 ---- A=(HL), HL=HL-1
 uint8_t opcode_8_ldd(uint16_t opcode_address){
     uint8_t opcode = get_mem_map_8(opcode_address);
 
-    if(get_mem_map_8(opcode_address) == 0x32){
+    if(opcode == 0x32){
         set_mem_map_8(CPU_REG.HL, CPU_REG.A);
     } else {
         CPU_REG.A = get_mem_map_8(CPU_REG.HL);

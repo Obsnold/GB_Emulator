@@ -2,6 +2,7 @@
 #include "gb_mem_map.h"
 #include "gb_common.h"
 #include "gb_cpu.h"
+#include "debug_print.h"
 
 //******************************************************
 //8-bit math/logic commands
@@ -21,6 +22,9 @@ uint8_t opcode_8_add(uint16_t opcode_address){
     switch(opcode){
         case 0xC6:
             value = get_mem_map_8(opcode_address + 1);
+            break;
+        case 0x86:
+            value = get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -63,6 +67,9 @@ uint8_t opcode_8_adc(uint16_t opcode_address){
     switch(opcode){
         case 0xCE:
             value = get_mem_map_8(opcode_address + 1);
+            break;
+        case 0x8E:
+            value = get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -107,6 +114,9 @@ uint8_t opcode_8_sub(uint16_t opcode_address){
         case 0xD6:
             value = get_mem_map_8(opcode_address + 1);
             break;
+        case 0x96:
+            value = get_mem_map_8(CPU_REG.HL);
+            break;
         default:
             value = *get_reg_8(opcode_z);
             break;
@@ -148,6 +158,9 @@ uint8_t opcode_8_sbc(uint16_t opcode_address){
     switch(opcode){
         case 0xDE:
             value = get_mem_map_8(opcode_address + 1);
+            break;
+        case 0x9E:
+            value = get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -192,6 +205,9 @@ uint8_t opcode_8_and(uint16_t opcode_address){
         case 0xE6:
             value = get_mem_map_8(opcode_address + 1);
             break;
+        case 0xA6:
+            value = get_mem_map_8(CPU_REG.HL);
+            break;
         default:
             value = *get_reg_8(opcode_z);
             break;
@@ -222,6 +238,9 @@ uint8_t opcode_8_xor(uint16_t opcode_address){
     switch(opcode){
         case 0xEE:
             value = get_mem_map_8(opcode_address + 1);
+            break;
+        case 0xAE:
+            value = get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -254,6 +273,9 @@ uint8_t opcode_8_or(uint16_t opcode_address){
         case 0xF6:
             value = get_mem_map_8(opcode_address + 1);
             break;
+        case 0xB6:
+            value = get_mem_map_8(CPU_REG.HL);
+            break;
         default:
             value = *get_reg_8(opcode_z);
             break;
@@ -284,6 +306,9 @@ uint8_t opcode_8_cp(uint16_t opcode_address){
     switch(opcode){
         case 0xFE:
             value = get_mem_map_8(opcode_address + 1);
+            break;
+        case 0xBE:
+            value = get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -317,15 +342,22 @@ inc  r           xx         4 z0h- r=r+1
 inc  (HL)        34        12 z0h- (HL)=(HL)+1
 */
 uint8_t opcode_8_inc(uint16_t opcode_address){
-    uint8_t* addr = NULL;
+    uint8_t value = 0;
     uint8_t opcode = get_mem_map_8(opcode_address);
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
-    addr = get_reg_8(opcode_y);
+    switch(opcode){
+        case 0x34:
+            value = get_mem_map_8(CPU_REG.HL);
+            break;
+        default:
+            value = *get_reg_8(opcode_y);
+            break;
+    }
 
     //check carry flags first
-    if(check_4_overflow(addr)){
+    if(check_4_overflow(&value)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
@@ -333,11 +365,24 @@ uint8_t opcode_8_inc(uint16_t opcode_address){
 
     //do opperartion
     //CPU_REG.A = 
-    ++*addr;
+    ++value;
 
     CLR_ADD_SUB_FLAG;
-    
-    check_zero_flag(*addr);
+    check_zero_flag(value);
+
+    // get value depending on opcode
+    switch(opcode){
+        case 0x34:
+            set_mem_map_8(CPU_REG.HL,value);
+            break;
+        default:
+        {
+            uint8_t *addr = get_reg_8(opcode_y);
+            *addr = value;
+        }
+            break;
+    }
+
     return opcode_table[opcode].cycles;
 }
 
@@ -346,15 +391,22 @@ dec  r           xx         4 z1h- r=r-1
 dec  (HL)        35        12 z1h- (HL)=(HL)-1
 */
 uint8_t opcode_8_dec(uint16_t opcode_address){
-    uint8_t* addr = NULL;
+    uint8_t value = 0;
     uint8_t opcode = get_mem_map_8(opcode_address);
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
-    
+
     // get value depending on opcode
-    addr = get_reg_8(opcode_y);
+    switch(opcode){
+        case 0x35:
+            value = get_mem_map_8(CPU_REG.HL);
+            break;
+        default:
+            value = *get_reg_8(opcode_y);
+            break;
+    }
 
     //check carry flags first
-    if(check_4_underflow(addr)){
+    if(check_4_underflow(&value)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
@@ -362,11 +414,25 @@ uint8_t opcode_8_dec(uint16_t opcode_address){
 
     //do opperartion
     //CPU_REG.A = 
-    --*addr;
+    --value;
 
     SET_ADD_SUB_FLAG;
-    
-    check_zero_flag(*addr);
+    check_zero_flag(value);
+
+    // get value depending on opcode
+    switch(opcode){
+        case 0x35:
+            set_mem_map_8(CPU_REG.HL,value);
+            break;
+        default:
+        {
+            uint8_t *addr = get_reg_8(opcode_y);
+            *addr = value;
+        }
+            break;
+    }
+
+
     return opcode_table[opcode].cycles;
 }
 

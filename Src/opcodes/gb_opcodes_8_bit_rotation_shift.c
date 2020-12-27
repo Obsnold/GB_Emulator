@@ -242,57 +242,68 @@ void opcode_res(uint8_t* dest, uint8_t bit){
 
 
 uint8_t opcode_cb_prefix(uint16_t opcode_address){
-    uint8_t* addr = NULL;
+    uint8_t value = 0;
     uint8_t time = CYCLE_2;
     uint8_t opcode = get_mem_map_8(opcode_address+1);
     uint8_t opcode_x = GET_OPCODE_X(opcode);
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
-    addr = get_reg_8(opcode_z);
 
+    // get value depending on opcode
     if(opcode_z == 0x06){
         time = CYCLE_1;
+        value = get_mem_map_8(CPU_REG.HL);
+    } else {
+        value = *get_reg_8(opcode_z);
     }
 
     switch(opcode_x){
         case 0x00: // rotate commands
             switch(opcode_y){
                 case 0x00: // RLC
-                    opcode_rlc(addr);
+                    opcode_rlc(&value);
                     break;
                 case 0x01: // RRC
-                    opcode_rrc(addr);
+                    opcode_rrc(&value);
                     break;
                 case 0x02: // RL
-                    opcode_rl(addr);
+                    opcode_rl(&value);
                     break;
                 case 0x03: // RR
-                    opcode_rr(addr);
+                    opcode_rr(&value);
                     break;
                 case 0x04: // SLA
-                    opcode_sla(addr);
+                    opcode_sla(&value);
                     break;
                 case 0x05: // SRA
-                    opcode_sra(addr);
+                    opcode_sra(&value);
                     break;
                 case 0x06: // SWAP
-                    opcode_swap(addr);
+                    opcode_swap(&value);
                     break;
                 case 0x07: // SRL
-                    opcode_srl(addr);
+                    opcode_srl(&value);
                     break;
             }
             break;
         case 0x01: // bit commands
-            opcode_bit(addr,opcode_y);
+            opcode_bit(&value,opcode_y);
             break;
         case 0x02: // reset commands
-            opcode_res(addr,opcode_y);
+            opcode_res(&value,opcode_y);
             break;
         case 0x03: // set commands
-            opcode_set(addr,opcode_y);
+            opcode_set(&value,opcode_y);
             break;
+    }
+
+    // get value depending on opcode
+    if(opcode_z == 0x06){
+        set_mem_map_8(CPU_REG.HL,value);
+    } else{ 
+        uint8_t *addr = get_reg_8(opcode_z);
+        *addr = value;
     }
 
     return time;
