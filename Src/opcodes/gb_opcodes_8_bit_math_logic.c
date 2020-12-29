@@ -62,6 +62,7 @@ uint8_t opcode_8_adc(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
+    uint8_t temp = GET_CARRY_FLAG;
 
     // get value depending on opcode
     switch(opcode){
@@ -90,7 +91,7 @@ uint8_t opcode_8_adc(uint16_t opcode_address){
 
     //do opperartion
     CPU_REG.A += value;
-    CPU_REG.A += GET_CARRY_FLAG;
+    CPU_REG.A += temp;
 
     //check other flags
     CLR_ADD_SUB_FLAG;
@@ -153,6 +154,7 @@ uint8_t opcode_8_sbc(uint16_t opcode_address){
     uint8_t value = 0;
     uint8_t opcode = get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
+    uint8_t temp = GET_CARRY_FLAG;
     
     // get value depending on opcode
     switch(opcode){
@@ -181,7 +183,7 @@ uint8_t opcode_8_sbc(uint16_t opcode_address){
 
     //do opperartion
     CPU_REG.A -= value;
-    CPU_REG.A -= GET_CARRY_FLAG;
+    CPU_REG.A -= temp;
 
     //check other flags
     SET_ADD_SUB_FLAG;
