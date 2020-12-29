@@ -11,6 +11,7 @@ void print_opcode();
 void print_memory(uint16_t start_pos, uint16_t end_pos);
 void print_lcd();
 void print_display_buffer();
+void print_step();
 
 #define PRINT(fmt, args...)    printf(fmt, ## args)
 

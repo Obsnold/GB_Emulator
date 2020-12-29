@@ -6,17 +6,33 @@
 
 #define DEBUG
 
-void print_cpu_reg(){
-#ifdef DEBUG
-    //PRINT("BB-CC-DD-EE-HH-LL-AA-FF-#PC#-#SP#\n");
+void print_step(){
+    PRINT("BB-CC-DD-EE-HH-LL-AA-FF-#PC#-#SP#  -  BC-DE-HL-AF-PC-SP  -  Z-C-AS-HC  -  \n");
     PRINT("%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%04x-%04x  -  ",
     CPU_REG.B,CPU_REG.C,CPU_REG.D,CPU_REG.E,CPU_REG.H,CPU_REG.L,CPU_REG.A,CPU_REG.F,CPU_REG.PC,CPU_REG.SP);
+    PRINT("%02x-%02x-%02x-%02x-%02x-%02x  -  ",
+    gb_mem_map[CPU_REG.BC],gb_mem_map[CPU_REG.DE],gb_mem_map[CPU_REG.HL],gb_mem_map[CPU_REG.AF],gb_mem_map[CPU_REG.PC],gb_mem_map[CPU_REG.SP]);
+    PRINT("%01x-%01x-%02x-%02x  -  ",
+    GET_ZERO_FLAG,GET_CARRY_FLAG,GET_ADD_SUB_FLAG,GET_HALF_CARRY_FLAG);
+}
+
+void print_cpu_reg(){
+#ifdef DEBUG
+    PRINT("BB-CC-DD-EE-HH-LL-AA-FF-#PC#-#SP#\n");
+    PRINT("%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%04x-%04x  -  ",
+    CPU_REG.B,CPU_REG.C,CPU_REG.D,CPU_REG.E,CPU_REG.H,CPU_REG.L,CPU_REG.A,CPU_REG.F,CPU_REG.PC,CPU_REG.SP);
+#endif
+}
+void print_flags(){
+#ifdef DEBUG
+    PRINT("Z-C-AS-HC\n");
+    PRINT("%01x-%01x-%02x-%02x\n",
+    GET_ZERO_FLAG,GET_CARRY_FLAG,GET_ADD_SUB_FLAG,GET_HALF_CARRY_FLAG);
 #endif
 }
 
 void print_indirect_reg(){
 #ifdef DEBUG
-    //PRINT("BB-CC-DD-EE-HH-LL-AA-FF-#PC#-#SP#\n");
     PRINT("%02x-%02x-%02x-%02x-%02x-%02x  -  ",
     gb_mem_map[CPU_REG.BC],gb_mem_map[CPU_REG.DE],gb_mem_map[CPU_REG.HL],gb_mem_map[CPU_REG.AF],gb_mem_map[CPU_REG.PC],gb_mem_map[CPU_REG.SP]);
 #endif
