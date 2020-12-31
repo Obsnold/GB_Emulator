@@ -19,13 +19,14 @@ int check_8_underflow(uint16_t b){
     return ((temp_a - b) & 0xFF00) > 0;
 }
 
-int check_4_overflow(uint16_t b){
-    return (((CPU_REG.A & 0x0F) + (b & 0x0F)) & 0x10) == 0x10;
+int check_4_overflow(uint8_t b,uint8_t carry){
+    return (((CPU_REG.A & 0x0F) + (b & 0x0F) + carry) & 0x10) == 0x10;
 }
 
-int check_4_underflow(uint16_t b){
-    return (((CPU_REG.A & 0x0F) - (b & 0x0F)) &0x10) == 0x10;
+int check_4_underflow(uint8_t b,uint8_t carry){
+    return (((CPU_REG.A & 0x0F) - (b & 0x0F) - carry) &0x10) == 0x10;
 }
+
 
 void check_zero_flag(uint8_t val){
     if (val == 0x00){
