@@ -72,12 +72,12 @@ uint8_t opcode_16_add_hl(uint16_t opcode_address){
 
     //first part
     CPU_REG.A = CPU_REG.L;
-    if (check_8_overflow(&low_nibble)){
+    if (check_8_overflow(low_nibble)){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    if(check_4_overflow(&low_nibble)){
+    if(check_4_overflow(low_nibble)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
@@ -89,12 +89,12 @@ uint8_t opcode_16_add_hl(uint16_t opcode_address){
     //second part
     CPU_REG.A = CPU_REG.H;
     uint8_t temp =GET_CARRY_FLAG;
-    if (check_8_overflow(&high_nibble)){
+    if (check_8_overflow(high_nibble)){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    if(check_4_overflow(&high_nibble)){
+    if(check_4_overflow(high_nibble)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
