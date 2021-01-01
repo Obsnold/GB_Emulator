@@ -10,24 +10,32 @@
 /*
 ld   rr,nn       x1 nn nn  12 ---- rr=nn (rr may be BC,DE,HL or SP)
 ld   SP,HL       F9         8 ---- SP=HL
+ld   (a16),SP    08          
 */
 uint8_t opcode_16_ld(uint16_t opcode_address){
     uint8_t opcode = get_mem_map_8(opcode_address);
     uint16_t* dest = NULL;
     uint16_t value = 0;
+    uint16_t addr = 0;
 
     switch(opcode){
         case 0xF9:
             dest = &CPU_REG.SP;
             value = CPU_REG.HL;
+            *dest = value;
+            break;
+        case 0x08:
+            addr = get_mem_map_16(opcode_address+1);
+            set_mem_map_16(addr,CPU_REG.SP);
             break;
         default:
             dest = get_reg_16_sp(GET_OPCODE_P(opcode));
             value = get_mem_map_16(opcode_address+1);
+            *dest = value;
             break;
     }
 
-    *dest = value;
+    
     return opcode_table[opcode].cycles;
 }
 
