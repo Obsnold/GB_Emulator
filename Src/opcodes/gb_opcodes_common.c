@@ -1,30 +1,28 @@
 #include "gb_opcodes.h"
 
 
-int check_16_overflow(uint16_t a, uint16_t b){
-    return (a > 0xFFFF - b);
+int check_16_overflow(int a,int b,int carry){
+    return ((a + b + carry) & 0xFFFF0000) > 0;
 }
 
-int check_16_underflow(uint16_t a, uint16_t b){
-    return (a < b);
+int check_12_overflow(int a,int b,int carry){
+    return (((a & 0xFFF) + (b & 0xFFF) + carry) & 0x1000) == 0x1000;
 }
 
-int check_8_overflow(uint16_t b){
-    uint16_t temp_a = CPU_REG.A;
-    return ((temp_a + b) & 0xFF00) > 0;
+int check_8_overflow(int a,int b,int carry){
+    return ((a + b + carry) & 0xFF00) > 0;
 }
 
-int check_8_underflow(uint16_t b){
-    uint16_t temp_a = CPU_REG.A;
-    return ((temp_a - b) & 0xFF00) > 0;
+int check_8_underflow(int a,int b,int carry){
+    return ((a - b - carry) & 0xFF00) > 0;
 }
 
-int check_4_overflow(uint8_t b,uint8_t carry){
-    return (((CPU_REG.A & 0x0F) + (b & 0x0F) + carry) & 0x10) == 0x10;
+int check_4_overflow(int a,int b,int carry){
+    return (((a & 0x0F) + (b & 0x0F) + (carry& 0x0F)) & 0x10) == 0x10;
 }
 
-int check_4_underflow(uint8_t b,uint8_t carry){
-    return (((CPU_REG.A & 0x0F) - (b & 0x0F) - carry) &0x10) == 0x10;
+int check_4_underflow(int a,int b,int carry){
+    return (((a & 0x0F) - (b & 0x0F) - (carry& 0x0F)) &0x10) == 0x10;
 }
 
 

@@ -77,12 +77,13 @@ uint8_t opcode_NA(uint16_t opcode_address);
 
 
 // common functions for the opcodes
-int check_16_overflow(uint16_t a, uint16_t b);
-int check_16_underflow(uint16_t a, uint16_t b);
-int check_8_overflow(uint16_t b);
-int check_8_underflow(uint16_t b);
-int check_4_overflow(uint8_t b,uint8_t carry);
-int check_4_underflow(uint8_t b,uint8_t carry);
+int check_16_overflow(int a,int b, int carry);
+int check_12_overflow(int a,int b, int carry);
+int check_8_overflow(int a,int b,int carry);
+int check_8_underflow(int a,int b,int carry);
+int check_4_overflow(int a,int b,int carry);
+int check_4_underflow(int a,int b,int carry);
+
 void check_zero_flag(uint8_t val);
 
 uint8_t* get_reg_8(uint8_t reg);

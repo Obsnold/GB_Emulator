@@ -32,12 +32,12 @@ uint8_t opcode_8_add(uint16_t opcode_address){
     }
     
     //check carry flags first
-    if (check_8_overflow(value)){
+    if (check_8_overflow(CPU_REG.A,value,0)){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    if(check_4_overflow(value,0)){
+    if(check_4_overflow(CPU_REG.A,value,0)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
@@ -78,12 +78,12 @@ uint8_t opcode_8_adc(uint16_t opcode_address){
     }
 
     //check carry flags first
-    if (check_8_overflow((uint16_t)value+temp)){
+    if (check_8_overflow(CPU_REG.A,value,temp)){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    if(check_4_overflow(value,temp)){
+    if(check_4_overflow(CPU_REG.A,value,temp)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
@@ -124,12 +124,12 @@ uint8_t opcode_8_sub(uint16_t opcode_address){
     }
 
     //check carry flags first
-    if (check_8_underflow(value)){
+    if (check_8_underflow(CPU_REG.A,value,0)){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    if(check_4_underflow(value,0)){
+    if(check_4_underflow(CPU_REG.A,value,0)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
@@ -170,12 +170,12 @@ uint8_t opcode_8_sbc(uint16_t opcode_address){
     }
 
     //check carry flags first
-    if (check_8_underflow((uint16_t)value+temp)){
+    if (check_8_underflow(CPU_REG.A,value,temp)){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    if(check_4_underflow(value,temp)){
+    if(check_4_underflow(CPU_REG.A,value,temp)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
@@ -319,12 +319,12 @@ uint8_t opcode_8_cp(uint16_t opcode_address){
 
     uint8_t temp = CPU_REG.A;
 
-    if (check_8_underflow(value)){
+    if (check_8_underflow(CPU_REG.A,value,0)){
         SET_CARRY_FLAG;
     } else {
         CLR_CARRY_FLAG;
     }
-    if(check_4_underflow(value,0)){
+    if(check_4_underflow(CPU_REG.A,value,0)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
@@ -359,7 +359,7 @@ uint8_t opcode_8_inc(uint16_t opcode_address){
     }
 
     //check carry flags first
-    if(check_4_overflow(value,0)){
+    if(check_4_overflow(CPU_REG.A,value,0)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
@@ -408,7 +408,7 @@ uint8_t opcode_8_dec(uint16_t opcode_address){
     }
 
     //check carry flags first
-    if(check_4_underflow(value,0)){
+    if(check_4_underflow(CPU_REG.A,value,0)){
         SET_HALF_CARRY_FLAG;
     } else {
         CLR_HALF_CARRY_FLAG;
