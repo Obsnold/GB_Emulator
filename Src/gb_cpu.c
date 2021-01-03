@@ -41,7 +41,11 @@ void gb_cpu(){
     //if CPU_REG.F has been written to make sure the bottom 4 bits are 0
     CPU_REG.F &= 0xF0;
 
-    
+    if(power_mode == PWR_HALT){
+        if(gb_mem_map[INTERRUPT_ENABLE] & gb_mem_map[INTERRUPT_FLAGS]){
+            power_mode = PWR_NORMAL;
+        }
+    }
 
     //check interrupts
     if(interrupts_enabled){
