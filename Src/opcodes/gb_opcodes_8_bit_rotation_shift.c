@@ -218,9 +218,9 @@ void opcode_bit(uint8_t* dest, uint8_t bit){
     CLR_ADD_SUB_FLAG;
     SET_HALF_CARRY_FLAG;
     if(*dest & (0x01 << bit)){
-        SET_ZERO_FLAG;
-    } else {
         CLR_ZERO_FLAG;
+    } else {
+        SET_ZERO_FLAG;
     }
 }
 
