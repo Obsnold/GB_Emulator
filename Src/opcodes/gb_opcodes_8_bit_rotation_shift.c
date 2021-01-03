@@ -166,7 +166,7 @@ swap r         CB 3x        8 z000 exchange low/hi-nibble
 swap (HL)      CB 36       16 z000 exchange low/hi-nibble
 */
 void opcode_swap(uint8_t* dest){
-    *dest = (*dest << 0x04) & (*dest >> 0x04);
+    *dest = (*dest << 0x04) | (*dest >> 0x04);
     check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
@@ -183,7 +183,7 @@ void opcode_sra(uint8_t* dest){
     } else {
         CLR_CARRY_FLAG;
     }
-    *dest = (*dest >> 1) & (*dest & 0x80);
+    *dest = (*dest >> 1) | (*dest & 0x80);
     check_zero_flag(*dest);
     CLR_ADD_SUB_FLAG;
     CLR_HALF_CARRY_FLAG;
