@@ -1,7 +1,10 @@
 #include "gb_mem_map.h"
-#include "gb_test_video_ram.h"
 #include "debug_print.h"
+#include "gb_cpu.h"
+#include "gb_load.h"
 #include <string.h>
+
+#define DEBUG
 
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
@@ -10,16 +13,6 @@
 #endif
 
 uint8_t gb_mem_map[GB_MEM_SIZE];
-
-//const values
-uint8_t addr_38H = 0x38;
-uint8_t addr_30H = 0x30;
-uint8_t addr_28H = 0x28;
-uint8_t addr_20H = 0x20;
-uint8_t addr_18H = 0x18;
-uint8_t addr_10H = 0x10;
-uint8_t addr_08H = 0x08;
-uint8_t addr_00H = 0x00;
 
 uint8_t gb_bootrom[0x100] = { 
     0x31, 0xfe, 0xff, 0xaf, 0x21, 0xff, 0x9f, 0x32, 0xcb, 0x7c, 0x20, 0xfb, 0x21, 0x26, 0xff, 0x0e,
@@ -40,10 +33,50 @@ uint8_t gb_bootrom[0x100] = {
     0xf5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xfb, 0x86, 0x20, 0xfe, 0x3e, 0x01, 0xe0, 0x50};
 
 
-
 void init_mem_map(){
-    //memset(gb_mem_map,0,GB_MEM_SIZE);
+    memset(gb_mem_map,0,GB_MEM_SIZE);
+    load_initial_membanks();
+#if 0 //load boot rom
     memcpy(gb_mem_map,gb_bootrom, 0x100);
+#else // set up memory as if bot rom had run
+    CPU_REG.AF=0x01B0;
+    CPU_REG.BC=0x0013;
+    CPU_REG.DE=0x00D8;
+    CPU_REG.HL=0x014D;
+    CPU_REG.SP=0xFFFE;
+    CPU_REG.PC=0x0100;
+    gb_mem_map[0xFF05] = 0x00   ;// TIMA
+    gb_mem_map[0xFF06] = 0x00   ;// TMA
+    gb_mem_map[0xFF07] = 0x00   ;// TAC
+    gb_mem_map[0xFF10] = 0x80   ;// NR10
+    gb_mem_map[0xFF11] = 0xBF   ;// NR11
+    gb_mem_map[0xFF12] = 0xF3   ;// NR12
+    gb_mem_map[0xFF14] = 0xBF   ;// NR14
+    gb_mem_map[0xFF16] = 0x3F   ;// NR21
+    gb_mem_map[0xFF17] = 0x00   ;// NR22
+    gb_mem_map[0xFF19] = 0xBF   ;// NR24
+    gb_mem_map[0xFF1A] = 0x7F   ;// NR30
+    gb_mem_map[0xFF1B] = 0xFF   ;// NR31
+    gb_mem_map[0xFF1C] = 0x9F   ;// NR32
+    gb_mem_map[0xFF1E] = 0xBF   ;// NR34
+    gb_mem_map[0xFF20] = 0xFF   ;// NR41
+    gb_mem_map[0xFF21] = 0x00   ;// NR42
+    gb_mem_map[0xFF22] = 0x00   ;// NR43
+    gb_mem_map[0xFF23] = 0xBF   ;// NR44
+    gb_mem_map[0xFF24] = 0x77   ;// NR50
+    gb_mem_map[0xFF25] = 0xF3   ;// NR51
+    gb_mem_map[0xFF26] = 0xF1   ;// NR52
+    gb_mem_map[0xFF40] = 0x91   ;// LCDC
+    gb_mem_map[0xFF42] = 0x00   ;// SCY
+    gb_mem_map[0xFF43] = 0x00   ;// SCX
+    gb_mem_map[0xFF45] = 0x00   ;// LYC
+    gb_mem_map[0xFF47] = 0xFC   ;// BGP
+    gb_mem_map[0xFF48] = 0xFF   ;// OBP0
+    gb_mem_map[0xFF49] = 0xFF   ;// OBP1
+    gb_mem_map[0xFF4A] = 0x00   ;// WY
+    gb_mem_map[0xFF4B] = 0x00   ;// WX
+    gb_mem_map[0xFFFF] = 0x00   ;// IE
+#endif
 }
 
 // the following functions should only be used by cpu instructions
@@ -54,11 +87,11 @@ uint8_t get_mem_map_8(uint16_t reg){
         // fixed rom bank
         data = gb_mem_map[reg];
 
-    } else if(reg >= CART_ROM_1 && reg < VRAM ){
+    } else if(reg >= CART_ROM_1 && reg < TILE_RAM_0 ){
         // switchable rom bank
         data = gb_mem_map[reg];
 
-    } else if(reg >= VRAM && reg < CART_RAM){
+    } else if(reg >= TILE_RAM_0 && reg < CART_RAM){
         // VRAM
         //need to check if VRAM is accessible
         if((gb_mem_map[LCD_STAT] & LCD_STAT_MODE) != LCD_STAT_MODE_PIXEL_TRANS)
@@ -99,7 +132,6 @@ uint8_t get_mem_map_8(uint16_t reg){
         // IO_PORTS
         // lots of stuff going on here 
         // for now just return data
-        DEBUG_PRINT("IO_PORTS\n");
         data = gb_mem_map[reg];
 
     } else if(reg >= ZERO_PAGE && reg < INTERRUPT_EN){
@@ -109,14 +141,80 @@ uint8_t get_mem_map_8(uint16_t reg){
 
     } if(reg == INTERRUPT_EN){
         // Interrupt enable
-        DEBUG_PRINT("INTERRUPT_EN\n");
         data = gb_mem_map[reg];
-
     } 
+    //DEBUG_PRINT("set_mem_map_8, reg=%04x, data=%02x\n",reg,data);
     return data;
 }
 
+
 bool set_mem_map_8(uint16_t reg, uint8_t data){
+   // uint8_t lData = gb_mem_map[reg];
+  /* if(reg < TILE_RAM_0 ){
+        // rom banks need to check for mbc and other controler chips
+        switch(gb_mem_map[TYPE_ROM]){
+            case TYPE_ROM_MBC1:
+            case TYPE_ROM_MBC1_RAM:
+            case TYPE_ROM_MBC1_RAM_BAT:
+                if(reg <= 0x1FFF){ //RAM enable
+
+                } else if(reg <= 0x3FFF){ //ROM Bank Number
+                    load_membank(lData & 0x1F);
+                    PRINT("SWITCH BANK %d\n", lData & 0x1F);
+                } else if(reg <= 0x5FFF){ //RAM Bank Number
+
+                } else if (reg <= 0x7FFF){ //ROM?RAM select mode
+
+                }
+            break;
+            case TYPE_ROM_MBC2:
+            case TYPE_ROM_MBC2_BAT:
+
+            break;
+
+            default:
+            break;
+        }
+    } else if(reg >= TILE_RAM_0 && reg < CART_RAM){
+        // VRAM
+        lData = data;
+    } else if(reg >= CART_RAM && reg < GB_RAM_1){
+        // CART ram if available
+        lData = data;
+    } else if(reg >= GB_RAM_1 && reg < GB_RAM_2){
+        // Game boy work ram 1
+        lData = data;
+    } else if(reg >= GB_RAM_2 && reg < ECHO_RAM){
+        // Game boy work ram 2
+        // switchable in GB color
+        lData = data;
+    } else if(reg >= ECHO_RAM && reg < OAM_TABLE){
+        // echo ram 
+        // mirrors work ram 1 and 2
+        // nintendo says not to use 
+        lData = data;
+    } else if(reg >= OAM_TABLE && reg < NA_MEM){
+        // OAM TAble
+        // need to check if OAM is accesible
+        lData = data;
+    } else if(reg >= NA_MEM && reg < IO_PORTS){
+        // NA MEMORY
+        // unusable memory for now just write data 0
+        // should cause bug if accessed when OAM in not accessible
+        lData = 0;
+    } else if(reg >= IO_PORTS && reg < ZERO_PAGE){
+        // IO_PORTS
+        // lots of stuff going on here 
+        // for now just write data
+        lData = data;
+    } else if(reg >= ZERO_PAGE && reg < INTERRUPT_EN){
+        // Zero page
+        // basically just fancy ram
+        lData = data;
+    } if(reg == INTERRUPT_EN){
+        // Interrupt enable
+        lData = data;
+    }*/
     gb_mem_map[reg] = data;
     return true;
 }
