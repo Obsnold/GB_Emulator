@@ -20,7 +20,7 @@ bool debug_mode =false;
 bool debug_step = false;
 unsigned long long step_count = 0;
 bool boot_rom = true;
-int breakpoint=0x100;
+int breakpoint=-1;
 bool run = true;
 
 int main(int argc, char *argv[] )
