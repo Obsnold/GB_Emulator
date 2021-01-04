@@ -81,8 +81,8 @@ void ppu_oam_search(){
     for(int i = 0; i < OAM_TABLE_SIZE; i++){
         //check x > 0, check lcd_line >= y,  lcd_line < y+8
         if( (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS] > 0) &&
-            (lcd_line >= gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] ) &&
-            (lcd_line < (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] + TILE_SIZE))){
+            (lcd_line+16 >= gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS]) &&
+            (lcd_line+16 < (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] + TILE_SIZE))){
                 //if sprite is on the lcd_line then add to list
                 oam_list[oam_list_size] = i;
                 oam_list_size++;
@@ -180,8 +180,9 @@ void ppu_pixel_transfer(){
             sp_pallet_1[i] = PAL_BLACK;
             break;
         }
-
     }
+    sp_pallet_0[0]=PAL_TRANS;
+    sp_pallet_1[0]=PAL_TRANS;
 
     //get tile set
     if(bg_window_tile_mode == 0){
@@ -359,8 +360,8 @@ void ppu_pixel_transfer(){
                 
                 //need to check we are in the right x position
                 if((x >= (oam_x_pos - TILE_SIZE)) && (x < oam_x_pos)){
-                    
-                    int sprite_line_offset = lcd_line - gb_mem_map[oam + OAM_Y_POS];
+                    //sprite y pos is 0 to 160
+                    int sprite_line_offset = lcd_line+16 - gb_mem_map[oam + OAM_Y_POS];
                     sprite_line_1 = 0;
                     sprite_line_2 = 0;
                     sprite_list_num = i;
@@ -413,11 +414,11 @@ void ppu_pixel_transfer(){
             if(input_buffer_2 & 0x8000){
                 bg_colour = bg_pallet[3];
             } else {
-                bg_colour = bg_pallet[2];
+                bg_colour = bg_pallet[1];
             }
         } else {
             if(input_buffer_2 & 0x8000){
-                bg_colour = bg_pallet[1];
+                bg_colour = bg_pallet[2];
             } else {
                 bg_colour = bg_pallet[0];
             }
@@ -451,11 +452,11 @@ void ppu_pixel_transfer(){
                         if(sprite_line_2 & 0x80){
                             sprite_colour = pallet[3];
                         } else {
-                            sprite_colour = pallet[2];
+                            sprite_colour = pallet[1];
                         }
                     } else {
                         if(sprite_line_2 & 0x80){
-                            sprite_colour = pallet[1];
+                            sprite_colour = pallet[2];
                         }
                     }
                     
@@ -507,6 +508,7 @@ uint8_t ppu(){
     //have we received a oma dma request?
     if(gb_mem_map[LCD_DMA] != 0){
         oam_dma();
+        gb_mem_map[LCD_DMA]=0;
     }
 
     // if we are in a new mode run the appropriate code
