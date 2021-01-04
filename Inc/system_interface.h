@@ -3,7 +3,7 @@
 
 #include "gb_common.h"
 
-int get_key_press();
+uint16_t get_key_press();
 void init_screen();
 void free_screen();
 void update_screen(uint8_t line);
@@ -18,7 +18,7 @@ void update_screen(uint8_t line);
 #define KEY_B       BIT_5
 #define KEY_A       BIT_4
 
-#define KEY_DEBUG   -2
-#define KEY_EXIT    -1
+#define KEY_DEBUG   0xFFFF
+#define KEY_EXIT    0xFFFE
 
 #endif

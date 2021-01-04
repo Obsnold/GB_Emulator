@@ -49,7 +49,7 @@ int main(int argc, char *argv[] )
       int keys = get_key_press();
 
       //if escape pressed then exit
-      if(keys == -1){
+      if(keys == KEY_EXIT){
          print_lcd();
          print_cpu_reg();
          print_opcode();

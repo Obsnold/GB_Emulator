@@ -8,13 +8,11 @@ void gb_input(uint8_t keys){
     if(keys != previous_keys){
         SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_JOYPAD);
     }
-    
-    if(gb_mem_map[JOYPAD_INPUT] & JOYPAD_BUT){
-        gb_mem_map[JOYPAD_INPUT] = 0xF0 | (keys & 0x0F);
-    }
-    if(gb_mem_map[JOYPAD_INPUT] & JOYPAD_DIR){
-        gb_mem_map[JOYPAD_INPUT] = 0xF0 | (keys >> 4);
-    }
 
+    if(GET_MEM_MAP(JOYPAD_INPUT, JOYPAD_BUT)==0){
+        gb_mem_map[JOYPAD_INPUT] = 0xF0 | (keys >> 4);
+    } else if(GET_MEM_MAP(JOYPAD_INPUT, JOYPAD_DIR)==0){
+        gb_mem_map[JOYPAD_INPUT] = 0xF0 | (keys & 0x0F);
+    } 
     previous_keys = keys;
 }

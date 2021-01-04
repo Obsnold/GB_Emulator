@@ -84,7 +84,7 @@ void update_screen(uint8_t line){
     }
 }
 
-int get_key_press(){
+uint16_t get_key_press(){
     int ret = 0xFF;
     int numkeys = 0;
 
@@ -95,39 +95,44 @@ int get_key_press(){
     // handle normal key presses
     if( array[SDL_SCANCODE_UP] == 1 )
     {
-        ret |= KEY_UP;
+        DEBUG_PRINT("KEY_UP\n");
+        ret ^= KEY_UP;
     }
     if( array[SDL_SCANCODE_DOWN] == 1 )
     {
-        ret |= KEY_DOWN;
+        DEBUG_PRINT("KEY_DOWN\n");
+        ret ^= KEY_DOWN;
     }
     if( array[SDL_SCANCODE_LEFT] == 1 )
     {
-        ret |= KEY_LEFT;
+        DEBUG_PRINT("KEY_LEFT\n");
+        ret ^= KEY_LEFT;
     }
     if( array[SDL_SCANCODE_RIGHT] == 1 )
     {
-        ret |= KEY_RIGHT;
+        DEBUG_PRINT("KEY_RIGHT\n");
+        ret ^= KEY_RIGHT;
     }
     if( array[SDL_SCANCODE_A] == 1 )
     {
-        ret |= KEY_A;
+        DEBUG_PRINT("KEY_A\n");
+        ret ^= KEY_A;
     }
     if( array[SDL_SCANCODE_S] == 1 )
     {
-        ret |= KEY_B;
+        DEBUG_PRINT("KEY_B\n");
+        ret ^= KEY_B;
     }
     if( array[SDL_SCANCODE_RETURN] == 1 )
     {
-        ret |= KEY_START;
+        DEBUG_PRINT("KEY_START\n");
+        ret ^= KEY_START;
     }
     if( array[SDL_SCANCODE_SPACE] == 1 )
     {
-        ret |= KEY_SELECT;
+        DEBUG_PRINT("KEY_SELECT\n");
+        ret ^= KEY_SELECT;
     }
-
-    // invert selection as 0 is pressed on the gameboy
-    ret= ~ret & 0xFF;
 
     // hanlde special key presses
     if( array[SDL_SCANCODE_BACKSPACE] == 1 )
