@@ -132,6 +132,24 @@ void ppu_pixel_transfer(){
         map = BG_MAP_1;
     }
 
+    //set the correct background palette
+    for(int i =0; i < 4; i++){
+        switch(GET_MEM_MAP(LCD_BGP,0x03 << (i*2))){
+            case 0:
+            bg_pallet[i] = PAL_WHITE;
+            break;
+            case 1:
+            bg_pallet[i] = PAL_L_GRAY;
+            break;
+            case 2:
+            bg_pallet[i] = PAL_D_GRAY;
+            break;
+            case 3:
+            bg_pallet[i] = PAL_BLACK;
+            break;
+        }
+    }
+
     //get tile set
     if(bg_window_tile_mode == 0){
         bg_window_tile_set = TILE_RAM_2;
@@ -360,15 +378,15 @@ void ppu_pixel_transfer(){
         uint32_t bg_colour = bg_pallet[0];
         if(input_buffer_1 & 0x8000){
             if(input_buffer_2 & 0x8000){
-                bg_colour = bg_pallet[0];
+                bg_colour = bg_pallet[3];
             } else {
-                bg_colour = bg_pallet[1];
+                bg_colour = bg_pallet[2];
             }
         } else {
             if(input_buffer_2 & 0x8000){
-                bg_colour = bg_pallet[2];
+                bg_colour = bg_pallet[1];
             } else {
-                bg_colour = bg_pallet[3];
+                bg_colour = bg_pallet[0];
             }
         }
         
