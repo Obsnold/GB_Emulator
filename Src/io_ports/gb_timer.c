@@ -40,7 +40,7 @@ void gb_timer(){
         }
 
         if((timer - clock_timer) > clock_timer_limit){
-            div_timer = timer;
+            clock_timer = timer;
             uint8_t temp = gb_mem_map[TIMER_TIMA];
             gb_mem_map[TIMER_TIMA]++;
             if(temp == 0xFF && gb_mem_map[TIMER_TIMA] == 00){
