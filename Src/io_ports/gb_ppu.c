@@ -68,8 +68,8 @@ uint8_t oam_list[10];
 uint8_t oam_list_size = 0;
 
 uint32_t bg_pallet[4] = {PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY, PAL_BLACK};
+uint32_t sp_pallet_0[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
 uint32_t sp_pallet_1[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
-uint32_t sp_pallet_2[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
 
 
 
@@ -132,8 +132,9 @@ void ppu_pixel_transfer(){
         map = BG_MAP_1;
     }
 
-    //set the correct background palette
+    
     for(int i =0; i < 4; i++){
+        //set the correct background palette
         switch(GET_MEM_MAP(LCD_BGP,0x03 << (i*2))){
             case 0:
             bg_pallet[i] = PAL_WHITE;
@@ -148,6 +149,38 @@ void ppu_pixel_transfer(){
             bg_pallet[i] = PAL_BLACK;
             break;
         }
+
+        //set the correct OAM palettes
+        switch(GET_MEM_MAP(LCD_OBP0,0x03 << (i*2))){
+            case 0:
+            sp_pallet_0[i] = PAL_WHITE;
+            break;
+            case 1:
+            sp_pallet_0[i] = PAL_L_GRAY;
+            break;
+            case 2:
+            sp_pallet_0[i] = PAL_D_GRAY;
+            break;
+            case 3:
+            sp_pallet_0[i] = PAL_BLACK;
+            break;
+        }
+
+        switch(GET_MEM_MAP(LCD_OBP1,0x03 << (i*2))){
+            case 0:
+            sp_pallet_1[i] = PAL_WHITE;
+            break;
+            case 1:
+            sp_pallet_1[i] = PAL_L_GRAY;
+            break;
+            case 2:
+            sp_pallet_1[i] = PAL_D_GRAY;
+            break;
+            case 3:
+            sp_pallet_1[i] = PAL_BLACK;
+            break;
+        }
+
     }
 
     //get tile set
@@ -404,9 +437,9 @@ void ppu_pixel_transfer(){
                 
                 //check the apllet to use
                 if(GET_MEM_MAP((oam + OAM_FLAGS), OAM_FLAGS_PALETTE_NO) == 0){
-                    pallet = sp_pallet_1;
+                    pallet = sp_pallet_0;
                 } else {
-                    pallet = sp_pallet_2;
+                    pallet = sp_pallet_1;
                 }
 
                 //need to check sprite priority
@@ -416,13 +449,13 @@ void ppu_pixel_transfer(){
                 ((input_buffer_1 & 0x80) == 0) && ((input_buffer_2 & 0x80) == 0))){
                     if(sprite_line_1 & 0x80){
                         if(sprite_line_2 & 0x80){
-                            sprite_colour = pallet[1];
+                            sprite_colour = pallet[3];
                         } else {
                             sprite_colour = pallet[2];
                         }
                     } else {
                         if(sprite_line_2 & 0x80){
-                            sprite_colour = pallet[3];
+                            sprite_colour = pallet[1];
                         }
                     }
                     
