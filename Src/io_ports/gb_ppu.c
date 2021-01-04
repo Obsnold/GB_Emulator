@@ -75,18 +75,18 @@ uint32_t sp_pallet_2[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
 
 
 void ppu_oam_search(){
-    uint8_t line = gb_mem_map[LCD_LY];
+    uint8_t lcd_line = gb_mem_map[LCD_LY];
     oam_list_size = 0;
     //search for all visible sprites
     for(int i = 0; i < OAM_TABLE_SIZE; i++){
-        //check x > 0, check line >= y,  line < y+8
+        //check x > 0, check lcd_line >= y,  lcd_line < y+8
         if( (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS] > 0) &&
-            (line >= gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] ) &&
-            (line < (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] + TILE_SIZE))){
-                //if sprite is on the line then add to list
+            (lcd_line >= gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] ) &&
+            (lcd_line < (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] + TILE_SIZE))){
+                //if sprite is on the lcd_line then add to list
                 oam_list[oam_list_size] = i;
                 oam_list_size++;
-                //limit of 10 sprites per line
+                //limit of 10 sprites per lcd_line
                 if(oam_list_size == 10){
                     break;
                 }
@@ -105,7 +105,7 @@ unsigned char reverse_bits(unsigned char b) {
 void ppu_pixel_transfer(){
     uint8_t screen_x = gb_mem_map[LCD_SCX];
     uint8_t screen_y = gb_mem_map[LCD_SCY];
-    uint8_t line = gb_mem_map[LCD_LY];
+    uint8_t lcd_line = gb_mem_map[LCD_LY];
     int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
     bool window_enabled = false;
     bool display_sprite = false;
@@ -121,7 +121,7 @@ void ppu_pixel_transfer(){
     uint8_t sprite_buf_shift_count = 0;
 
     //do we need to display the window on this line?
-    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_WINDOW_ENABLE) && (line >= gb_mem_map[LCD_WY])){
+    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_WINDOW_ENABLE) && (lcd_line >= gb_mem_map[LCD_WY])){
             window_enabled = true;
     }
     
@@ -141,11 +141,11 @@ void ppu_pixel_transfer(){
     
     // work out position of start tile in map
     int map_tile_x = screen_x/TILE_SIZE;
-    int map_tile_y = (screen_y+line)/TILE_SIZE;
+    int map_tile_y = (screen_y+lcd_line)/TILE_SIZE;
 
     //get start pixels from tile
     int tile_pixel_x = screen_x - (map_tile_x*TILE_SIZE);
-    int tile_pixel_y = (screen_y+line) - (map_tile_y*TILE_SIZE);
+    int tile_pixel_y = (screen_y+lcd_line) - (map_tile_y*TILE_SIZE);
     
     //deal with going off the edge of the screen
     if(map_tile_y >= BG_SIZE){
@@ -153,7 +153,7 @@ void ppu_pixel_transfer(){
     }
     
     // get offsete for working out tile poition
-    // these wont change as it the line is the same
+    // these wont change as it the lcd_line is the same
     int map_line = map_tile_y*BG_SIZE;
     int tile_line_offset = tile_pixel_y*2;
 
@@ -246,7 +246,7 @@ void ppu_pixel_transfer(){
 
             //reset tilepointers to window map
             //window always starts at 0,0 overlayed starting at wx wy
-            int window_line=(line - gb_mem_map[LCD_WY]);
+            int window_line=(lcd_line - gb_mem_map[LCD_WY]);
             map_tile_x = 0;
             map_tile_y = window_line/TILE_SIZE;
 
@@ -260,7 +260,7 @@ void ppu_pixel_transfer(){
             }
             
             // get offsete for working out tile poition
-            // these wont change as it the line is the same
+            // these wont change as it the lcd_line is the same
             map_line = map_tile_y*BG_SIZE;
             tile_line_offset = tile_pixel_y*2;
 
@@ -309,7 +309,7 @@ void ppu_pixel_transfer(){
                 //need to check we are in the right x position
                 if((x >= (oam_x_pos - TILE_SIZE)) && (x < oam_x_pos)){
                     
-                    int sprite_line_offset = line - gb_mem_map[oam + OAM_Y_POS];
+                    int sprite_line_offset = lcd_line - gb_mem_map[oam + OAM_Y_POS];
                     sprite_line_1 = 0;
                     sprite_line_2 = 0;
                     sprite_list_num = i;
@@ -373,7 +373,7 @@ void ppu_pixel_transfer(){
         }
         
         //draw pixel to display
-        gb_display[x][line] = bg_colour;
+        gb_display[x][lcd_line] = bg_colour;
 
         //  do we need to overlay a sprite?
         if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_ENABLE) && (sprite_buf_shift_count < TILE_SIZE) && display_sprite){
@@ -409,7 +409,7 @@ void ppu_pixel_transfer(){
                     }
                     
                     //draw pixel to display
-                    gb_display[x][line] = sprite_colour;
+                    gb_display[x][lcd_line] = sprite_colour;
                 }
             }
 
