@@ -149,32 +149,9 @@ uint8_t get_mem_map_8(uint16_t reg){
 
 
 bool set_mem_map_8(uint16_t reg, uint8_t data){
-   // uint8_t lData = gb_mem_map[reg];
-  /* if(reg < TILE_RAM_0 ){
+    uint8_t lData = gb_mem_map[reg];
+   if(reg < TILE_RAM_0 ){
         // rom banks need to check for mbc and other controler chips
-        switch(gb_mem_map[TYPE_ROM]){
-            case TYPE_ROM_MBC1:
-            case TYPE_ROM_MBC1_RAM:
-            case TYPE_ROM_MBC1_RAM_BAT:
-                if(reg <= 0x1FFF){ //RAM enable
-
-                } else if(reg <= 0x3FFF){ //ROM Bank Number
-                    load_membank(lData & 0x1F);
-                    PRINT("SWITCH BANK %d\n", lData & 0x1F);
-                } else if(reg <= 0x5FFF){ //RAM Bank Number
-
-                } else if (reg <= 0x7FFF){ //ROM?RAM select mode
-
-                }
-            break;
-            case TYPE_ROM_MBC2:
-            case TYPE_ROM_MBC2_BAT:
-
-            break;
-
-            default:
-            break;
-        }
     } else if(reg >= TILE_RAM_0 && reg < CART_RAM){
         // VRAM
         lData = data;
@@ -192,7 +169,7 @@ bool set_mem_map_8(uint16_t reg, uint8_t data){
         // echo ram 
         // mirrors work ram 1 and 2
         // nintendo says not to use 
-        lData = data;
+        //lData = data;
     } else if(reg >= OAM_TABLE && reg < NA_MEM){
         // OAM TAble
         // need to check if OAM is accesible
@@ -214,8 +191,8 @@ bool set_mem_map_8(uint16_t reg, uint8_t data){
     } if(reg == INTERRUPT_EN){
         // Interrupt enable
         lData = data;
-    }*/
-    gb_mem_map[reg] = data;
+    }
+    gb_mem_map[reg] = lData;
     return true;
 }
 
