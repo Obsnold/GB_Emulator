@@ -499,7 +499,7 @@ void ppu_v_blank(){
 
 void oam_dma(){
     uint16_t source = gb_mem_map[LCD_DMA] * 0x100;
-    memcpy(&gb_mem_map[OAM_TABLE],&gb_mem_map[source],0x100);
+    memcpy(&gb_mem_map[OAM_TABLE],&gb_mem_map[source],0xA0);
 }
 
 uint8_t ppu(){
