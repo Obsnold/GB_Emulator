@@ -481,15 +481,24 @@ uint8_t ppu(){
         switch(ppu_mode){
             case LCD_STAT_MODE_OAM:
                 ppu_oam_search();
+                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_OAM_INTR_EN)){
+                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                }
             break;
             case LCD_STAT_MODE_PIXEL_TRANS:
                 ppu_pixel_transfer();
             break;
             case LCD_STAT_MODE_HBLNK:
                 ppu_h_blank();
+                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_HBLNK_INTR_EN)){
+                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                }
             break;
             case LCD_STAT_MODE_VBLNK:
                 ppu_v_blank();
+                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_VBLNK_INTR_EN)){
+                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                }
             break;
             default:
             //error
@@ -518,7 +527,7 @@ uint8_t ppu(){
                 ppu_cycles_count = H_BLANK_CYCLES;
             break;
             case LCD_STAT_MODE_HBLNK:
-                if(gb_mem_map[LCD_LY] > GB_SCREEN_HEIGHT){
+                if(gb_mem_map[LCD_LY] >= GB_SCREEN_HEIGHT){
                     CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
                     SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_VBLNK);
                     ppu_cycles_count = V_BLANK_STEP_CYCLES;
@@ -527,8 +536,10 @@ uint8_t ppu(){
                     SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
                     ppu_cycles_count = OAM_SEARCH_CYCLES;
                 }
-                if(gb_mem_map[LCD_LY] == gb_mem_map[LCD_LYC]){
-                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_LCY_INTR_EN)){
+                    if(gb_mem_map[LCD_LY] == gb_mem_map[LCD_LYC]){
+                        SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                    }
                 }
             break;
             case LCD_STAT_MODE_VBLNK:
