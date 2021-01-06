@@ -446,8 +446,8 @@ void ppu_pixel_transfer(){
                 //need to check sprite priority
                 int priority = GET_MEM_MAP(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
 
-                if((priority == 0) || (priority &&
-                ((input_buffer_1 & 0x80) == 0) && ((input_buffer_2 & 0x80) == 0))){
+                if((priority == 0) || 
+                (priority > 0 && ((input_buffer_1 & 0x8000) == 0) && ((input_buffer_2 & 0x8000) == 0))){
                     if(sprite_line_1 & 0x80){
                         if(sprite_line_2 & 0x80){
                             sprite_colour = pallet[3];
