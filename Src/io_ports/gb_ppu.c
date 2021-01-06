@@ -547,7 +547,7 @@ uint8_t ppu(){
     prev_tick = tick;
 
     // If the cycle time has elapsed set the appropriate flags and change the cycle count
-    if (ppu_cycles > (ppu_cycles_count* 250)){
+    if (ppu_cycles > (ppu_cycles_count* CYCLE_TIME)){
         DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
         ppu_cycles = 0;
         switch (ppu_mode){

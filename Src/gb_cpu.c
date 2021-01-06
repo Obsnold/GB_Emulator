@@ -5,6 +5,7 @@
 
 uint8_t current_cycle_time = 0;
 
+
 // cpu modes and flags
 enum cpu_power power_mode;
 bool interrupts_enabled = false;
@@ -79,7 +80,7 @@ void gb_cpu(){
 
     //if no interrupts then process normally
     if(power_mode == PWR_NORMAL){
-        if(cpu_cycles > (current_cycle_time * 250)){
+        if(cpu_cycles > (current_cycle_time * CYCLE_TIME)){
             //if(CPU_REG.PC<0x235){
                 //if(CPU_REG.PC>=0x0600 && CPU_REG.PC<=0x060f){
                     //print_cpu_reg();

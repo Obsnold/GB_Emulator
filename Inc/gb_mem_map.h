@@ -23,6 +23,8 @@
 	$0000-$00FF 	Restart and Interrupt Vectors
 */
 
+#define CYCLE_TIME 954 //clock tick in nano seconds based on 1MHz clock
+
 #define GB_MEM_SIZE         0xFFFF
 
 #define INTERRUPT_EN   		0xFFFF
