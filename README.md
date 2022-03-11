@@ -11,6 +11,7 @@ currently it can run Tetris and Dr Mario.
   * Exit - Esc
 
 ## Build Instructions
+Requires Linux and SDL2.
   * browse to directory
   * run make
 
