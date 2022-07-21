@@ -51,15 +51,26 @@ void free_screen(){
 #define rgb888_green_4 0x0F380F
 
 int gLine = 0;
+bool g_enable_lcd = false;
+
+void enable_lcd(bool set){
+    g_enable_lcd = set;
+}
 
 void update_screen(uint8_t line){
+    
     if(line != gLine){
         gLine = line;
-        for(int x = 0; x < GB_SCREEN_WIDTH; x++){
-                int pixel = (line * GB_SCREEN_WIDTH * RGB_CHANNELS)+(x*RGB_CHANNELS);
-                pixel_screen[pixel] = ((gb_display[x][line] & 0xFF0000) >> 0x10);
-                pixel_screen[pixel+1] = ((gb_display[x][line] & 0xFF00) >> 0x08);
-                pixel_screen[pixel+2] = (gb_display[x][line] & 0xFF);
+        if(g_enable_lcd){
+            for(int x = 0; x < GB_SCREEN_WIDTH; x++){
+                    int pixel = (line * GB_SCREEN_WIDTH * RGB_CHANNELS)+(x*RGB_CHANNELS);
+                    pixel_screen[pixel] = ((gb_display[x][line] & 0xFF0000) >> 0x10);
+                    pixel_screen[pixel+1] = ((gb_display[x][line] & 0xFF00) >> 0x08);
+                    pixel_screen[pixel+2] = (gb_display[x][line] & 0xFF);
+            }
+        } else {
+            
+            memset(pixel_screen, 0x00, (GB_SCREEN_HEIGHT * GB_SCREEN_WIDTH * RGB_CHANNELS * SCREEN_MULT));
         }
 
         if(line == 0){

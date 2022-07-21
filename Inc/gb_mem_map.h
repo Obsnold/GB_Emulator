@@ -45,6 +45,13 @@
 #define CART_ROM_0          0x0000
 
 #define CART_MB_SIZE		0x4000
+#define CART_RAM_MB_SIZE	0x2000
+
+//MBC1
+#define MBC1_REG_RAM_EN 0x2000
+#define MBC1_REG_ROM_BANK_NUM 0x4000
+#define MBC1_REG_RAM_BANK_NUM 0x6000
+#define MBC1_REG_BANK_MODE_SEL 0x8000
 
 //interupt and start addr locations
 #define RESTART_ADDR_00		0x0000
@@ -89,6 +96,7 @@
 
 //CART_TYPE
 #define TYPE_ROM						0x02
+#define TYPE_ROM_NO_MBC					0x00
 #define TYPE_ROM_MBC1					0x01
 #define TYPE_ROM_MBC1_RAM				0x02
 #define TYPE_ROM_MBC1_RAM_BAT			0x03
@@ -136,6 +144,7 @@
 #define RAM_SIZE_8KB	0x02
 #define RAM_SIZE_32KB	0x03
 #define RAM_SIZE_128KB	0x04
+#define RAM_SIZE_64KB	0x05
 
 //CART_REGION
 #define REGION_JAP		0x00

@@ -1,4 +1,4 @@
-#include "gb_load.h"
+#include "gb_cart.h"
 #include "gb_mem_map.h"
 #include "gb_ppu.h"
 #include "gb_cpu.h"
@@ -36,14 +36,14 @@ int main(int argc, char *argv[] )
    cpu_init();
    init_screen(); 
 
-   if(!load_gb_cart(argv[1])){
+   init_mem_map();
+
+   if(gb_cart_load(argv[1]) < 0){
        PRINT("Cannot load cart\n");
    }
 
    print_cart_header();
-
-   init_mem_map();
-   //0.00000025s
+   //print_memory(CART_RAM,GB_RAM_1);
    while(run){
       
       int keys = get_key_press();
@@ -53,9 +53,12 @@ int main(int argc, char *argv[] )
          print_lcd();
          print_cpu_reg();
          print_opcode();
-         print_memory(TILE_RAM_0,BG_MAP_1);
+         //print_memory(CART_RAM,GB_RAM_1);
+        /* print_memory(OAM_TABLE,NA_MEM);
          print_memory(BG_MAP_1,BG_MAP_2);
          print_memory(BG_MAP_2,CART_RAM);
+         print_memory(OAM_TABLE,NA_MEM);*/
+         print_interrupts();
          run = false;
       }
 
@@ -85,19 +88,17 @@ int main(int argc, char *argv[] )
          }
       }
 
-      // TODO change this later so it is handled in the 
-      // mem map or cartidge layer 
-      if(boot_rom && CPU_REG.PC >= 0x100){
-         load_initial_membanks();
-         boot_rom = false;
-      }
-
       // main loop
       gb_cpu();
       ppu();
       gb_timer();
       gb_input(keys);
-      
+     
+      if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_ENABLE)){
+         enable_lcd(true);
+      } else {
+         enable_lcd(false);
+      }
       update_screen(gb_mem_map[LCD_LY]);
    }
    free_screen();

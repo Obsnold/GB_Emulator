@@ -4,7 +4,7 @@
 #include "gb_opcodes.h"
 #include "gb_ppu.h"
 
-#define DEBUG
+//#define DEBUG
 
 void print_step(){
     PRINT("BB-CC-DD-EE-HH-LL-AA-FF-#PC#-#SP#  -  BC-DE-HL-AF-PC-SP  -  Z-C-AS-HC  -  \n");
@@ -149,6 +149,19 @@ void print_lcd(){
     PRINT("LCD_OBP1=%02x \n",gb_mem_map[LCD_OBP1]);
     PRINT("LCD_WY=%02x \n",gb_mem_map[LCD_WY]);
     PRINT("LCD_WX=%02x \n",gb_mem_map[LCD_WX]);
+#endif
+}
+
+void print_interrupts(){
+#ifdef DEBUG
+    PRINT("=================LCD=================\n");
+
+    PRINT("INTERRUPT_ENABLE=%02x \n",gb_mem_map[INTERRUPT_ENABLE]);
+    PRINT("INTERRUPT_V_BLANK=%02x \n",gb_mem_map[INTERRUPT_FLAGS]&INTERRUPT_V_BLANK);
+    PRINT("INTERRUPT_LCD_STAT=%02x \n",gb_mem_map[INTERRUPT_FLAGS]&INTERRUPT_LCD_STAT);
+    PRINT("INTERRUPT_TIMER=%02x \n",gb_mem_map[INTERRUPT_FLAGS]&INTERRUPT_TIMER);
+    PRINT("INTERRUPT_SERIAL=%02x \n",gb_mem_map[INTERRUPT_FLAGS]&INTERRUPT_SERIAL);
+    PRINT("INTERRUPT_JOYPAD=%02x \n",gb_mem_map[INTERRUPT_FLAGS]&INTERRUPT_JOYPAD);
 #endif
 }
 

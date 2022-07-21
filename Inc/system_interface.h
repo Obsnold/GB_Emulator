@@ -7,6 +7,7 @@ uint16_t get_key_press();
 void init_screen();
 void free_screen();
 void update_screen(uint8_t line);
+void enable_lcd(bool set);
 
 #define KEY_DOWN    BIT_3
 #define KEY_UP      BIT_2

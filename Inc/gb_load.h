@@ -3,10 +3,7 @@
 
 #include <stdint.h>
 
-
-int load_gb_cart(char* filename);
-void load_initial_membanks();
-uint8_t* get_cart();
-void load_membank(unsigned int bank);
+int load_raw_file(char* filename, uint8_t** data_out);
+int save_raw_file(char* filename, uint8_t* data_in);
 
 #endif

@@ -1,7 +1,7 @@
 #include "gb_mem_map.h"
 #include "debug_print.h"
 #include "gb_cpu.h"
-#include "gb_load.h"
+#include "gb_cart.h"
 #include <string.h>
 
 #define DEBUG
@@ -35,7 +35,6 @@ uint8_t gb_bootrom[0x100] = {
 
 void init_mem_map(){
     memset(gb_mem_map,0,GB_MEM_SIZE);
-    load_initial_membanks();
 #if 0 //load boot rom
     memcpy(gb_mem_map,gb_bootrom, 0x100);
 #else // set up memory as if bot rom had run
@@ -150,11 +149,64 @@ uint8_t get_mem_map_8(uint16_t reg){
 
 bool set_mem_map_8(uint16_t reg, uint8_t data){
     uint8_t lData = gb_mem_map[reg];
-   if(reg < TILE_RAM_0 ){
+    if(reg < TILE_RAM_0 ){
         // rom banks need to check for mbc and other controler chips
+        switch(gb_mem_map[CART_TYPE]){
+            case TYPE_ROM_MBC1:
+            case TYPE_ROM_MBC1_RAM:
+            case TYPE_ROM_MBC1_RAM_BAT:
+                if(reg < MBC1_REG_RAM_EN){
+                    if(data == 0x00){
+                        gb_cart_set_ram_enabled(false);
+                    } else if (data == 0x0A){
+                        gb_cart_set_ram_enabled(true);
+                    }
+                } else if (reg < MBC1_REG_ROM_BANK_NUM){
+                  //  if(g_banking_mode == 0x00){
+                       // printf("g_rom_bank = %d\n",data);
+                        gb_cart_switch_rom_bank(data);
+                   /* } else {
+                        // TODO fix this
+                        gb_cart_switch_rom_bank(data);
+                    }*/
+                }else if (reg < MBC1_REG_RAM_BANK_NUM){
+                    //printf("g_rom_bank = %d\n",g_rom_bank);
+                    gb_cart_switch_ram_bank(data);
+                }else if (reg < MBC1_REG_BANK_MODE_SEL){
+                    gb_cart_set_banking_mode(data);
+                }
+                break;
+            case TYPE_ROM_MBC2:
+            case TYPE_ROM_MBC2_BAT:
+            case TYPE_ROM_RAM:
+            case TYPE_ROM_RAM_BAT:
+            case TYPE_ROM_MMM01:
+            case TYPE_ROM_MMM01_SRAM:
+            case TYPE_ROM_MMM01_SRAM_BAT:
+            case TYPE_ROM_MBC3_TIMER_BAT:
+            case TYPE_ROM_MBC3_TIMER_RAM_BAT:
+            case TYPE_ROM_MBC3:
+            case TYPE_ROM_MBC3_RAM:
+            case TYPE_ROM_MBC3_RAM_BAT:
+            case TYPE_ROM_MBC5:
+            case TYPE_ROM_MBC5_RAM:
+            case TYPE_ROM_MBC5_RAM_BAT:
+            case TYPE_ROM_MBC5_RUMBL:
+            case TYPE_ROM_MBC5_RUMBL_SRAM:
+            case TYPE_ROM_MBC5_RUMBL_SRAM_BAT:
+            case TYPE_POCKET_CAM:
+            case TYPE_BANDAI_TAMA5:
+            case TYPE_HUDSON_HUC_3:
+            case TYPE_HUDSON_HUC_1:
+            case TYPE_ROM_NO_MBC:
+            default:
+                //do nothing cannot switch ram bank
+                break;
+    }
     } else if(reg >= TILE_RAM_0 && reg < CART_RAM){
         // VRAM
-        lData = data;
+        //if((gb_mem_map[LCD_STAT] & LCD_STAT_MODE) != LCD_STAT_MODE_PIXEL_TRANS)
+            lData = data;
     } else if(reg >= CART_RAM && reg < GB_RAM_1){
         // CART ram if available
         lData = data;
@@ -173,7 +225,10 @@ bool set_mem_map_8(uint16_t reg, uint8_t data){
     } else if(reg >= OAM_TABLE && reg < NA_MEM){
         // OAM TAble
         // need to check if OAM is accesible
-        lData = data;
+        uint8_t ppu_mode = gb_mem_map[LCD_STAT] & LCD_STAT_MODE;
+        if(ppu_mode != LCD_STAT_MODE_PIXEL_TRANS && ppu_mode != LCD_STAT_MODE_OAM)
+            lData = data;
+        
     } else if(reg >= NA_MEM && reg < IO_PORTS){
         // NA MEMORY
         // unusable memory for now just write data 0

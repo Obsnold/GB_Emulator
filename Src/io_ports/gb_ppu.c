@@ -71,7 +71,7 @@ uint32_t bg_pallet[4] = {PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY, PAL_BLACK};
 uint32_t sp_pallet_0[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
 uint32_t sp_pallet_1[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
 
-
+bool lcd_enabled = false;
 
 
 void ppu_oam_search(){
@@ -502,94 +502,113 @@ void oam_dma(){
     memcpy(&gb_mem_map[OAM_TABLE],&gb_mem_map[source],0xA0);
 }
 
+
 uint8_t ppu(){
-    uint8_t ppu_mode = GET_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_ENABLE) ){
+        uint8_t ppu_mode = GET_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
 
-    //have we received a oma dma request?
-    if(gb_mem_map[LCD_DMA] != 0){
-        oam_dma();
-        gb_mem_map[LCD_DMA]=0;
-    }
-
-    // if we are in a new mode run the appropriate code
-    if(ppu_cycles == 0){
-        switch(ppu_mode){
-            case LCD_STAT_MODE_OAM:
-                ppu_oam_search();
-                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_OAM_INTR_EN)){
-                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-                }
-            break;
-            case LCD_STAT_MODE_PIXEL_TRANS:
-                ppu_pixel_transfer();
-            break;
-            case LCD_STAT_MODE_HBLNK:
-                ppu_h_blank();
-                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_HBLNK_INTR_EN)){
-                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-                }
-            break;
-            case LCD_STAT_MODE_VBLNK:
-                ppu_v_blank();
-                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_VBLNK_INTR_EN)){
-                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-                }
-            break;
-            default:
-            //error
-            break;
+        //have we received a oma dma request?
+        if(gb_mem_map[LCD_DMA] != 0){
+            oam_dma();
+            gb_mem_map[LCD_DMA]=0;
         }
-    }
 
-    // get time 
-    unsigned long tick = get_ns();
-    ppu_cycles += tick - prev_tick;
-    prev_tick = tick;
 
-    // If the cycle time has elapsed set the appropriate flags and change the cycle count
-    if (ppu_cycles > (ppu_cycles_count* CYCLE_TIME)){
-        DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
-        ppu_cycles = 0;
-        switch (ppu_mode){
-            case LCD_STAT_MODE_OAM:
-                CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_PIXEL_TRANS);
-                ppu_cycles_count = PIXEL_TRANSFER_CYCLES;
-            break;
-            case LCD_STAT_MODE_PIXEL_TRANS:
-                CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_HBLNK);
-                ppu_cycles_count = H_BLANK_CYCLES;
-            break;
-            case LCD_STAT_MODE_HBLNK:
-                if(gb_mem_map[LCD_LY] >= GB_SCREEN_HEIGHT){
-                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_VBLNK);
-                    ppu_cycles_count = V_BLANK_STEP_CYCLES;
-                } else {
-                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
-                    ppu_cycles_count = OAM_SEARCH_CYCLES;
-                }
-                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_LCY_INTR_EN)){
-                    if(gb_mem_map[LCD_LY] == gb_mem_map[LCD_LYC]){
+        // if we are in a new mode run the appropriate code
+        if(ppu_cycles == 0){
+            switch(ppu_mode){
+                case LCD_STAT_MODE_OAM:
+                    ppu_oam_search();
+                    if(GET_MEM_MAP(LCD_STAT,LCD_STAT_OAM_INTR_EN)){
                         SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
                     }
-                }
-            break;
-            case LCD_STAT_MODE_VBLNK:
-                if(gb_mem_map[LCD_LY] > (GB_SCREEN_HEIGHT + GB_SCREEN_HEIGHT_V_BLANK)){
-                    gb_mem_map[LCD_LY] = 0;
-                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
-                    ppu_cycles_count = OAM_SEARCH_CYCLES;
-                }
-            break;
-            default:
-            //error
-            break;
+                break;
+                case LCD_STAT_MODE_PIXEL_TRANS:
+                    ppu_pixel_transfer();
+                break;
+                case LCD_STAT_MODE_HBLNK:
+                    ppu_h_blank();
+                    if(GET_MEM_MAP(LCD_STAT,LCD_STAT_HBLNK_INTR_EN)){
+                        SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                    }
+                break;
+                case LCD_STAT_MODE_VBLNK:
+                    ppu_v_blank();
+                    if(GET_MEM_MAP(LCD_STAT,LCD_STAT_VBLNK_INTR_EN)){
+                        SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                    }
+                break;
+                default:
+                //error
+                break;
+            }
         }
+
+        // get time 
+        unsigned long tick = get_ns();
+        ppu_cycles += tick - prev_tick;
+        prev_tick = tick;
+
+    
+    
+        // If the cycle time has elapsed set the appropriate flags and change the cycle count
+        if (ppu_cycles > (ppu_cycles_count* CYCLE_TIME)){
+            DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
+            ppu_cycles = 0;
+            switch (ppu_mode){
+                case LCD_STAT_MODE_OAM:
+                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_PIXEL_TRANS);
+                    ppu_cycles_count = PIXEL_TRANSFER_CYCLES;
+                break;
+                case LCD_STAT_MODE_PIXEL_TRANS:
+                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_HBLNK);
+                    ppu_cycles_count = H_BLANK_CYCLES;
+                break;
+                case LCD_STAT_MODE_HBLNK:
+                    if(gb_mem_map[LCD_LY] >= GB_SCREEN_HEIGHT){
+                        CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+                        SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_VBLNK);
+                        ppu_cycles_count = V_BLANK_STEP_CYCLES;
+                    } else {
+                        CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+                        SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
+                        ppu_cycles_count = OAM_SEARCH_CYCLES;
+                    }
+                    if(GET_MEM_MAP(LCD_STAT,LCD_STAT_LCY_INTR_EN)){
+                        if(gb_mem_map[LCD_LY] == gb_mem_map[LCD_LYC]){
+                            SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                        }
+                    }
+                break;
+                case LCD_STAT_MODE_VBLNK:
+                    if(gb_mem_map[LCD_LY] > (GB_SCREEN_HEIGHT + GB_SCREEN_HEIGHT_V_BLANK)){
+                        gb_mem_map[LCD_LY] = 0;
+                        CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+                        SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
+                        ppu_cycles_count = OAM_SEARCH_CYCLES;
+                    }
+                break;
+                default:
+                //error
+                break;
+            }
+        }
+    } else {
+        if(lcd_enabled != GET_MEM_MAP(LCD_CTRL,LCD_CTRL_ENABLE)){
+            gb_mem_map[LCD_LY] = 0;
+            CLR_MEM_MAP(LCD_STAT,0xFF);
+            SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
+            ppu_cycles_count = OAM_SEARCH_CYCLES;
+            ppu_cycles = 0;
+            prev_tick = 0;
+          /*  SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
+            SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);*/
+            printf("asdaksdajksdh\n");
+        }
+        lcd_enabled = GET_MEM_MAP(LCD_CTRL,LCD_CTRL_ENABLE);
     }
-    return ppu_mode;
+    return 0;
 }
 

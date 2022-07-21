@@ -81,12 +81,12 @@ void gb_cpu(){
     //if no interrupts then process normally
     if(power_mode == PWR_NORMAL){
         if(cpu_cycles > (current_cycle_time * CYCLE_TIME)){
-            //if(CPU_REG.PC<0x235){
-                //if(CPU_REG.PC>=0x0600 && CPU_REG.PC<=0x060f){
-                    //print_cpu_reg();
-                    //print_indirect_reg();
-                    //print_opcode();
-                //}
+           // if(CPU_REG.PC<0x235){
+                /*if(CPU_REG.PC>=0x0260 && CPU_REG.PC<=0x0300){
+                    print_cpu_reg();
+                    print_indirect_reg();
+                    print_opcode();
+                }*/
                 uint8_t opcode = gb_mem_map[CPU_REG.PC];
                 uint16_t temp_pc = CPU_REG.PC;
                 CPU_REG.PC += opcode_table[opcode].length;
