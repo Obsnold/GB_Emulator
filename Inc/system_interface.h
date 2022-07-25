@@ -8,6 +8,9 @@ void init_screen();
 void free_screen();
 void update_screen(uint8_t line);
 void enable_lcd(bool set);
+void debug_screen_init();
+void debug_screen_free();
+void debug_screen();
 
 #define KEY_DOWN    BIT_3
 #define KEY_UP      BIT_2
