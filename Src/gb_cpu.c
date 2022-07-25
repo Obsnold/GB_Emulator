@@ -4,7 +4,7 @@
 #include "debug_print.h"
 
 uint8_t current_cycle_time = 0;
-
+struct cpu_reg CPU_REG;
 
 // cpu modes and flags
 enum cpu_power power_mode;

@@ -56,8 +56,9 @@ struct cpu_reg {
         };
         uint16_t SP;
     };
-}CPU_REG;// = {{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}}};
+};//CPU_REG;// = {{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}}};
 
+extern struct cpu_reg CPU_REG;
 
 //flags
 #define ZERO_FLAG       BIT_7
