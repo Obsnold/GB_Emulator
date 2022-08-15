@@ -1,5 +1,6 @@
 #include "gb_timer.h"
 #include "gb_mem_map.h"
+#include "debug_print.h"
 
 unsigned long clock_timer = 0;
 unsigned long div_timer = 0;
@@ -41,13 +42,12 @@ void gb_timer(){
 
         if((timer - clock_timer) > clock_timer_limit){
             clock_timer = timer;
-            uint8_t temp = gb_mem_map[TIMER_TIMA];
-            gb_mem_map[TIMER_TIMA]++;
-            if(temp == 0xFF && gb_mem_map[TIMER_TIMA] == 00){
+            if(gb_mem_map[TIMER_TIMA] == 0xFF){
                 gb_mem_map[TIMER_TIMA] = gb_mem_map[TIMER_TMA];
                 SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_TIMER);
+                //PRINT("TEST------\n");
             }
+            gb_mem_map[TIMER_TIMA]++;
         }
-
     }
 }

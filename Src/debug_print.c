@@ -4,7 +4,7 @@
 #include "gb_opcodes.h"
 #include "gb_ppu.h"
 
-//#define DEBUG
+#define DEBUG
 
 void print_step(){
     PRINT("BB-CC-DD-EE-HH-LL-AA-FF-#PC#-#SP#  -  BC-DE-HL-AF-PC-SP  -  Z-C-AS-HC  -  \n");

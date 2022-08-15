@@ -22,5 +22,6 @@ void set_16_from_8(uint8_t* dest, uint16_t source);
 uint8_t get_16_low(uint16_t* source);
 uint8_t get_16_high(uint16_t* source);
 unsigned long get_ns();
+void sleep_ns(long ns);
 
 #endif

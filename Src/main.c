@@ -9,6 +9,8 @@
 #include "debug_print.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
+
 
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
@@ -35,6 +37,7 @@ int main(int argc, char *argv[] )
    
    cpu_init();
    init_screen(); 
+   //debug_screen_init();
 
    init_mem_map();
 
@@ -42,23 +45,24 @@ int main(int argc, char *argv[] )
        PRINT("Cannot load cart\n");
    }
 
-   print_cart_header();
+   //print_cart_header();
    //print_memory(CART_RAM,GB_RAM_1);
+   long temp;
    while(run){
       
       int keys = get_key_press();
 
       //if escape pressed then exit
       if(keys == KEY_EXIT){
-         print_lcd();
-         print_cpu_reg();
-         print_opcode();
+        // print_lcd();
+        // print_cpu_reg();
+        // print_opcode();
          //print_memory(CART_RAM,GB_RAM_1);
         /* print_memory(OAM_TABLE,NA_MEM);
          print_memory(BG_MAP_1,BG_MAP_2);
          print_memory(BG_MAP_2,CART_RAM);
          print_memory(OAM_TABLE,NA_MEM);*/
-         print_interrupts();
+         //print_interrupts();
          run = false;
       }
 
@@ -100,6 +104,14 @@ int main(int argc, char *argv[] )
          enable_lcd(false);
       }
       update_screen(gb_mem_map[LCD_LY]);
+      /*if(temp %100000 == 0){
+         debug_screen();
+         temp=0;
+         //PRINT("DEBUG_PRINT\n");
+      }
+      temp++;*/
    }
+
    free_screen();
+   //debug_screen_free();
 }
