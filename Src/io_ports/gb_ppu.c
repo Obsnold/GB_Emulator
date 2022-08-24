@@ -79,12 +79,16 @@ bool lcd_enabled = false;
 void ppu_oam_search(){
     uint8_t lcd_line = gb_mem_map[LCD_LY];
     oam_list_size = 0;
+    uint8_t oam_sprite_size = TILE_SIZE;
+    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_SIZE) != 0){
+        oam_sprite_size = TILE_SIZE * 2;
+    } 
     //search for all visible sprites
     for(int i = 0; i < OAM_TABLE_SIZE; i++){
         //check x > 0, check lcd_line >= y,  lcd_line < y+8
         if( (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS] > 0) &&
             (lcd_line+16 >= gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS]) &&
-            (lcd_line+16 < (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] + TILE_SIZE))){
+            (lcd_line+16 < (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] + oam_sprite_size))){
                 //if sprite is on the lcd_line then add to list
                 oam_list[oam_list_size] = i;
                 oam_list_size++;
@@ -228,6 +232,10 @@ void draw_sprites_line(){
     uint8_t lcd_line = gb_mem_map[LCD_LY];
     uint32_t* pallet;
     //check the apllet to use
+    uint8_t oam_sprite_size = TILE_SIZE;
+    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_SIZE) != 0){
+        oam_sprite_size = TILE_SIZE * 2;
+    } 
 
     for(int i = 0; i < oam_list_size; i++){
         uint16_t oam = OAM_TABLE + (oam_list[i] * OAM_SIZE);
@@ -241,12 +249,12 @@ void draw_sprites_line(){
         }
 
         if(GET_MEM_MAP((oam + OAM_FLAGS),OAM_FLAGS_Y_FLIP)){
-                sprite_line_offset = TILE_SIZE - sprite_line_offset -1;
+                sprite_line_offset = oam_sprite_size - sprite_line_offset -1;
         }
 
         uint16_t tile_line = TILE_RAM_0 + (gb_mem_map[oam + OAM_TILE] * TILE_MEM_SIZE) + (sprite_line_offset*2);
 
-        for(int x = 0; x < TILE_SIZE; x++){
+        for(int x = 0; x < oam_sprite_size; x++){
             uint8_t pixel_1 = 0;
             uint8_t pixel_2 = 0;
 
