@@ -20,12 +20,13 @@ void gb_timer(){
     // or 1 tick every 61035ns
     if((timer - div_timer) > 61035){
         div_timer = timer;
-        gb_mem_map[TIMER_DIV]++;
+        gb_mem_map[TIMER_DIV]+=((timer - div_timer) / 61035);
+        //PRINT("TEST-----1-\n");
     }
 
-    if(GET_MEM_MAP(TIMER_TAC,TAC_ENABLE)){
+    if(get_mem_map_bit(TIMER_TAC,TAC_ENABLE)){
         unsigned long  clock_timer_limit = 244141;
-        switch(GET_MEM_MAP(TIMER_TAC,TAC_CLOCK_SELECT)){
+        switch(get_mem_map_bit(TIMER_TAC,TAC_CLOCK_SELECT)){
             case TAC_CLOCK_1024:
                 clock_timer_limit = 244141;
                 break;
@@ -41,13 +42,15 @@ void gb_timer(){
         }
 
         if((timer - clock_timer) > clock_timer_limit){
-            clock_timer = timer;
-            if(gb_mem_map[TIMER_TIMA] == 0xFF){
+            uint8_t temp_time = gb_mem_map[TIMER_TIMA];
+            gb_mem_map[TIMER_TIMA] += ((timer - clock_timer) / clock_timer_limit);
+            //PRINT("TIMER %ld\n",((timer - clock_timer) / clock_timer_limit));
+            if(gb_mem_map[TIMER_TIMA] < temp_time){
                 gb_mem_map[TIMER_TIMA] = gb_mem_map[TIMER_TMA];
-                SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_TIMER);
-                //PRINT("TEST------\n");
+                set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_TIMER);
+                //PRINT("TEST-----3-\n");
             }
-            gb_mem_map[TIMER_TIMA]++;
+            clock_timer = timer;
         }
     }
 }

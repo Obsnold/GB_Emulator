@@ -78,9 +78,9 @@ void init_mem_map(){
 #endif
 }
 
-// the following functions should only be used by cpu instructions
+// the following functions should only be used by cpu/opcode instructions
 // the system itself should directly access memory
-uint8_t get_mem_map_8(uint16_t reg){
+uint8_t op_get_mem_map_8(uint16_t reg){
     uint8_t data = 0;
     if(reg < CART_ROM_1 ){
         // fixed rom bank
@@ -147,7 +147,7 @@ uint8_t get_mem_map_8(uint16_t reg){
 }
 
 
-bool set_mem_map_8(uint16_t reg, uint8_t data){
+bool op_set_mem_map_8(uint16_t reg, uint8_t data){
     uint8_t lData = gb_mem_map[reg];
     if(reg < TILE_RAM_0 ){
         // rom banks need to check for mbc and other controler chips
@@ -251,13 +251,45 @@ bool set_mem_map_8(uint16_t reg, uint8_t data){
     return true;
 }
 
+uint16_t op_get_mem_map_16(uint16_t reg){
+    uint16_t temp = op_get_mem_map_8(reg);
+    return temp + (op_get_mem_map_8(reg+1)<<8);
+}
+
+bool op_set_mem_map_16(uint16_t reg, uint16_t data){
+    op_set_mem_map_8(reg+1,(uint8_t)(data>>8));
+    op_set_mem_map_8(reg,(uint8_t)(data&0xFF));
+    return true;
+}
+
+// following functions are for system/io_ports 
+uint8_t get_mem_map_8(uint16_t reg){
+    return gb_mem_map[reg];
+}
+
+void set_mem_map_8(uint16_t reg, uint8_t data){
+    gb_mem_map[reg] = data;
+}
+
 uint16_t get_mem_map_16(uint16_t reg){
-    uint16_t temp = get_mem_map_8(reg);
-    return temp + (get_mem_map_8(reg+1)<<8);
+    uint16_t temp = op_get_mem_map_8(reg);
+    return temp + (op_get_mem_map_8(reg+1)<<8);
 }
 
 bool set_mem_map_16(uint16_t reg, uint16_t data){
     set_mem_map_8(reg+1,(uint8_t)(data>>8));
     set_mem_map_8(reg,(uint8_t)(data&0xFF));
     return true;
+}
+
+uint8_t get_mem_map_bit(uint16_t reg, uint8_t data){
+    return gb_mem_map[reg] & data;
+}
+
+void set_mem_map_bit(uint16_t reg, uint8_t data){
+    gb_mem_map[reg] |= data;
+}
+
+void clear_mem_map_bit(uint16_t reg, uint8_t data){
+    gb_mem_map[reg] &= ~data;
 }

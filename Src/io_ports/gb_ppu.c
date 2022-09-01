@@ -80,7 +80,7 @@ void ppu_oam_search(){
     uint8_t lcd_line = gb_mem_map[LCD_LY];
     oam_list_size = 0;
     uint8_t oam_sprite_size = TILE_SIZE;
-    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_SIZE) != 0){
+    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_OBJ_SIZE) != 0){
         oam_sprite_size = TILE_SIZE * 2;
     } 
     //search for all visible sprites
@@ -111,7 +111,7 @@ unsigned char reverse_bits(unsigned char b) {
 void set_pallets(){
     for(int i = 0; i < 4; i++){
         //set the correct background palette
-        switch(GET_MEM_MAP(LCD_BGP,0x03 << (i*2)) >> (i*2)){
+        switch(get_mem_map_bit(LCD_BGP,0x03 << (i*2)) >> (i*2)){
             case 0:
             bg_pallet[i] = PAL_WHITE;
             break;
@@ -127,7 +127,7 @@ void set_pallets(){
         }
 
         //set the correct OAM palettes
-        switch(GET_MEM_MAP(LCD_OBP0,0x03 << (i*2)) >> (i*2)){
+        switch(get_mem_map_bit(LCD_OBP0,0x03 << (i*2)) >> (i*2)){
             case 0:
             sp_pallet_0[i] = PAL_WHITE;
             break;
@@ -142,7 +142,7 @@ void set_pallets(){
             break;
         }
 
-        switch(GET_MEM_MAP(LCD_OBP1,0x03 << (i*2)) >> (i*2)){
+        switch(get_mem_map_bit(LCD_OBP1,0x03 << (i*2)) >> (i*2)){
             case 0:
             sp_pallet_1[i] = PAL_WHITE;
             break;
@@ -168,13 +168,13 @@ void draw_background_line(){
     uint8_t screen_x_pos = gb_mem_map[LCD_SCX];
     uint16_t map = 0; // the map address with references to the tiles
     uint16_t bg_window_tile_set = 0; //the address of the tile map set
-    uint8_t bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT); // which addressing method are we using
+    uint8_t bg_window_tile_mode = get_mem_map_bit(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT); // which addressing method are we using
     if( bg_window_tile_mode == 0){
         bg_window_tile_set = TILE_RAM_2;
     } else {
         bg_window_tile_set = TILE_RAM_0;
     }
-    if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
+    if(get_mem_map_bit(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
         map = BG_MAP_2;
     } else {
         map = BG_MAP_1;
@@ -233,7 +233,7 @@ void draw_sprites_line(){
     uint32_t* pallet;
     //check the apllet to use
     uint8_t oam_sprite_size = TILE_SIZE;
-    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_SIZE) != 0){
+    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_OBJ_SIZE) != 0){
         oam_sprite_size = TILE_SIZE * 2;
     } 
 
@@ -242,13 +242,13 @@ void draw_sprites_line(){
         uint8_t oam_x_pos = gb_mem_map[oam + OAM_X_POS];
         uint8_t sprite_line_offset = (lcd_line+16) - gb_mem_map[oam + OAM_Y_POS];
 
-        if(GET_MEM_MAP((oam + OAM_FLAGS), OAM_FLAGS_PALETTE_NO) == 0){
+        if(get_mem_map_bit((oam + OAM_FLAGS), OAM_FLAGS_PALETTE_NO) == 0){
             pallet = sp_pallet_0;
         } else {
             pallet = sp_pallet_1;
         }
 
-        if(GET_MEM_MAP((oam + OAM_FLAGS),OAM_FLAGS_Y_FLIP)){
+        if(get_mem_map_bit((oam + OAM_FLAGS),OAM_FLAGS_Y_FLIP)){
                 sprite_line_offset = oam_sprite_size - sprite_line_offset -1;
         }
 
@@ -258,7 +258,7 @@ void draw_sprites_line(){
             uint8_t pixel_1 = 0;
             uint8_t pixel_2 = 0;
 
-            if(GET_MEM_MAP((oam + OAM_FLAGS),OAM_FLAGS_X_FLIP)){
+            if(get_mem_map_bit((oam + OAM_FLAGS),OAM_FLAGS_X_FLIP)){
                 pixel_1 = (gb_mem_map[tile_line] & (0x01 << x));
                 pixel_2 = (gb_mem_map[tile_line + 1] & (0x01 << x));
             } else {
@@ -272,7 +272,7 @@ void draw_sprites_line(){
             } else if (x_pos >= GB_SCREEN_WIDTH){
                 x_pos = GB_SCREEN_WIDTH -1;
             }
-            int priority = GET_MEM_MAP(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
+            int priority = get_mem_map_bit(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
 
             if((priority == 0) || 
              (gb_display[x_pos][lcd_line] == bg_pallet[0] && priority > 0)){
@@ -296,14 +296,14 @@ void draw_window_line(){
     uint8_t lcd_line = gb_mem_map[LCD_LY];
     if(gb_mem_map[LCD_WY] <= lcd_line){
         uint16_t bg_window_tile_set = 0; //the address of the tile map set
-        uint8_t bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT); // which addressing method are we using
+        uint8_t bg_window_tile_mode = get_mem_map_bit(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT); // which addressing method are we using
         if( bg_window_tile_mode == 0){
             bg_window_tile_set = TILE_RAM_2;
         } else {
             bg_window_tile_set = TILE_RAM_0;
         }
         uint16_t map = BG_MAP_1;
-        if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_WINDOW_MAP_SELECT)){
+        if(get_mem_map_bit(LCD_CTRL, LCD_CTRL_WINDOW_MAP_SELECT)){
             map = BG_MAP_2;
         }
 
@@ -368,7 +368,7 @@ void ppu_h_blank(){
 
 void ppu_v_blank(){
     //set interrupt
-    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
+    set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
     gb_mem_map[LCD_LY]++;
 }
 
@@ -379,8 +379,8 @@ void oam_dma(){
 
 
 uint8_t ppu(){
-    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_ENABLE) ){
-        uint8_t ppu_mode = GET_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
+    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE) ){
+        uint8_t ppu_mode = get_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
 
         //have we received a oma dma request?
         if(gb_mem_map[LCD_DMA] != 0){
@@ -394,31 +394,31 @@ uint8_t ppu(){
             switch(ppu_mode){
                 case LCD_STAT_MODE_OAM:
                     ppu_oam_search();
-                    if(GET_MEM_MAP(LCD_STAT,LCD_STAT_OAM_INTR_EN)){
-                        SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_OAM_INTR_EN)){
+                        set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
                     }
                 break;
                 case LCD_STAT_MODE_PIXEL_TRANS:
                     //ppu_pixel_transfer();
                     set_pallets();
                     draw_background_line();
-                    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_ENABLE)){
+                    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_OBJ_ENABLE)){
                         draw_sprites_line();
                     }
-                    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_WINDOW_ENABLE) && (gb_mem_map[LCD_LY] >= gb_mem_map[LCD_WY])){
+                    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_WINDOW_ENABLE) && (gb_mem_map[LCD_LY] >= gb_mem_map[LCD_WY])){
                         draw_window_line();
                     }
                 break;
                 case LCD_STAT_MODE_HBLNK:
                     ppu_h_blank();
-                    if(GET_MEM_MAP(LCD_STAT,LCD_STAT_HBLNK_INTR_EN)){
-                        SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_HBLNK_INTR_EN)){
+                        set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
                     }
                 break;
                 case LCD_STAT_MODE_VBLNK:
                     ppu_v_blank();
-                    if(GET_MEM_MAP(LCD_STAT,LCD_STAT_VBLNK_INTR_EN)){
-                        SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_VBLNK_INTR_EN)){
+                        set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
                     }
                 break;
                 default:
@@ -440,36 +440,36 @@ uint8_t ppu(){
             ppu_cycles = 0;
             switch (ppu_mode){
                 case LCD_STAT_MODE_OAM:
-                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_PIXEL_TRANS);
+                    clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                    set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_PIXEL_TRANS);
                     ppu_cycles_count = PIXEL_TRANSFER_CYCLES;
                 break;
                 case LCD_STAT_MODE_PIXEL_TRANS:
-                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_HBLNK);
+                    clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                    set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_HBLNK);
                     ppu_cycles_count = H_BLANK_CYCLES;
                 break;
                 case LCD_STAT_MODE_HBLNK:
                     if(gb_mem_map[LCD_LY] >= GB_SCREEN_HEIGHT){
-                        CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                        SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_VBLNK);
+                        clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                        set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_VBLNK);
                         ppu_cycles_count = V_BLANK_STEP_CYCLES;
                     } else {
-                        CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                        SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
+                        clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                        set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_OAM);
                         ppu_cycles_count = OAM_SEARCH_CYCLES;
                     }
-                    if(GET_MEM_MAP(LCD_STAT,LCD_STAT_LCY_INTR_EN)){
+                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_LCY_INTR_EN)){
                         if(gb_mem_map[LCD_LY] == gb_mem_map[LCD_LYC]){
-                            SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                            set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
                         }
                     }
                 break;
                 case LCD_STAT_MODE_VBLNK:
                     if(gb_mem_map[LCD_LY] > (GB_SCREEN_HEIGHT + GB_SCREEN_HEIGHT_V_BLANK)){
                         gb_mem_map[LCD_LY] = 0;
-                        CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                        SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
+                        clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                        set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_OAM);
                         ppu_cycles_count = OAM_SEARCH_CYCLES;
                     }
                 break;
@@ -479,19 +479,19 @@ uint8_t ppu(){
             }
         }
     } else {
-        if(lcd_enabled != GET_MEM_MAP(LCD_CTRL,LCD_CTRL_ENABLE)){
+        if(lcd_enabled != get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE)){
             gb_mem_map[LCD_LY] = 0;
             uint32_t temp23 = 0xFF;
-            CLR_MEM_MAP(LCD_STAT,temp23);
-            SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
+            clear_mem_map_bit(LCD_STAT,temp23);
+            set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_OAM);
             ppu_cycles_count = OAM_SEARCH_CYCLES;
             ppu_cycles = 0;
             prev_tick = 0;
-          /*  SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
-            SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);*/
+          /*  set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
+            set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);*/
             printf("asdaksdajksdh\n");
         }
-        lcd_enabled = GET_MEM_MAP(LCD_CTRL,LCD_CTRL_ENABLE);
+        lcd_enabled = get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE);
     }
     return 0;
 }

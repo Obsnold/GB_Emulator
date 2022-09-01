@@ -216,7 +216,8 @@ void draw_background(){
     //256*256 pixels
     uint16_t map = 0; // the map address with references to the tiles
     uint16_t bg_window_tile_set = 0; //the address of the tile map set
-    uint8_t bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT); // which addressing method are we using
+    uint8_t bg_window_tile_mode = get_mem_map_bit(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT); // which addressing method are we using
+
     if( bg_window_tile_mode == 0){
        // PRINT("TILE_RAM_2\n");
         bg_window_tile_set = TILE_RAM_2;
@@ -224,7 +225,8 @@ void draw_background(){
         bg_window_tile_set = TILE_RAM_0;
         //PRINT("TILE_RAM_0\n");
     }
-    if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
+
+    if(get_mem_map_bit(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
         map = BG_MAP_2;
         //PRINT("BG_MAP_2\n");
     } else {
@@ -261,6 +263,14 @@ void debug_screen_free(){
 	SDL_DestroyWindow(d_window);
 }
 
+void debug_draw_tile_ram(){
+    for(int i = 0; i < 16; i++){ // columns
+        for(int j = 0; j < 24; j++){ //Rows
+            draw_tile(i*8, j*8, TILE_RAM_0+((i*16) + (j*16*16)));
+        }
+    }
+}
+
 void debug_screen(){
     //Draw Tile RAM
     /*
@@ -270,7 +280,8 @@ void debug_screen(){
         }
     }*/
 
-    draw_background();
+    ///draw_background();
+    debug_draw_tile_ram();
 
     SDL_SetRenderDrawColor(d_renderer, 0, 0, 0, 255);
     SDL_RenderClear(d_renderer);

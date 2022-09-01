@@ -269,13 +269,18 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 
 extern uint8_t gb_mem_map[GB_MEM_SIZE];
 
-#define GET_MEM_MAP(REG, BIT) (gb_mem_map[REG] & BIT)
-#define SET_MEM_MAP(REG, BIT) (gb_mem_map[REG] |= BIT)
-#define CLR_MEM_MAP(REG, BIT) (gb_mem_map[REG] &= ~BIT)
-
 void init_mem_map();
+
+uint8_t op_get_mem_map_8(uint16_t reg);
+bool op_set_mem_map_8(uint16_t reg, uint8_t data);
+uint16_t op_get_mem_map_16(uint16_t reg);
+bool op_set_mem_map_16(uint16_t reg, uint16_t data);
+
 uint8_t get_mem_map_8(uint16_t reg);
-bool set_mem_map_8(uint16_t reg, uint8_t data);
+void set_mem_map_8(uint16_t reg, uint8_t data);
+void set_mem_map_bit(uint16_t reg, uint8_t data);
+void clear_mem_map_bit(uint16_t reg, uint8_t data);
+uint8_t get_mem_map_bit(uint16_t reg, uint8_t data);
 uint16_t get_mem_map_16(uint16_t reg);
 bool set_mem_map_16(uint16_t reg, uint16_t data);
 

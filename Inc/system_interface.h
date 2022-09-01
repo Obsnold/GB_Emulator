@@ -12,6 +12,7 @@ void debug_screen_init();
 void debug_screen_free();
 void debug_screen();
 void debug_screen_select(uint8_t key);
+void debug_draw_tile_ram();
 
 #define KEY_DOWN    BIT_3
 #define KEY_UP      BIT_2

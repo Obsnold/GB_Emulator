@@ -4,8 +4,6 @@
 #include "gb_opcodes.h"
 
 
-
-
 struct gb_opcode opcode_table[OPCODE_TABLE_SIZE] = {
     {"NOP",         1, CYCLE_1,                 &opcode_nop        /* , NULL, NULL, NULL*/},
     {"LD BC u16",   3, CYCLE_3,                 &opcode_16_ld      /* , &CPU_REG.BC, &u16_pointer, NULL*/},

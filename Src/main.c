@@ -30,7 +30,6 @@ int main(int argc, char *argv[] )
    if( argc < 2 ) {
       PRINT("Incorrect arguments\n");
       return 0;
-      
    }
    PRINT("%s loading %s\n",  argv[0], argv[1]);
    
@@ -98,7 +97,7 @@ int main(int argc, char *argv[] )
       gb_timer();
       gb_input(keys);
      
-      if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_ENABLE)){
+      if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE)){
          enable_lcd(true);
       } else {
          enable_lcd(false);

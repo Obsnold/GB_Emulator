@@ -51,21 +51,21 @@ void gb_cpu(){
     //check interrupts
     if(interrupts_enabled){
         uint16_t interrupt_address = 0;
-        if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_V_BLANK) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK)){
+        if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_V_BLANK) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK)){
             interrupt_address = 0x40;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
-        } else if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_LCD_STAT) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT)){
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
+        } else if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_LCD_STAT) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT)){
             interrupt_address = 0x48;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-        } else if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_TIMER) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_TIMER)){
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+        } else if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_TIMER) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_TIMER)){
             interrupt_address = 0x50;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_TIMER);
-        } else if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_SERIAL) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_SERIAL)){
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_TIMER);
+        } else if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_SERIAL) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_SERIAL)){
             interrupt_address = 0x58;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_SERIAL);
-        } else if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_JOYPAD) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_JOYPAD)){
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_SERIAL);
+        } else if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_JOYPAD) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_JOYPAD)){
             interrupt_address = 0x60;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_JOYPAD);
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_JOYPAD);
         }
 
 
@@ -82,11 +82,11 @@ void gb_cpu(){
     if(power_mode == PWR_NORMAL){
         if(cpu_cycles > (current_cycle_time * CYCLE_TIME)){
            // if(CPU_REG.PC<0x235){
-                if(CPU_REG.PC>=0x0050 && CPU_REG.PC<=0x0058){
+                /*if(CPU_REG.PC>=0x0000 && CPU_REG.PC<=0x0100){
                     print_cpu_reg();
                     print_indirect_reg();
                     print_opcode();
-                }
+                }*/
                 uint8_t opcode = gb_mem_map[CPU_REG.PC];
                 uint16_t temp_pc = CPU_REG.PC;
                 CPU_REG.PC += opcode_table[opcode].length;
