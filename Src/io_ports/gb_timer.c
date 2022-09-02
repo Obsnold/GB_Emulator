@@ -19,10 +19,9 @@ void gb_timer(){
     // divider register is always updated at a rate of 16384Hz
     // or 1 tick every 61035ns
     if((timer - div_timer) > 61035){
-        div_timer = timer;
         uint8_t temp = get_mem_map_8(TIMER_DIV)+((timer - div_timer) / 61035);
         set_mem_map_8(TIMER_DIV, temp);
-        //PRINT("TEST-----1-\n");
+        div_timer = timer;
     }
 
     if(get_mem_map_bit(TIMER_TAC,TAC_ENABLE)){
