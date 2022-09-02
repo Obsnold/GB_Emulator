@@ -10,9 +10,9 @@ void gb_input(uint8_t keys){
     }
 
     if(get_mem_map_bit(JOYPAD_INPUT, JOYPAD_BUT)==0){
-        gb_mem_map[JOYPAD_INPUT] = 0xF0 | (keys >> 4);
+        set_mem_map_8(JOYPAD_INPUT, 0xF0 | (keys >> 4));
     } else if(get_mem_map_bit(JOYPAD_INPUT, JOYPAD_DIR)==0){
-        gb_mem_map[JOYPAD_INPUT] = 0xF0 | (keys & 0x0F);
+        set_mem_map_8(JOYPAD_INPUT, 0xF0 | (keys & 0x0F));
     } 
     previous_keys = keys;
 }

@@ -43,7 +43,7 @@ void gb_cpu(){
     CPU_REG.F &= 0xF0;
 
     if(power_mode == PWR_HALT){
-        if(gb_mem_map[INTERRUPT_ENABLE] & gb_mem_map[INTERRUPT_FLAGS]){
+        if(get_mem_map_8(INTERRUPT_ENABLE) & get_mem_map_8(INTERRUPT_FLAGS)){
             power_mode = PWR_NORMAL;
         }
     }
@@ -87,7 +87,7 @@ void gb_cpu(){
                     print_indirect_reg();
                     print_opcode();
                 }*/
-                uint8_t opcode = gb_mem_map[CPU_REG.PC];
+                uint8_t opcode = get_mem_map_8(CPU_REG.PC);
                 uint16_t temp_pc = CPU_REG.PC;
                 CPU_REG.PC += opcode_table[opcode].length;
                 current_cycle_time = opcode_table[opcode].operation(temp_pc);

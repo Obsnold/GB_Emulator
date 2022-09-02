@@ -31,10 +31,12 @@ int gb_cart_load(char* filename){
     }
 
     //load initial rom into memory
-    memcpy(&gb_mem_map[CART_ROM_0],g_cart, CART_MB_SIZE * 2);
+    for(uint16_t i = 0; i < CART_MB_SIZE * 2; i++){
+        set_mem_map_8(CART_ROM_0+i,g_cart[i]);
+    }
 
     // get values from cart header
-    switch(gb_mem_map[CART_ROM_SIZE]){
+    switch(get_mem_map_8(CART_ROM_SIZE)){
         case ROM_SIZE_1_5MB:
         g_number_of_rom_banks = 96;
         break;
@@ -74,7 +76,7 @@ int gb_cart_load(char* filename){
         break;
     }
 
-    switch(gb_mem_map[CART_RAM_SIZE]){
+    switch(get_mem_map_8(CART_RAM_SIZE)){
         case RAM_SIZE_128KB:
         g_number_of_ram_banks = 16;
         break;
@@ -114,9 +116,9 @@ void gb_cart_switch_rom_bank(unsigned int bank){
     }
 
     if(g_rom_bank < g_number_of_rom_banks){
-        memcpy(&gb_mem_map[CART_ROM_1],
-                (g_cart + (g_rom_bank * CART_MB_SIZE)),
-                CART_MB_SIZE);
+        for(uint16_t i = 0; i < CART_MB_SIZE; i++){
+            set_mem_map_8(CART_ROM_1+i,g_cart[(g_rom_bank * CART_MB_SIZE) + i]);
+        }
     } else {
         DEBUG_PRINT("Error! trying to switch rom membanks");
     }
@@ -128,14 +130,15 @@ void gb_cart_switch_ram_bank(unsigned int bank){
         g_ram_bank = bank & 0x03;
     } else if(bank <= g_number_of_ram_banks){
         //first save existing ram
-        memcpy(g_ram_banks[g_ram_bank-1],
-                &gb_mem_map[CART_RAM],
-                CART_MB_SIZE);
+        for(uint16_t i = 0; i < CART_MB_SIZE; i++){
+            g_ram_banks[g_ram_bank-1][i] = get_mem_map_8(CART_RAM+i);
+        }
+        
         //now load new ram
         g_ram_bank = bank & 0x03;
-        memcpy(&gb_mem_map[CART_RAM],
-                g_ram_banks[g_ram_bank-1],
-                CART_MB_SIZE);
+        for(uint16_t i = 0; i < CART_MB_SIZE; i++){
+            set_mem_map_8(CART_RAM+i,g_ram_banks[g_ram_bank-1][i]);
+        }
         
     } else {
         DEBUG_PRINT("Error! trying to switch ram membanks");

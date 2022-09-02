@@ -267,8 +267,6 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 #define GET_HIGH_NIBBLE(x) ((x & 0xF0) >> 0x04)
 #define GET_LOW_NIBBLE(x) (x & 0x0F)
 
-extern uint8_t gb_mem_map[GB_MEM_SIZE];
-
 void init_mem_map();
 
 uint8_t op_get_mem_map_8(uint16_t reg);

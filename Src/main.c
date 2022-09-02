@@ -102,7 +102,7 @@ int main(int argc, char *argv[] )
       } else {
          enable_lcd(false);
       }
-      update_screen(gb_mem_map[LCD_LY]);
+      update_screen(get_mem_map_8(LCD_LY));
       /*if(temp %100000 == 0){
          debug_screen();
          temp=0;

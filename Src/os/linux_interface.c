@@ -187,8 +187,8 @@ void debug_screen_init(){
 void draw_tile(uint8_t x_pos, uint8_t y_pos, int tile_address){
     for(int x = 0; x < 8; x++){
         for(int y = 0; y < 8; y++){
-            uint8_t pixel_1 = (gb_mem_map[tile_address + (y*2)] & (0x80 >> x));
-            uint8_t pixel_2 = (gb_mem_map[tile_address + (y*2) + 1] & (0x80 >> x));
+            uint8_t pixel_1 = (get_mem_map_8(tile_address + (y*2)) & (0x80 >> x));
+            uint8_t pixel_2 = (get_mem_map_8(tile_address + (y*2) + 1) & (0x80 >> x));
             //PRINT("%02x, %02x\n",pixel_1,pixel_2);
             int pix = 0;
             if(pixel_1){
@@ -237,7 +237,7 @@ void draw_background(){
 
     for(int i = 0; i < 32; i++){ // columns
         for(int j = 0; j < 32; j++){ //Rows
-            int tile = (gb_mem_map[map+i+(j*32)]);
+            int tile = (get_mem_map_8(map+i+(j*32)));
             if(bg_window_tile_mode == 0) {
                 if(tile >= 0x80){
                     tile -= 0x100;
@@ -297,80 +297,38 @@ void debug_screen(){
                 0);
     d_texture = SDL_CreateTextureFromSurface(d_renderer, surface);
     SDL_FreeSurface(surface);
-    //SDL_Rect final_src = {gb_mem_map[LCD_SCX] * SCREEN_MULT, gb_mem_map[LCD_SCY] * SCREEN_MULT, GB_SCREEN_WIDTH * SCREEN_MULT, GB_SCREEN_HEIGHT * SCREEN_MULT};
-    SDL_Rect src_rect = {gb_mem_map[LCD_SCX], gb_mem_map[LCD_SCY], GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT};
+
+    SDL_Rect src_rect = {get_mem_map_8(LCD_SCX), get_mem_map_8(LCD_SCY), GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT};
     SDL_Rect dst_rect = {0, 0, GB_SCREEN_WIDTH*SCREEN_MULT, GB_SCREEN_HEIGHT*SCREEN_MULT};
 
-    if(gb_mem_map[LCD_SCY] + GB_SCREEN_HEIGHT > DEBUG_SCREEN_HEIGHT){         
-        src_rect.h = DEBUG_SCREEN_HEIGHT - gb_mem_map[LCD_SCY];
+    if(get_mem_map_8(LCD_SCY) + GB_SCREEN_HEIGHT > DEBUG_SCREEN_HEIGHT){         
+        src_rect.h = DEBUG_SCREEN_HEIGHT - get_mem_map_8(LCD_SCY);
         dst_rect.h = src_rect.h * SCREEN_MULT;
     }
-    if(gb_mem_map[LCD_SCX] + GB_SCREEN_WIDTH > DEBUG_SCREEN_WIDTH){
-        src_rect.w = DEBUG_SCREEN_WIDTH - gb_mem_map[LCD_SCX];
+    if(get_mem_map_8(LCD_SCX) + GB_SCREEN_WIDTH > DEBUG_SCREEN_WIDTH){
+        src_rect.w = DEBUG_SCREEN_WIDTH - get_mem_map_8(LCD_SCX);
         dst_rect.w = src_rect.w * SCREEN_MULT;
     }
     //PRINT("SRC X=%d Y=%d, W=%d, H=%d\n", src_recgb_displayt.x,src_rect.y,src_rect.w,src_rect.h);
     //PRINT("DST X=%d Y=%d, W=%d, H=%d\n", dst_rect.x,dst_rect.y,dst_rect.w,dst_rect.h);
     SDL_RenderCopy(d_renderer, d_texture, &src_rect, &dst_rect);
 
-    if(GB_SCREEN_WIDTH + gb_mem_map[LCD_SCX] > DEBUG_SCREEN_WIDTH){
-        SDL_Rect src_rect_1 = {0, src_rect.y, (GB_SCREEN_WIDTH + gb_mem_map[LCD_SCX]) - DEBUG_SCREEN_WIDTH, src_rect.h};
+    if(GB_SCREEN_WIDTH + get_mem_map_8(LCD_SCX) > DEBUG_SCREEN_WIDTH){
+        SDL_Rect src_rect_1 = {0, src_rect.y, (GB_SCREEN_WIDTH + get_mem_map_8(LCD_SCX)) - DEBUG_SCREEN_WIDTH, src_rect.h};
         SDL_Rect dst_rect_1 = {src_rect.w*SCREEN_MULT, dst_rect.y, src_rect_1.w * SCREEN_MULT, dst_rect.h};
         SDL_RenderCopy(d_renderer, d_texture, &src_rect_1, &dst_rect_1);
     } 
-    if (GB_SCREEN_HEIGHT + gb_mem_map[LCD_SCY] > DEBUG_SCREEN_HEIGHT){
-        SDL_Rect src_rect_1 = {src_rect.x, 0, src_rect.w,(GB_SCREEN_HEIGHT + gb_mem_map[LCD_SCY]) - DEBUG_SCREEN_HEIGHT};
+    if (GB_SCREEN_HEIGHT + get_mem_map_8(LCD_SCY) > DEBUG_SCREEN_HEIGHT){
+        SDL_Rect src_rect_1 = {src_rect.x, 0, src_rect.w,(GB_SCREEN_HEIGHT + get_mem_map_8(LCD_SCY)) - DEBUG_SCREEN_HEIGHT};
         SDL_Rect dst_rect_1 = {dst_rect.x, src_rect.h*SCREEN_MULT,  dst_rect.w ,src_rect_1.h * SCREEN_MULT};
         SDL_RenderCopy(d_renderer, d_texture, &src_rect_1, &dst_rect_1);
     }
-    if((GB_SCREEN_WIDTH + gb_mem_map[LCD_SCX] > DEBUG_SCREEN_WIDTH) && 
-    (GB_SCREEN_HEIGHT + gb_mem_map[LCD_SCY] > DEBUG_SCREEN_HEIGHT)){
-        SDL_Rect src_rect_1 = {0, 0, (GB_SCREEN_WIDTH + gb_mem_map[LCD_SCX]) - DEBUG_SCREEN_WIDTH,(GB_SCREEN_HEIGHT + gb_mem_map[LCD_SCY]) - DEBUG_SCREEN_HEIGHT};
+    if((GB_SCREEN_WIDTH + get_mem_map_8(LCD_SCX) > DEBUG_SCREEN_WIDTH) && 
+    (GB_SCREEN_HEIGHT + get_mem_map_8(LCD_SCY) > DEBUG_SCREEN_HEIGHT)){
+        SDL_Rect src_rect_1 = {0, 0, (GB_SCREEN_WIDTH + get_mem_map_8(LCD_SCX)) - DEBUG_SCREEN_WIDTH,(GB_SCREEN_HEIGHT + get_mem_map_8(LCD_SCY)) - DEBUG_SCREEN_HEIGHT};
         SDL_Rect dst_rect_1 = {src_rect.w*SCREEN_MULT, src_rect.h*SCREEN_MULT,   src_rect_1.w * SCREEN_MULT ,src_rect_1.h * SCREEN_MULT};
         SDL_RenderCopy(d_renderer, d_texture, &src_rect_1, &dst_rect_1);
     } 
-
-/*
-    if((x != (int)gb_mem_map[LCD_SCX]) && ( y != (int)gb_mem_map[LCD_SCY])){
-
-    } else if(x != gb_mem_map[LCD_SCX] || y != gb_mem_map[LCD_SCY]){
-
-    }*/
-    /*
-    SDL_Rect rectToDraw = {gb_mem_map[LCD_SCX] * SCREEN_MULT, gb_mem_map[LCD_SCY] * SCREEN_MULT, GB_SCREEN_WIDTH * SCREEN_MULT, GB_SCREEN_HEIGHT * SCREEN_MULT};
-    SDL_RenderDrawRect(d_renderer, &rectToDraw);
-    
-    
-    //check if we need additional boxes due to going off the screen
-    int x = gb_mem_map[LCD_SCX];
-    int y = gb_mem_map[LCD_SCY];
-    if(gb_mem_map[LCD_SCY] + GB_SCREEN_HEIGHT > DEBUG_SCREEN_HEIGHT){         
-        y = -(GB_SCREEN_HEIGHT + (DEBUG_SCREEN_HEIGHT - (gb_mem_map[LCD_SCY] + GB_SCREEN_HEIGHT)));
-        //PRINT("HEIGHT %d\n",y);
-        //PRINT("Y %d\n",(int)gb_mem_map[LCD_SCY]);
-    }
-    if(gb_mem_map[LCD_SCX] + GB_SCREEN_WIDTH > DEBUG_SCREEN_WIDTH){
-        x = -(GB_SCREEN_WIDTH + (DEBUG_SCREEN_WIDTH - (gb_mem_map[LCD_SCX] + GB_SCREEN_WIDTH)));
-        //PRINT("WIDTH %d\n",x);
-        //PRINT("X %d\n",(int)gb_mem_map[LCD_SCX]);
-    }
-
-    if((x != (int)gb_mem_map[LCD_SCX]) && ( y != (int)gb_mem_map[LCD_SCY])){
-        SDL_Rect rectToDraw = {gb_mem_map[LCD_SCX] * SCREEN_MULT, y * SCREEN_MULT, GB_SCREEN_WIDTH * SCREEN_MULT, GB_SCREEN_HEIGHT * SCREEN_MULT};
-        SDL_RenderDrawRect(d_renderer, &rectToDraw);
-        SDL_Rect rectToDraw2 = {x * SCREEN_MULT, gb_mem_map[LCD_SCY] * SCREEN_MULT, GB_SCREEN_WIDTH * SCREEN_MULT, GB_SCREEN_HEIGHT * SCREEN_MULT};
-        SDL_RenderDrawRect(d_renderer, &rectToDraw2);
-        SDL_Rect rectToDraw3 = {x * SCREEN_MULT, y * SCREEN_MULT, GB_SCREEN_WIDTH * SCREEN_MULT, GB_SCREEN_HEIGHT * SCREEN_MULT};
-        SDL_RenderDrawRect(d_renderer, &rectToDraw3);
-    } else if(x != gb_mem_map[LCD_SCX] || y != gb_mem_map[LCD_SCY]){
-        SDL_Rect rectToDraw = {x * SCREEN_MULT, y * SCREEN_MULT, GB_SCREEN_WIDTH * SCREEN_MULT, GB_SCREEN_HEIGHT * SCREEN_MULT};
-        SDL_RenderDrawRect(d_renderer, &rectToDraw);
-    }*/
-    //SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    //SDL_RenderClear(renderer);
-
-    //SDL_RenderCopy(renderer, d_texture, &final, &final2);      
-   // SDL_RenderPresent(renderer);
     SDL_RenderPresent(d_renderer);
 }
 

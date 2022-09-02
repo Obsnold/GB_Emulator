@@ -20,7 +20,8 @@ void gb_timer(){
     // or 1 tick every 61035ns
     if((timer - div_timer) > 61035){
         div_timer = timer;
-        gb_mem_map[TIMER_DIV]+=((timer - div_timer) / 61035);
+        uint8_t temp = get_mem_map_8(TIMER_DIV)+((timer - div_timer) / 61035);
+        set_mem_map_8(TIMER_DIV, temp);
         //PRINT("TEST-----1-\n");
     }
 
@@ -42,11 +43,12 @@ void gb_timer(){
         }
 
         if((timer - clock_timer) > clock_timer_limit){
-            uint8_t temp_time = gb_mem_map[TIMER_TIMA];
-            gb_mem_map[TIMER_TIMA] += ((timer - clock_timer) / clock_timer_limit);
+            uint8_t temp_time = get_mem_map_8(TIMER_TIMA);
+            uint8_t temp = get_mem_map_8(TIMER_TIMA) + ((timer - clock_timer) / clock_timer_limit);
+            set_mem_map_8(TIMER_DIV,temp);
             //PRINT("TIMER %ld\n",((timer - clock_timer) / clock_timer_limit));
-            if(gb_mem_map[TIMER_TIMA] < temp_time){
-                gb_mem_map[TIMER_TIMA] = gb_mem_map[TIMER_TMA];
+            if(get_mem_map_8(TIMER_TIMA) < temp_time){
+                set_mem_map_8(TIMER_TIMA, get_mem_map_8(TIMER_TMA));
                 set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_TIMER);
                 //PRINT("TEST-----3-\n");
             }
