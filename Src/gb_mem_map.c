@@ -3,14 +3,17 @@
 #include "gb_cpu.h"
 #include "gb_cart.h"
 #include <string.h>
+#include <pthread.h>
 
 #define DEBUG
 
 #ifdef DEBUG
-#define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
+#define DEBUG_//PRINT(fmt, args...)   //PRINT(fmt, ## args)
 #else
-#define DEBUG_PRINT(fmt, args...)
+#define DEBUG_//PRINT(fmt, args...)
 #endif
+
+pthread_mutex_t mutex_mem_map;
 
 uint8_t gb_mem_map[GB_MEM_SIZE];
 
@@ -34,6 +37,7 @@ uint8_t gb_bootrom[0x100] = {
 
 
 void init_mem_map(){
+    pthread_mutex_init(&mutex_mem_map,NULL);
     memset(gb_mem_map,0,GB_MEM_SIZE);
 #if 0 //load boot rom
     memcpy(gb_mem_map,gb_bootrom, 0x100);
@@ -81,6 +85,8 @@ void init_mem_map(){
 // the following functions should only be used by cpu/opcode instructions
 // the system itself should directly access memory
 uint8_t op_get_mem_map_8(uint16_t reg){
+   //PRINT("op_get_mem_map_8\n");
+    pthread_mutex_lock(&mutex_mem_map);
     uint8_t data = 0;
     if(reg < CART_ROM_1 ){
         // fixed rom bank
@@ -142,16 +148,18 @@ uint8_t op_get_mem_map_8(uint16_t reg){
         // Interrupt enable
         data = gb_mem_map[reg];
     } 
-    //DEBUG_PRINT("set_mem_map_8, reg=%04x, data=%02x\n",reg,data);
+    //DEBUG_//PRINT("set_mem_map_8, reg=%04x, data=%02x\n",reg,data);
+    pthread_mutex_unlock(&mutex_mem_map);
     return data;
 }
 
 
 bool op_set_mem_map_8(uint16_t reg, uint8_t data){
-    uint8_t lData = gb_mem_map[reg];
+    //PRINT("op_set_mem_map_8\n");
+    uint8_t lData = get_mem_map_8(reg);
     if(reg < TILE_RAM_0 ){
         // rom banks need to check for mbc and other controler chips
-        switch(gb_mem_map[CART_TYPE]){
+        switch(get_mem_map_8(CART_TYPE)){
             case TYPE_ROM_MBC1:
             case TYPE_ROM_MBC1_RAM:
             case TYPE_ROM_MBC1_RAM_BAT:
@@ -164,15 +172,15 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
                 } else if (reg < MBC1_REG_ROM_BANK_NUM){
                   //  if(g_banking_mode == 0x00){
                        // printf("g_rom_bank = %d\n",data);
-                        gb_cart_switch_rom_bank(data);
+                       gb_cart_switch_rom_bank(data);
                    /* } else {
                         // TODO fix this
                         gb_cart_switch_rom_bank(data);
                     }*/
-                }else if (reg < MBC1_REG_RAM_BANK_NUM){
+                } else if (reg < MBC1_REG_RAM_BANK_NUM){
                     //printf("g_rom_bank = %d\n",g_rom_bank);
                     gb_cart_switch_ram_bank(data);
-                }else if (reg < MBC1_REG_BANK_MODE_SEL){
+                } else if (reg < MBC1_REG_BANK_MODE_SEL){
                     gb_cart_set_banking_mode(data);
                 }
                 break;
@@ -225,7 +233,7 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
     } else if(reg >= OAM_TABLE && reg < NA_MEM){
         // OAM TAble
         // need to check if OAM is accesible
-        uint8_t ppu_mode = gb_mem_map[LCD_STAT] & LCD_STAT_MODE;
+        uint8_t ppu_mode = get_mem_map_8(LCD_STAT) & LCD_STAT_MODE;
         if(ppu_mode != LCD_STAT_MODE_PIXEL_TRANS && ppu_mode != LCD_STAT_MODE_OAM)
             lData = data;
         
@@ -247,7 +255,59 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
         // Interrupt enable
         lData = data;
     }
-    gb_mem_map[reg] = lData;
+    set_mem_map_8(reg,lData);
+    return true;
+}
+
+// following functions are for system/io_ports 
+uint8_t get_mem_map_8(uint16_t reg){
+    //PRINT("get_mem_map_8\n");
+    pthread_mutex_lock(&mutex_mem_map);
+    uint8_t temp = gb_mem_map[reg];
+    pthread_mutex_unlock(&mutex_mem_map);
+    return temp;
+}
+
+void set_mem_map_8(uint16_t reg, uint8_t data){
+   //PRINT("set_mem_map_8\n");
+   pthread_mutex_lock(&mutex_mem_map);
+   gb_mem_map[reg] = data;
+   pthread_mutex_unlock(&mutex_mem_map);
+}
+
+uint8_t get_mem_map_bit(uint16_t reg, uint8_t data){
+   //PRINT("get_mem_map_bit\n");
+    pthread_mutex_lock(&mutex_mem_map);
+    uint8_t temp = gb_mem_map[reg] & data;
+    pthread_mutex_unlock(&mutex_mem_map);
+    return temp;
+}
+
+void set_mem_map_bit(uint16_t reg, uint8_t data){
+   //PRINT("set_mem_map_bit\n");
+    pthread_mutex_lock(&mutex_mem_map);
+    gb_mem_map[reg] |= data;
+    pthread_mutex_unlock(&mutex_mem_map);
+}
+
+void clear_mem_map_bit(uint16_t reg, uint8_t data){
+   //PRINT("clear_mem_map_bit\n");
+    pthread_mutex_lock(&mutex_mem_map);
+    gb_mem_map[reg] &= ~data;
+    pthread_mutex_unlock(&mutex_mem_map);
+}
+
+
+
+
+uint16_t get_mem_map_16(uint16_t reg){
+    uint16_t temp = op_get_mem_map_8(reg);
+    return temp + (op_get_mem_map_8(reg+1)<<8);
+}
+
+bool set_mem_map_16(uint16_t reg, uint16_t data){
+    set_mem_map_8(reg+1,(uint8_t)(data>>8));
+    set_mem_map_8(reg,(uint8_t)(data&0xFF));
     return true;
 }
 
@@ -262,34 +322,3 @@ bool op_set_mem_map_16(uint16_t reg, uint16_t data){
     return true;
 }
 
-// following functions are for system/io_ports 
-uint8_t get_mem_map_8(uint16_t reg){
-    return gb_mem_map[reg];
-}
-
-void set_mem_map_8(uint16_t reg, uint8_t data){
-    gb_mem_map[reg] = data;
-}
-
-uint16_t get_mem_map_16(uint16_t reg){
-    uint16_t temp = op_get_mem_map_8(reg);
-    return temp + (op_get_mem_map_8(reg+1)<<8);
-}
-
-bool set_mem_map_16(uint16_t reg, uint16_t data){
-    set_mem_map_8(reg+1,(uint8_t)(data>>8));
-    set_mem_map_8(reg,(uint8_t)(data&0xFF));
-    return true;
-}
-
-uint8_t get_mem_map_bit(uint16_t reg, uint8_t data){
-    return gb_mem_map[reg] & data;
-}
-
-void set_mem_map_bit(uint16_t reg, uint8_t data){
-    gb_mem_map[reg] |= data;
-}
-
-void clear_mem_map_bit(uint16_t reg, uint8_t data){
-    gb_mem_map[reg] &= ~data;
-}

@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
-
+#include <pthread.h>
 
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
@@ -27,6 +27,11 @@ bool run = true;
 
 int main(int argc, char *argv[] )
 {
+   pthread_t timer_thread;
+   pthread_t ppu_thread;
+   pthread_t cpu_thread;
+   pthread_t input_thread;
+
    if( argc < 2 ) {
       PRINT("Incorrect arguments\n");
       return 0;
@@ -44,6 +49,13 @@ int main(int argc, char *argv[] )
        PRINT("Cannot load cart\n");
    }
 
+   int createerror = pthread_create(&timer_thread, NULL, gb_timer, NULL);
+   if (0 != createerror) /*check whether the thread creation was successful*/
+   {
+      PRINT("Error creating pthread");
+      pthread_join(timer_thread, NULL); /*wait until the created thread terminates*/
+      return 0;
+   }
    //print_cart_header();
    //print_memory(CART_RAM,GB_RAM_1);
    long temp;
@@ -94,7 +106,7 @@ int main(int argc, char *argv[] )
       // main loop
       gb_cpu();
       ppu();
-      gb_timer();
+      //gb_timer();
       gb_input(keys);
      
       if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE)){
@@ -103,6 +115,8 @@ int main(int argc, char *argv[] )
          enable_lcd(false);
       }
       update_screen(get_mem_map_8(LCD_LY));
+
+      //PRINT("MAIN1---\n");
       /*if(temp %100000 == 0){
          debug_screen();
          temp=0;
@@ -110,7 +124,7 @@ int main(int argc, char *argv[] )
       }
       temp++;*/
    }
-
+   pthread_cancel(timer_thread);
    free_screen();
    //debug_screen_free();
 }
