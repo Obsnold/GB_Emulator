@@ -301,24 +301,25 @@ void clear_mem_map_bit(uint16_t reg, uint8_t data){
 
 
 uint16_t get_mem_map_16(uint16_t reg){
-    uint16_t temp = op_get_mem_map_8(reg);
-    return temp + (op_get_mem_map_8(reg+1)<<8);
+    return op_get_mem_map_16(reg);
 }
 
 bool set_mem_map_16(uint16_t reg, uint16_t data){
-    set_mem_map_8(reg+1,(uint8_t)(data>>8));
-    set_mem_map_8(reg,(uint8_t)(data&0xFF));
-    return true;
+    return op_set_mem_map_16(reg,data);
 }
 
 uint16_t op_get_mem_map_16(uint16_t reg){
-    uint16_t temp = op_get_mem_map_8(reg);
-    return temp + (op_get_mem_map_8(reg+1)<<8);
+    pthread_mutex_lock(&mutex_mem_map);
+    uint16_t temp = gb_mem_map[reg] + (gb_mem_map[reg+1]<<8);
+    pthread_mutex_unlock(&mutex_mem_map);
+    return temp;
 }
 
 bool op_set_mem_map_16(uint16_t reg, uint16_t data){
-    op_set_mem_map_8(reg+1,(uint8_t)(data>>8));
-    op_set_mem_map_8(reg,(uint8_t)(data&0xFF));
+    pthread_mutex_lock(&mutex_mem_map);
+    gb_mem_map[reg] = (uint8_t)(data&0xFF);
+    gb_mem_map[reg+1] = (uint8_t)(data>>8);
+    pthread_mutex_unlock(&mutex_mem_map); 
     return true;
 }
 
