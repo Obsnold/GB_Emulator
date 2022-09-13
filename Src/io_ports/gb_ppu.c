@@ -387,6 +387,7 @@ void oam_dma(){
 
 uint8_t ppu(){
     if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE) ){
+        lcd_enabled = true;
         uint8_t ppu_mode = get_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
 
         //have we received a oma dma request?
@@ -485,19 +486,18 @@ uint8_t ppu(){
             }
         }
     } else {
-        if(lcd_enabled != get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE)){
+        if(lcd_enabled == true){
+            lcd_enabled = false;
             set_mem_map_8(LCD_LY, 0);
-            uint32_t temp23 = 0xFF;
-            clear_mem_map_bit(LCD_STAT,temp23);
+            set_mem_map_8(LCD_STAT,0x00);
             set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_OAM);
             ppu_cycles_count = OAM_SEARCH_CYCLES;
             ppu_cycles = 0;
             prev_tick = 0;
-          /*  set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
-            set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);*/
-            printf("asdaksdajksdh\n");
+            set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
+            set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+            //printf("asdaksdajksdh\n");
         }
-        lcd_enabled = get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE);
     }
     return 0;
 }

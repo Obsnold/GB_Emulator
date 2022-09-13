@@ -166,7 +166,7 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
                 if(reg < MBC1_REG_RAM_EN){
                     if(data == 0x00){
                         gb_cart_set_ram_enabled(false);
-                    } else if (data == 0x0A){
+                    } else if (data & 0x0A){
                         gb_cart_set_ram_enabled(true);
                     }
                 } else if (reg < MBC1_REG_ROM_BANK_NUM){

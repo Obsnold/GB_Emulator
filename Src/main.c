@@ -56,7 +56,7 @@ int main(int argc, char *argv[] )
       pthread_join(timer_thread, NULL); /*wait until the created thread terminates*/
       return 0;
    }
-   //print_cart_header();
+   print_cart_header();
    //print_memory(CART_RAM,GB_RAM_1);
    long temp;
    while(run){

@@ -125,7 +125,7 @@ void gb_cart_switch_rom_bank(unsigned int bank){
 }
 
 void gb_cart_switch_ram_bank(unsigned int bank){
-    //printf("gb_cart_switch_ram_bank %d\n", bank);
+    printf("gb_cart_switch_ram_bank %d\n", bank);
     if(g_number_of_ram_banks == 0x01){
         g_ram_bank = bank & 0x03;
     } else if(bank <= g_number_of_ram_banks){
