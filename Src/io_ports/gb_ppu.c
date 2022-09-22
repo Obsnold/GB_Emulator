@@ -388,7 +388,6 @@ void oam_dma(){
 uint8_t ppu(){
     if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE) ){
         lcd_enabled = true;
-        uint8_t ppu_mode = get_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
 
         //have we received a oma dma request?
         if(get_mem_map_8(LCD_DMA) != 0){
@@ -396,17 +395,27 @@ uint8_t ppu(){
             set_mem_map_8(LCD_DMA,0);
         }
 
-        // if we are in a new mode run the appropriate code
-        if(ppu_cycles == 0){
-            switch(ppu_mode){
+        // get time 
+        unsigned long tick = get_ns();
+        ppu_cycles += tick - prev_tick;
+        prev_tick = tick;
+
+        if (ppu_cycles > (ppu_cycles_count* CYCLE_TIME)){
+            DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
+            ppu_cycles = 0;
+            switch (get_mem_map_bit(LCD_STAT,LCD_STAT_MODE)){
                 case LCD_STAT_MODE_OAM:
                     ppu_oam_search();
                     if(get_mem_map_bit(LCD_STAT,LCD_STAT_OAM_INTR_EN)){
                         set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
                     }
+
+                    //---------------------------------------------------------
+                    clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                    set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_PIXEL_TRANS);
+                    ppu_cycles_count = PIXEL_TRANSFER_CYCLES;
                 break;
                 case LCD_STAT_MODE_PIXEL_TRANS:
-                    //ppu_pixel_transfer();
                     set_pallets();
                     draw_background_line();
                     if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_OBJ_ENABLE)){
@@ -415,48 +424,19 @@ uint8_t ppu(){
                     if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_WINDOW_ENABLE) && (get_mem_map_8(LCD_LY) >= get_mem_map_8(LCD_WY))){
                         draw_window_line();
                     }
+
+                    //---------------------------------------------------------
+                    clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                    set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_HBLNK);
+                    ppu_cycles_count = H_BLANK_CYCLES;
                 break;
                 case LCD_STAT_MODE_HBLNK:
                     ppu_h_blank();
                     if(get_mem_map_bit(LCD_STAT,LCD_STAT_HBLNK_INTR_EN)){
                         set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
                     }
-                break;
-                case LCD_STAT_MODE_VBLNK:
-                    ppu_v_blank();
-                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_VBLNK_INTR_EN)){
-                        set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-                    }
-                break;
-                default:
-                //error
-                break;
-            }
-        }
 
-        // get time 
-        unsigned long tick = get_ns();
-        ppu_cycles += tick - prev_tick;
-        prev_tick = tick;
-
-    
-    
-        // If the cycle time has elapsed set the appropriate flags and change the cycle count
-        if (ppu_cycles > (ppu_cycles_count* CYCLE_TIME)){
-            DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
-            ppu_cycles = 0;
-            switch (ppu_mode){
-                case LCD_STAT_MODE_OAM:
-                    clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
-                    set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_PIXEL_TRANS);
-                    ppu_cycles_count = PIXEL_TRANSFER_CYCLES;
-                break;
-                case LCD_STAT_MODE_PIXEL_TRANS:
-                    clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
-                    set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_HBLNK);
-                    ppu_cycles_count = H_BLANK_CYCLES;
-                break;
-                case LCD_STAT_MODE_HBLNK:
+                    //---------------------------------------------------------
                     if(get_mem_map_8(LCD_LY) >= GB_SCREEN_HEIGHT){
                         clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
                         set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_VBLNK);
@@ -473,6 +453,12 @@ uint8_t ppu(){
                     }
                 break;
                 case LCD_STAT_MODE_VBLNK:
+                    ppu_v_blank();
+                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_VBLNK_INTR_EN)){
+                        set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                    }
+
+                    //---------------------------------------------------------
                     if(get_mem_map_8(LCD_LY) > (GB_SCREEN_HEIGHT + GB_SCREEN_HEIGHT_V_BLANK)){
                         set_mem_map_8(LCD_LY, 0);
                         clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
@@ -496,7 +482,6 @@ uint8_t ppu(){
             prev_tick = 0;
             set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
             set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-            //printf("asdaksdajksdh\n");
         }
     }
     return 0;
