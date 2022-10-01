@@ -385,7 +385,7 @@ void oam_dma(){
 }
 
 
-uint8_t ppu(){
+uint8_t ppu(unsigned long delta_time){
     if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE) ){
         lcd_enabled = true;
 
@@ -395,14 +395,12 @@ uint8_t ppu(){
             set_mem_map_8(LCD_DMA,0);
         }
 
-        // get time 
-        unsigned long tick = get_ns();
-        ppu_cycles += tick - prev_tick;
-        prev_tick = tick;
+        // get time
+        ppu_cycles += delta_time;
 
         if (ppu_cycles > (ppu_cycles_count* CYCLE_TIME)){
             DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
-            ppu_cycles = 0;
+            ppu_cycles -= (ppu_cycles_count* CYCLE_TIME);
             switch (get_mem_map_bit(LCD_STAT,LCD_STAT_MODE)){
                 case LCD_STAT_MODE_OAM:
                     ppu_oam_search();

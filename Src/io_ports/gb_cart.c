@@ -1,6 +1,7 @@
 #include "gb_cart.h"
 #include "gb_mem_map.h"
 #include "gb_load.h"
+#include "debug_print.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -29,11 +30,7 @@ int gb_cart_load(char* filename){
     if(g_cart_size <= 0){
         return -1;
     }
-
-    //load initial rom into memory
-    for(uint16_t i = 0; i < CART_MB_SIZE * 2; i++){
-        set_mem_map_8(CART_ROM_0+i,g_cart[i]);
-    }
+    PRINT("g_cart_size %u\n",g_cart_size);
 
     // get values from cart header
     switch(get_mem_map_8(CART_ROM_SIZE)){
@@ -114,14 +111,6 @@ void gb_cart_switch_rom_bank(unsigned int bank){
     if(g_banking_mode == 0x01){
         g_rom_bank = g_rom_bank + (g_ram_bank << 0x05);
     }
-
-    if(g_rom_bank < g_number_of_rom_banks){
-        for(uint16_t i = 0; i < CART_MB_SIZE; i++){
-            set_mem_map_8(CART_ROM_1+i,g_cart[(g_rom_bank * CART_MB_SIZE) + i]);
-        }
-    } else {
-        DEBUG_PRINT("Error! trying to switch rom membanks");
-    }
 }
 
 void gb_cart_switch_ram_bank(unsigned int bank){
@@ -146,11 +135,20 @@ void gb_cart_switch_ram_bank(unsigned int bank){
 }
 
 void gb_cart_set_ram_enabled(bool set){
-    printf("gb_cart_set_ram_enabled %d\n", set);
+    //printf("gb_cart_set_ram_enabled %d\n", set);
     g_enable_ram = set;
 }
 
 void gb_cart_set_banking_mode(uint8_t set){
-    printf("gb_cart_set_banking_mode %d\n", set);
+    //printf("gb_cart_set_banking_mode %d\n", set);
     g_banking_mode = set;
+}
+
+uint8_t get_cart_rom_fix_8(uint16_t addr){
+    //PRINT("TEST----- %02x\n",addr);
+    return g_cart[addr];
+}
+
+uint8_t get_cart_rom_8(uint16_t addr){
+    return g_cart[(g_rom_bank * CART_MB_SIZE) + addr - CART_MB_SIZE];
 }

@@ -3,6 +3,8 @@
 #include "gb_cpu.h"
 #include "debug_print.h"
 
+#define CPU_CYCLE_TIME 238 // the time in nanoseconds it takes to complete one cycle
+
 uint8_t current_cycle_time = 0;
 struct cpu_reg CPU_REG;
 
@@ -29,16 +31,10 @@ void set_interrupts(bool set){
     interrupts_enabled = set;
 }
 
-#define clear() DEBUG_PRINT("\033[H\033[J")
-uint8_t temp_LCDY = 0;
+void gb_cpu(unsigned long delta_time){
 
-void gb_cpu(){
-    // get time 
-    unsigned long tick = get_ns();
-    cpu_cycles += tick - cpu_prev_tick;
-    cpu_prev_tick = tick;
+    cpu_cycles += delta_time;
 
-    //dirty trick for now
     //if CPU_REG.F has been written to make sure the bottom 4 bits are 0
     CPU_REG.F &= 0xF0;
 
@@ -80,17 +76,18 @@ void gb_cpu(){
 
     //if no interrupts then process normally
     if(power_mode == PWR_NORMAL){
-        if(cpu_cycles > (current_cycle_time * CYCLE_TIME)){
+        if(cpu_cycles > (current_cycle_time * CPU_CYCLE_TIME)){
+            cpu_cycles -= (current_cycle_time * CPU_CYCLE_TIME);
+            uint8_t opcode = get_mem_map_8(CPU_REG.PC);
+            uint16_t temp_pc = CPU_REG.PC;
+            CPU_REG.PC += opcode_table[opcode].length;
+            current_cycle_time = opcode_table[opcode].operation(temp_pc);
            // if(CPU_REG.PC<0x235){
                 /*if(CPU_REG.PC>=0x0000 && CPU_REG.PC<=0x0100){
                     print_cpu_reg();
                     print_indirect_reg();
                     print_opcode();
                 }*/
-                uint8_t opcode = get_mem_map_8(CPU_REG.PC);
-                uint16_t temp_pc = CPU_REG.PC;
-                CPU_REG.PC += opcode_table[opcode].length;
-                current_cycle_time = opcode_table[opcode].operation(temp_pc);
             //}
         }
     }
