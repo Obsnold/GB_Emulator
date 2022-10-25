@@ -3,8 +3,10 @@
 #include "gb_cpu.h"
 #include "debug_print.h"
 
-uint8_t current_cycle_time = 0;
+#define CPU_CYCLE_TIME 238 // the time in nanoseconds it takes to complete one cycle
 
+uint8_t current_cycle_time = 0;
+struct cpu_reg CPU_REG;
 
 // cpu modes and flags
 enum cpu_power power_mode;
@@ -29,21 +31,15 @@ void set_interrupts(bool set){
     interrupts_enabled = set;
 }
 
-#define clear() DEBUG_PRINT("\033[H\033[J")
-uint8_t temp_LCDY = 0;
+void gb_cpu(unsigned long delta_time){
 
-void gb_cpu(){
-    // get time 
-    unsigned long tick = get_ns();
-    cpu_cycles += tick - cpu_prev_tick;
-    cpu_prev_tick = tick;
+    cpu_cycles += delta_time;
 
-    //dirty trick for now
     //if CPU_REG.F has been written to make sure the bottom 4 bits are 0
     CPU_REG.F &= 0xF0;
 
     if(power_mode == PWR_HALT){
-        if(gb_mem_map[INTERRUPT_ENABLE] & gb_mem_map[INTERRUPT_FLAGS]){
+        if(get_mem_map_8(INTERRUPT_ENABLE) & get_mem_map_8(INTERRUPT_FLAGS)){
             power_mode = PWR_NORMAL;
         }
     }
@@ -51,21 +47,21 @@ void gb_cpu(){
     //check interrupts
     if(interrupts_enabled){
         uint16_t interrupt_address = 0;
-        if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_V_BLANK) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK)){
+        if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_V_BLANK) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK)){
             interrupt_address = 0x40;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
-        } else if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_LCD_STAT) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT)){
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
+        } else if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_LCD_STAT) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT)){
             interrupt_address = 0x48;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-        } else if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_TIMER) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_TIMER)){
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+        } else if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_TIMER) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_TIMER)){
             interrupt_address = 0x50;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_TIMER);
-        } else if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_SERIAL) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_SERIAL)){
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_TIMER);
+        } else if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_SERIAL) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_SERIAL)){
             interrupt_address = 0x58;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_SERIAL);
-        } else if(GET_MEM_MAP(INTERRUPT_ENABLE,INTERRUPT_JOYPAD) && GET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_JOYPAD)){
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_SERIAL);
+        } else if(get_mem_map_bit(INTERRUPT_ENABLE,INTERRUPT_JOYPAD) && get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_JOYPAD)){
             interrupt_address = 0x60;
-            CLR_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_JOYPAD);
+            clear_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_JOYPAD);
         }
 
 
@@ -80,17 +76,18 @@ void gb_cpu(){
 
     //if no interrupts then process normally
     if(power_mode == PWR_NORMAL){
-        if(cpu_cycles > (current_cycle_time * CYCLE_TIME)){
-            //if(CPU_REG.PC<0x235){
-                //if(CPU_REG.PC>=0x0600 && CPU_REG.PC<=0x060f){
-                    //print_cpu_reg();
-                    //print_indirect_reg();
-                    //print_opcode();
-                //}
-                uint8_t opcode = gb_mem_map[CPU_REG.PC];
-                uint16_t temp_pc = CPU_REG.PC;
-                CPU_REG.PC += opcode_table[opcode].length;
-                current_cycle_time = opcode_table[opcode].operation(temp_pc);
+        if(cpu_cycles > (current_cycle_time * CPU_CYCLE_TIME)){
+            cpu_cycles -= (current_cycle_time * CPU_CYCLE_TIME);
+            uint8_t opcode = get_mem_map_8(CPU_REG.PC);
+            uint16_t temp_pc = CPU_REG.PC;
+            CPU_REG.PC += opcode_table[opcode].length;
+            current_cycle_time = opcode_table[opcode].operation(temp_pc);
+           // if(CPU_REG.PC<0x235){
+                /*if(CPU_REG.PC>=0x0000 && CPU_REG.PC<=0x0100){
+                    print_cpu_reg();
+                    print_indirect_reg();
+                    print_opcode();
+                }*/
             //}
         }
     }

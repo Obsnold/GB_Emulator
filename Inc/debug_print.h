@@ -12,7 +12,7 @@ void print_memory(uint16_t start_pos, uint16_t end_pos);
 void print_lcd();
 void print_display_buffer();
 void print_step();
-
+void print_interrupts();
 #define PRINT(fmt, args...)    printf(fmt, ## args)
 
 #endif //__DEBUG_PRINT_H

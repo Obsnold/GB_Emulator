@@ -1,4 +1,4 @@
-#include "gb_load.h"
+#include "gb_cart.h"
 #include "gb_mem_map.h"
 #include "gb_ppu.h"
 #include "gb_cpu.h"
@@ -9,6 +9,7 @@
 #include "debug_print.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
 
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
@@ -23,39 +24,58 @@ bool boot_rom = true;
 int breakpoint=-1;
 bool run = true;
 
-int main(int argc, char *argv[] )
+unsigned long prev_time = 0;
+unsigned long min_time = 1000;
+
+void gb_init(){
+   cpu_init();
+   init_screen(); 
+   //debug_screen_init();
+   init_mem_map();
+   prev_time = get_ns();
+}
+
+void gb_emu(int keys){
+   //sleep_ns(100);
+   unsigned long time = get_ns();
+   unsigned long time_delta = time - prev_time;
+   prev_time = time;
+   gb_timer(time_delta);
+   gb_cpu(time_delta);
+   ppu(time_delta);
+   gb_input(keys);
+}
+
+
+int main(int argc, char *argv[])
 {
    if( argc < 2 ) {
       PRINT("Incorrect arguments\n");
       return 0;
-      
    }
    PRINT("%s loading %s\n",  argv[0], argv[1]);
-   
-   
-   cpu_init();
-   init_screen(); 
 
-   if(!load_gb_cart(argv[1])){
+   if(gb_cart_load(argv[1]) < 0){
        PRINT("Cannot load cart\n");
    }
 
-   print_cart_header();
+   gb_init();
 
-   init_mem_map();
-   //0.00000025s
    while(run){
       
       int keys = get_key_press();
 
       //if escape pressed then exit
       if(keys == KEY_EXIT){
-         print_lcd();
-         print_cpu_reg();
-         print_opcode();
-         print_memory(TILE_RAM_0,BG_MAP_1);
+        // print_lcd();
+        // print_cpu_reg();
+        // print_opcode();
+         //print_memory(CART_RAM,GB_RAM_1);
+        /* print_memory(OAM_TABLE,NA_MEM);
          print_memory(BG_MAP_1,BG_MAP_2);
          print_memory(BG_MAP_2,CART_RAM);
+         print_memory(OAM_TABLE,NA_MEM);*/
+         //print_interrupts();
          run = false;
       }
 
@@ -85,20 +105,24 @@ int main(int argc, char *argv[] )
          }
       }
 
-      // TODO change this later so it is handled in the 
-      // mem map or cartidge layer 
-      if(boot_rom && CPU_REG.PC >= 0x100){
-         load_initial_membanks();
-         boot_rom = false;
-      }
-
       // main loop
-      gb_cpu();
-      ppu();
-      gb_timer();
-      gb_input(keys);
-      
-      update_screen(gb_mem_map[LCD_LY]);
+      gb_emu(keys);
+     
+      if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE)){
+         enable_lcd(true);
+      } else {
+         enable_lcd(false);
+      }
+      update_screen(get_mem_map_8(LCD_LY));
+
+      //PRINT("MAIN1---\n");
+      /*if(temp %100000 == 0){
+         debug_screen();
+         temp=0;
+         //PRINT("DEBUG_PRINT\n");
+      }
+      temp++;*/
    }
    free_screen();
+   //debug_screen_free();
 }

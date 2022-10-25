@@ -1,8 +1,7 @@
 #include "gb_timer.h"
 #include "gb_mem_map.h"
-
-unsigned long clock_timer = 0;
-unsigned long div_timer = 0;
+#include "debug_print.h"
+#include <time.h>
 
 /*
            00: CPU Clock / 1024 (DMG, SGB2, CGB Single Speed Mode:   4096 Hz, SGB1:   ~4194 Hz, CGB Double Speed Mode:   8192 Hz)
@@ -11,20 +10,21 @@ unsigned long div_timer = 0;
            11: CPU Clock / 256  (DMG, SGB2, CGB Single Speed Mode:  16384 Hz, SGB1:  ~16780 Hz, CGB Double Speed Mode:  32768 Hz)
 */
 
-void gb_timer(){
-    // get time 
-    unsigned long timer = get_ns();
+unsigned long clock_timer = 0;
+unsigned long div_timer = 0;
 
+void gb_timer(unsigned long delta_time){
     // divider register is always updated at a rate of 16384Hz
     // or 1 tick every 61035ns
-    if((timer - div_timer) > 61035){
-        div_timer = timer;
-        gb_mem_map[TIMER_DIV]++;
+    if((div_timer + delta_time) > 61035){
+        uint8_t temp = get_mem_map_8(TIMER_DIV)+(div_timer / 61035);
+        set_mem_map_8(TIMER_DIV, temp);
+        div_timer += (delta_time % 61035);
     }
 
-    if(GET_MEM_MAP(TIMER_TAC,TAC_ENABLE)){
+    if(get_mem_map_bit(TIMER_TAC,TAC_ENABLE)){
         unsigned long  clock_timer_limit = 244141;
-        switch(GET_MEM_MAP(TIMER_TAC,TAC_CLOCK_SELECT)){
+        switch(get_mem_map_bit(TIMER_TAC,TAC_CLOCK_SELECT)){
             case TAC_CLOCK_1024:
                 clock_timer_limit = 244141;
                 break;
@@ -39,15 +39,15 @@ void gb_timer(){
                 break;
         }
 
-        if((timer - clock_timer) > clock_timer_limit){
-            clock_timer = timer;
-            uint8_t temp = gb_mem_map[TIMER_TIMA];
-            gb_mem_map[TIMER_TIMA]++;
-            if(temp == 0xFF && gb_mem_map[TIMER_TIMA] == 00){
-                gb_mem_map[TIMER_TIMA] = gb_mem_map[TIMER_TMA];
-                SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_TIMER);
+        if((clock_timer + delta_time) > clock_timer_limit){
+            uint8_t temp_time = get_mem_map_8(TIMER_TIMA);
+            uint8_t temp = get_mem_map_8(TIMER_TIMA) + (clock_timer / clock_timer_limit);
+            set_mem_map_8(TIMER_TIMA,temp);
+            if(temp < temp_time){
+                set_mem_map_8(TIMER_TIMA, get_mem_map_8(TIMER_TMA));
+                set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_TIMER);
             }
+            clock_timer += (delta_time % clock_timer_limit);
         }
-
     }
 }

@@ -15,16 +15,16 @@ add  A,(HL)      86         8 z0hc A=A+(HL)
 */
 uint8_t opcode_8_add(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
 
     // get value depending on opcode
     switch(opcode){
         case 0xC6:
-            value = get_mem_map_8(opcode_address + 1);
+            value = op_get_mem_map_8(opcode_address + 1);
             break;
         case 0x86:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -60,17 +60,17 @@ adc  A,(HL)      8E         8 z0hc A=A+(HL)+cy
 */
 uint8_t opcode_8_adc(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
     uint8_t temp = GET_CARRY_FLAG;
 
     // get value depending on opcode
     switch(opcode){
         case 0xCE:
-            value = get_mem_map_8(opcode_address + 1);
+            value = op_get_mem_map_8(opcode_address + 1);
             break;
         case 0x8E:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -107,16 +107,16 @@ sub  (HL)        96         8 z1hc A=A-(HL)
 */
 uint8_t opcode_8_sub(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
 
     // get value depending on opcode
     switch(opcode){
         case 0xD6:
-            value = get_mem_map_8(opcode_address + 1);
+            value = op_get_mem_map_8(opcode_address + 1);
             break;
         case 0x96:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -152,17 +152,17 @@ sbc  A,(HL)      9E         8 z1hc A=A-(HL)-cy
 */
 uint8_t opcode_8_sbc(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
     uint8_t temp = GET_CARRY_FLAG;
     
     // get value depending on opcode
     switch(opcode){
         case 0xDE:
-            value = get_mem_map_8(opcode_address + 1);
+            value = op_get_mem_map_8(opcode_address + 1);
             break;
         case 0x9E:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -199,16 +199,16 @@ and  (HL)        A6         8 z010 A=A & (HL)
 */
 uint8_t opcode_8_and(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
     // get value depending on opcode
     switch(opcode){
         case 0xE6:
-            value = get_mem_map_8(opcode_address + 1);
+            value = op_get_mem_map_8(opcode_address + 1);
             break;
         case 0xA6:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -233,16 +233,16 @@ xor  (HL)        AE         8 z000
 */ 
 uint8_t opcode_8_xor(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
     // get value depending on opcode
     switch(opcode){
         case 0xEE:
-            value = get_mem_map_8(opcode_address + 1);
+            value = op_get_mem_map_8(opcode_address + 1);
             break;
         case 0xAE:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -267,16 +267,16 @@ or   (HL)        B6         8 z000 A=A | (HL)
 */
 uint8_t opcode_8_or(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
 
     // get value depending on opcode
     switch(opcode){
         case 0xF6:
-            value = get_mem_map_8(opcode_address + 1);
+            value = op_get_mem_map_8(opcode_address + 1);
             break;
         case 0xB6:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -301,16 +301,16 @@ cp   (HL)        BE         8 z1hc compare A-(HL)
 */
 uint8_t opcode_8_cp(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_z = GET_OPCODE_Z(opcode);
     
     // get value depending on opcode
     switch(opcode){
         case 0xFE:
-            value = get_mem_map_8(opcode_address + 1);
+            value = op_get_mem_map_8(opcode_address + 1);
             break;
         case 0xBE:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_z);
@@ -345,13 +345,13 @@ inc  (HL)        34        12 z0h- (HL)=(HL)+1
 */
 uint8_t opcode_8_inc(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
     
     // get value depending on opcode
     switch(opcode){
         case 0x34:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_y);
@@ -375,7 +375,7 @@ uint8_t opcode_8_inc(uint16_t opcode_address){
     // get value depending on opcode
     switch(opcode){
         case 0x34:
-            set_mem_map_8(CPU_REG.HL,value);
+            op_set_mem_map_8(CPU_REG.HL,value);
             break;
         default:
         {
@@ -394,13 +394,13 @@ dec  (HL)        35        12 z1h- (HL)=(HL)-1
 */
 uint8_t opcode_8_dec(uint16_t opcode_address){
     uint8_t value = 0;
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     uint8_t opcode_y = GET_OPCODE_Y(opcode);
 
     // get value depending on opcode
     switch(opcode){
         case 0x35:
-            value = get_mem_map_8(CPU_REG.HL);
+            value = op_get_mem_map_8(CPU_REG.HL);
             break;
         default:
             value = *get_reg_8(opcode_y);
@@ -424,7 +424,7 @@ uint8_t opcode_8_dec(uint16_t opcode_address){
     // get value depending on opcode
     switch(opcode){
         case 0x35:
-            set_mem_map_8(CPU_REG.HL,value);
+            op_set_mem_map_8(CPU_REG.HL,value);
             break;
         default:
         {
@@ -442,7 +442,7 @@ uint8_t opcode_8_dec(uint16_t opcode_address){
 daa              27         4 z-0x decimal adjust akku
 */
 uint8_t opcode_8_daa(uint16_t opcode_address){
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     bool cf = false;
     bool hf = false;
     bool nf = false;
@@ -481,7 +481,7 @@ uint8_t opcode_8_daa(uint16_t opcode_address){
 cpl              2F         4 -11- A = A xor FF
 */
 uint8_t opcode_8_cpl(uint16_t opcode_address){
-    uint8_t opcode = get_mem_map_8(opcode_address);
+    uint8_t opcode = op_get_mem_map_8(opcode_address);
     
     CPU_REG.A ^= 0xFF;
     SET_ADD_SUB_FLAG;

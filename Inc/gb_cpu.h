@@ -10,7 +10,7 @@ enum cpu_power{
 
 void cpu_set_power_mode(enum cpu_power mode );
 void set_interrupts(bool set);
-void gb_cpu();
+void gb_cpu(unsigned long delta_time);
 void cpu_init();
 
 struct cpu_reg {
@@ -56,8 +56,9 @@ struct cpu_reg {
         };
         uint16_t SP;
     };
-}CPU_REG;// = {{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}}};
+};//CPU_REG;// = {{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}},{{0,0}}};
 
+extern struct cpu_reg CPU_REG;
 
 //flags
 #define ZERO_FLAG       BIT_7

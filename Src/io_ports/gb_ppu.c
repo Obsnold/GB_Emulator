@@ -55,6 +55,8 @@ and 0 once every 456 dots. Scanlines 144 through 153 are mode 1.*/
 //uint8_t gb_bg_pixels[BG_SIZE*TILE_SIZE][BG_SIZE*TILE_SIZE];
 uint32_t gb_display[GB_SCREEN_WIDTH][GB_SCREEN_HEIGHT];
 
+uint32_t display_line[GB_SCREEN_WIDTH];
+
 #define OAM_SEARCH_CYCLES 20
 #define PIXEL_TRANSFER_CYCLES 43
 #define H_BLANK_CYCLES 51
@@ -71,18 +73,22 @@ uint32_t bg_pallet[4] = {PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY, PAL_BLACK};
 uint32_t sp_pallet_0[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
 uint32_t sp_pallet_1[4] = {PAL_TRANS, PAL_WHITE, PAL_L_GRAY, PAL_D_GRAY};
 
-
+bool lcd_enabled = false;
 
 
 void ppu_oam_search(){
-    uint8_t lcd_line = gb_mem_map[LCD_LY];
+    uint8_t lcd_line = get_mem_map_8(LCD_LY);
     oam_list_size = 0;
+    uint8_t oam_sprite_size = TILE_SIZE;
+    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_OBJ_SIZE) != 0){
+        oam_sprite_size = TILE_SIZE * 2;
+    } 
     //search for all visible sprites
     for(int i = 0; i < OAM_TABLE_SIZE; i++){
         //check x > 0, check lcd_line >= y,  lcd_line < y+8
-        if( (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS] > 0) &&
-            (lcd_line+16 >= gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS]) &&
-            (lcd_line+16 < (gb_mem_map[OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS] + TILE_SIZE))){
+        if( (get_mem_map_8(OAM_TABLE + (i*OAM_SIZE) + OAM_X_POS) > 0) &&
+            (lcd_line+16 >= get_mem_map_8(OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS)) &&
+            (lcd_line+16 < (get_mem_map_8(OAM_TABLE + (i*OAM_SIZE) + OAM_Y_POS) + oam_sprite_size))){
                 //if sprite is on the lcd_line then add to list
                 oam_list[oam_list_size] = i;
                 oam_list_size++;
@@ -102,40 +108,10 @@ unsigned char reverse_bits(unsigned char b) {
    return b;
 }
 
-void ppu_pixel_transfer(){
-    uint8_t screen_x = gb_mem_map[LCD_SCX];
-    uint8_t screen_y = gb_mem_map[LCD_SCY];
-    uint8_t lcd_line = gb_mem_map[LCD_LY];
-    int bg_window_tile_mode = GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT);
-    bool window_enabled = false;
-    bool display_sprite = false;
-    uint16_t map = BG_MAP_1;
-    uint16_t bg_window_tile_set = TILE_RAM_0;
-    uint16_t input_buffer_1 = 0;
-    uint16_t input_buffer_2 = 0;
-    int buffer_shift_count = 0;
-    int tile_count = 1;
-    uint8_t sprite_line_1 = 0;
-    uint8_t sprite_line_2 = 0;
-    uint8_t sprite_list_num = 0;
-    uint8_t sprite_buf_shift_count = 0;
-
-    //do we need to display the window on this line?
-    if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_WINDOW_ENABLE) && (lcd_line >= gb_mem_map[LCD_WY])){
-            window_enabled = true;
-    }
-    
-    //get background map
-    if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
-        map = BG_MAP_2;
-    } else {
-        map = BG_MAP_1;
-    }
-
-    
-    for(int i =0; i < 4; i++){
+void set_pallets(){
+    for(int i = 0; i < 4; i++){
         //set the correct background palette
-        switch(GET_MEM_MAP(LCD_BGP,0x03 << (i*2))){
+        switch(get_mem_map_bit(LCD_BGP,0x03 << (i*2)) >> (i*2)){
             case 0:
             bg_pallet[i] = PAL_WHITE;
             break;
@@ -151,7 +127,7 @@ void ppu_pixel_transfer(){
         }
 
         //set the correct OAM palettes
-        switch(GET_MEM_MAP(LCD_OBP0,0x03 << (i*2))){
+        switch(get_mem_map_bit(LCD_OBP0,0x03 << (i*2)) >> (i*2)){
             case 0:
             sp_pallet_0[i] = PAL_WHITE;
             break;
@@ -166,7 +142,7 @@ void ppu_pixel_transfer(){
             break;
         }
 
-        switch(GET_MEM_MAP(LCD_OBP1,0x03 << (i*2))){
+        switch(get_mem_map_bit(LCD_OBP1,0x03 << (i*2)) >> (i*2)){
             case 0:
             sp_pallet_1[i] = PAL_WHITE;
             break;
@@ -184,412 +160,328 @@ void ppu_pixel_transfer(){
     sp_pallet_0[0]=PAL_TRANS;
     sp_pallet_1[0]=PAL_TRANS;
 
-    //get tile set
-    if(bg_window_tile_mode == 0){
+}
+
+void draw_background_line(){
+    uint8_t lcd_line = get_mem_map_8(LCD_LY);
+    uint8_t screen_y_pos = get_mem_map_8(LCD_SCY);
+    uint8_t screen_x_pos = get_mem_map_8(LCD_SCX);
+    uint16_t map = 0; // the map address with references to the tiles
+    uint16_t bg_window_tile_set = 0; //the address of the tile map set
+    uint8_t bg_window_tile_mode = get_mem_map_bit(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT); // which addressing method are we using
+    if( bg_window_tile_mode == 0){
         bg_window_tile_set = TILE_RAM_2;
     } else {
         bg_window_tile_set = TILE_RAM_0;
     }
-    
-    // work out position of start tile in map
-    int map_tile_x = screen_x/TILE_SIZE;
-    int map_tile_y = (screen_y+lcd_line)/TILE_SIZE;
-
-    //get start pixels from tile
-    int tile_pixel_x = screen_x - (map_tile_x*TILE_SIZE);
-    int tile_pixel_y = (screen_y+lcd_line) - (map_tile_y*TILE_SIZE);
-    
-    //deal with going off the edge of the screen
-    if(map_tile_y >= BG_SIZE){
-        map_tile_y-=BG_SIZE;
-    }
-    
-    // get offsete for working out tile poition
-    // these wont change as it the lcd_line is the same
-    int map_line = map_tile_y*BG_SIZE;
-    int tile_line_offset = tile_pixel_y*2;
-
-    // get first map tile
-    int map_tile_start = map_tile_x + map_line;
-
-    // get address of tile in tile map
-    int tile_map_addr = gb_mem_map[map + map_tile_start];
-
-    //need to check correct addresing
-    if(bg_window_tile_mode == 0) {
-        if(tile_map_addr >= 0x80){
-            tile_map_addr -= 0x100;
-        }
+    if(get_mem_map_bit(LCD_CTRL, LCD_CTRL_BG_MAP_SELECT)){
+        map = BG_MAP_2;
+    } else {
+        map = BG_MAP_1;
     }
 
-    // get first tile from tile set
-    uint16_t tile_line = bg_window_tile_set + (tile_map_addr * TILE_MEM_SIZE) + tile_line_offset;
-    input_buffer_1 = gb_mem_map[tile_line] << 8;
-    input_buffer_2 = gb_mem_map[tile_line + 1] << 8;
+    uint8_t map_y_offset = ((lcd_line + screen_y_pos) / 8);
+    uint8_t map_y_tile_offset = ((lcd_line + screen_y_pos) % 8);
+    uint8_t map_x_offset = (screen_x_pos / 8);
+    uint8_t map_x_tile_offset = (screen_x_pos % 8);
 
-    //deal with going off the edge of the screen
-    if((map_tile_x + tile_count) >= BG_SIZE){
-        tile_count-=BG_SIZE;
+    if(map_y_offset >= 32){
+        map_y_offset = map_y_offset - 32;
     }
-
-    // get address of tile in tile map
-    tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
-
-    //need to check correct addresing
-    if(bg_window_tile_mode == 0) {
-        if(tile_map_addr >= 0x80){
-            tile_map_addr -= 0x100;
-        }
-    }
-
-    // get second from tile set
-    tile_line = bg_window_tile_set + (gb_mem_map[map + map_tile_start + tile_count] * TILE_MEM_SIZE) + tile_line_offset;
-    input_buffer_1 |= gb_mem_map[tile_line];
-    input_buffer_2 |= gb_mem_map[tile_line + 1];
-
-    //shift buffers to starting pixel and account for offset
-    buffer_shift_count = tile_pixel_x;
-    input_buffer_1 = input_buffer_1 << buffer_shift_count;
-    input_buffer_2 = input_buffer_2 << buffer_shift_count;
-
     for(int x = 0; x < GB_SCREEN_WIDTH; x++){
-        //check if we need to load the next tile
-        if(buffer_shift_count == 8){
-            buffer_shift_count = 0;
-            tile_count++;
-            //deal with going off the edge of the screen
-            if((map_tile_x + tile_count) >= BG_SIZE){
-                tile_count-=BG_SIZE;
+        int tile = get_mem_map_8(map + map_x_offset + (map_y_offset * 32));
+        if(bg_window_tile_mode == 0) {
+            if(tile >= 0x80){
+                tile -= 0x100;
             }
-
-            // get address of tile in tile map
-            tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
-
-            //need to check correct addresing
-            if(bg_window_tile_mode == 0) {
-                if(tile_map_addr >= 0x80){
-                    tile_map_addr -= 0x100;
-                }
-            }
-
-            //load next tile
-            tile_line = bg_window_tile_set + (tile_map_addr * TILE_MEM_SIZE) + tile_line_offset;
-            input_buffer_1 |= gb_mem_map[tile_line];
-            input_buffer_2 |= gb_mem_map[tile_line + 1];
         }
-
-
-        //check to see if we need to apply the window
-        if(window_enabled && (x >= gb_mem_map[LCD_WX] - 7)){
-            //disable 
-            window_enabled=false;
-            //if window is enabled overwrite whatever is currently in the buffer
-            input_buffer_1 = 0;
-            input_buffer_2 = 0;
-            buffer_shift_count = 0;
-            tile_count = 1;
-            
-            //get window map
-            if(GET_MEM_MAP(LCD_CTRL, LCD_CTRL_WINDOW_MAP_SELECT)){
-                map = BG_MAP_2;
+        tile *= 16;
+        tile += bg_window_tile_set;  
+        tile += (map_y_tile_offset*2);
+        
+        uint8_t pixel_1 = get_mem_map_8(tile) & (0x80 >> map_x_tile_offset);
+        uint8_t pixel_2 = get_mem_map_8(tile + 1) & (0x80 >> map_x_tile_offset);
+        int pix = 0;
+        if(pixel_1){
+            if(pixel_2){
+                pix = bg_pallet[3];
             } else {
-                map = BG_MAP_1;
-            }
-
-            //reset tilepointers to window map
-            //window always starts at 0,0 overlayed starting at wx wy
-            int window_line=(lcd_line - gb_mem_map[LCD_WY]);
-            map_tile_x = 0;
-            map_tile_y = window_line/TILE_SIZE;
-
-            //get start pixels from tile
-            tile_pixel_x = 0;
-            tile_pixel_y = window_line - (map_tile_y*TILE_SIZE);
-            
-            //deal with going off the edge of the screen
-            if(map_tile_y >= BG_SIZE){
-                map_tile_y-=BG_SIZE;
-            }
-            
-            // get offsete for working out tile poition
-            // these wont change as it the lcd_line is the same
-            map_line = map_tile_y*BG_SIZE;
-            tile_line_offset = tile_pixel_y*2;
-
-            // get first map tile
-            map_tile_start = map_tile_x + map_line;
-
-            // get address of tile in tile map
-            tile_map_addr = gb_mem_map[map + map_tile_start];
-
-            //need to check correct addresing
-            if(bg_window_tile_mode == 0) {
-                if(tile_map_addr >= 0x80){
-                    tile_map_addr -= 0x100;
-                }
-            }
-
-            // get first tile from tile set
-            tile_line = bg_window_tile_set + (tile_map_addr * TILE_MEM_SIZE) + tile_line_offset;
-            input_buffer_1 = gb_mem_map[tile_line] << 8;
-            input_buffer_2 = gb_mem_map[tile_line + 1] << 8;
-
-            // get address of tile in tile map
-            tile_map_addr = gb_mem_map[map + map_tile_start + tile_count];
-
-            //need to check correct addresing
-            if(bg_window_tile_mode == 0) {
-                if(tile_map_addr >= 0x80){
-                    tile_map_addr -= 0x100;
-                }
-            }
-
-            // get second from tile set
-            tile_line = bg_window_tile_set + (tile_map_addr * TILE_MEM_SIZE) + tile_line_offset;
-            input_buffer_1 |= gb_mem_map[tile_line];
-            input_buffer_2 |= gb_mem_map[tile_line + 1];
-        }
-
-        //check OAM to see if we need to apply a sprite
-        // also check we are not currently displaying a sprite
-        if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_ENABLE) && (sprite_buf_shift_count == 0)){
-            
-            for(int i = 0; i < oam_list_size; i++){
-                uint16_t oam = OAM_TABLE + (oam_list[i] * OAM_SIZE);
-                uint8_t oam_x_pos = gb_mem_map[oam + OAM_X_POS];
-                
-                //need to check we are in the right x position
-                if((x >= (oam_x_pos - TILE_SIZE)) && (x < oam_x_pos)){
-                    //sprite y pos is 0 to 160
-                    int sprite_line_offset = lcd_line+16 - gb_mem_map[oam + OAM_Y_POS];
-                    sprite_line_1 = 0;
-                    sprite_line_2 = 0;
-                    sprite_list_num = i;
-                    sprite_buf_shift_count = 0;
-                    
-                    //flip y if we need to
-                    if(GET_MEM_MAP((oam + OAM_FLAGS),OAM_FLAGS_Y_FLIP)){
-                        sprite_line_offset = TILE_SIZE - sprite_line_offset -1;
-                    }
-                    
-                    // get line
-                    tile_line = TILE_RAM_0 + (gb_mem_map[oam + OAM_TILE] * TILE_MEM_SIZE) + (sprite_line_offset*2);
-                    sprite_line_1 = gb_mem_map[tile_line];
-                    sprite_line_2 = gb_mem_map[tile_line+1];
-
-                    //flip x if we need to
-                    if(GET_MEM_MAP((oam + OAM_FLAGS),OAM_FLAGS_X_FLIP)){
-                        sprite_line_1 = reverse_bits(sprite_line_1);
-                        sprite_line_2 = reverse_bits(sprite_line_2);
-                    }
-
-                    // check if we need to shift off the left side of the screen
-                    if(oam_x_pos < TILE_SIZE){
-                        sprite_line_1 = sprite_line_1 << (TILE_SIZE - oam_x_pos);
-                        sprite_line_2 = sprite_line_2 << (TILE_SIZE - oam_x_pos);
-                        sprite_buf_shift_count = TILE_SIZE - oam_x_pos;
-                        // is the sprite also overlapped?
-                        if(x > 0){
-                            sprite_line_1 = sprite_line_1 << x;
-                            sprite_line_2 = sprite_line_2 << x;
-                            sprite_buf_shift_count += x;
-                        }
-                    }else if(x > (oam_x_pos - TILE_SIZE)){ //check if we need to shift due to sprite overlap
-                        int shift = (x + TILE_SIZE) - oam_x_pos;
-                        sprite_line_1 = sprite_line_1 << shift;
-                        sprite_line_2 = sprite_line_2 << shift;
-                        sprite_buf_shift_count += shift;
-                    }
-
-                    display_sprite = true;
-
-                    break;
-                }
-            }
-        }
-
-        //get latest pixel on to the screen buffer
-        uint32_t bg_colour = bg_pallet[0];
-        if(input_buffer_1 & 0x8000){
-            if(input_buffer_2 & 0x8000){
-                bg_colour = bg_pallet[3];
-            } else {
-                bg_colour = bg_pallet[1];
+                pix = bg_pallet[1];
             }
         } else {
-            if(input_buffer_2 & 0x8000){
-                bg_colour = bg_pallet[2];
+            if(pixel_2){
+                pix = bg_pallet[2];
             } else {
-                bg_colour = bg_pallet[0];
+                pix = bg_pallet[0];
             }
         }
+        gb_display[x][lcd_line] = pix;
         
-        //draw pixel to display
-        gb_display[x][lcd_line] = bg_colour;
+        map_x_tile_offset++;
+        if(map_x_tile_offset >= 8){
+            map_x_tile_offset = 0;
+            map_x_offset++;
+            if(map_x_offset >= 32){
+                map_x_offset = map_x_offset - 32;
+            }
+        }
+    }
+}
 
-        //  do we need to overlay a sprite?
-        if(GET_MEM_MAP(LCD_CTRL,LCD_CTRL_OBJ_ENABLE) && (sprite_buf_shift_count < TILE_SIZE) && display_sprite){
-            uint32_t sprite_colour = 0;
-            uint32_t* pallet;
-            uint16_t oam = OAM_TABLE + (oam_list[sprite_list_num] * OAM_SIZE);
-            
-            //if the pixel is not transparent
-            if(!(((sprite_line_1 & 0x80) == 0) && ((sprite_line_2 & 0x80) == 0))){
-                
-                //check the apllet to use
-                if(GET_MEM_MAP((oam + OAM_FLAGS), OAM_FLAGS_PALETTE_NO) == 0){
-                    pallet = sp_pallet_0;
-                } else {
-                    pallet = sp_pallet_1;
-                }
+void draw_sprites_line(){
+    uint8_t lcd_line = get_mem_map_8(LCD_LY);
+    uint32_t* pallet;
+    //check the apllet to use
+    uint8_t oam_sprite_size = TILE_SIZE;
+    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_OBJ_SIZE) != 0){
+        oam_sprite_size = TILE_SIZE * 2;
+    } 
 
-                //need to check sprite priority
-                int priority = GET_MEM_MAP(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
+    for(int i = 0; i < oam_list_size; i++){
+        uint16_t oam = OAM_TABLE + (oam_list[i] * OAM_SIZE);
+        uint8_t oam_x_pos = get_mem_map_8(oam + OAM_X_POS);
+        uint8_t sprite_line_offset = (lcd_line+16) - get_mem_map_8(oam + OAM_Y_POS);
 
-                if((priority == 0) || 
-                (priority > 0 && ((input_buffer_1 & 0x8000) == 0) && ((input_buffer_2 & 0x8000) == 0))){
-                    if(sprite_line_1 & 0x80){
-                        if(sprite_line_2 & 0x80){
-                            sprite_colour = pallet[3];
-                        } else {
-                            sprite_colour = pallet[1];
-                        }
+        if(get_mem_map_bit((oam + OAM_FLAGS), OAM_FLAGS_PALETTE_NO) == 0){
+            pallet = sp_pallet_0;
+        } else {
+            pallet = sp_pallet_1;
+        }
+
+        if(get_mem_map_bit((oam + OAM_FLAGS),OAM_FLAGS_Y_FLIP)){
+                sprite_line_offset = oam_sprite_size - sprite_line_offset -1;
+        }
+
+        uint16_t tile_line = TILE_RAM_0 + (get_mem_map_8(oam + OAM_TILE) * TILE_MEM_SIZE) + (sprite_line_offset*2);
+
+        for(int x = 0; x < oam_sprite_size; x++){
+            uint8_t pixel_1 = 0;
+            uint8_t pixel_2 = 0;
+
+            if(get_mem_map_bit((oam + OAM_FLAGS),OAM_FLAGS_X_FLIP)){
+                pixel_1 = (get_mem_map_8(tile_line) & (0x01 << x));
+                pixel_2 = (get_mem_map_8(tile_line + 1) & (0x01 << x));
+            } else {
+                pixel_1 = (get_mem_map_8(tile_line) & (0x80 >> x));
+                pixel_2 = (get_mem_map_8(tile_line + 1) & (0x80 >> x));
+            }
+
+            int x_pos = oam_x_pos + x - TILE_SIZE;
+            if(x_pos < 0){
+                x_pos = 0;
+            } else if (x_pos >= GB_SCREEN_WIDTH){
+                x_pos = GB_SCREEN_WIDTH -1;
+            }
+            int priority = get_mem_map_bit(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
+
+            if((priority == 0) || 
+             (gb_display[x_pos][lcd_line] == bg_pallet[0] && priority > 0)){
+                if(pixel_1){
+                    if(pixel_2){
+                        gb_display[x_pos][lcd_line] = pallet[3];
                     } else {
-                        if(sprite_line_2 & 0x80){
-                            sprite_colour = pallet[2];
-                        }
+                        gb_display[x_pos][lcd_line] = pallet[1];
                     }
-                    
-                    //draw pixel to display
-                    gb_display[x][lcd_line] = sprite_colour;
+                } else {
+                    if(pixel_2){
+                        gb_display[x_pos][lcd_line] = pallet[2];
+                    } 
                 }
             }
+        }
+    }
+}
 
-            //shift pixels and increment counter
-            sprite_line_1 = sprite_line_1 << 0x01;
-            sprite_line_2 = sprite_line_2 << 0x01;
-            sprite_buf_shift_count++;
+void draw_window_line(){
+    uint8_t lcd_line = get_mem_map_8(LCD_LY);
+    if(get_mem_map_8(LCD_WY) <= lcd_line){
+        uint16_t bg_window_tile_set = 0; //the address of the tile map set
+        uint8_t bg_window_tile_mode = get_mem_map_bit(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT); // which addressing method are we using
+        if( bg_window_tile_mode == 0){
+            bg_window_tile_set = TILE_RAM_2;
+        } else {
+            bg_window_tile_set = TILE_RAM_0;
+        }
+        uint16_t map = BG_MAP_1;
+        if(get_mem_map_bit(LCD_CTRL, LCD_CTRL_WINDOW_MAP_SELECT)){
+            map = BG_MAP_2;
+        }
 
-            if(sprite_buf_shift_count == TILE_SIZE){
-                // we have finished displaying the sprite so reset counter
-                sprite_buf_shift_count = 0;
-                display_sprite = false;
-            }
+        uint8_t window_line = (lcd_line - get_mem_map_8(LCD_WY));
+        int8_t window_x = get_mem_map_8(LCD_WX) - 7;
+        uint16_t map_y_offset = window_line /8;
+        uint16_t map_x_offset = 0;
+        uint8_t tile_y_offset = window_line % 8;
+        uint8_t tile_x_offset = 0;
+
+        if(window_x < 0){
+            window_x = 0;
         } 
 
-        //shift pixels and increment counter
-        input_buffer_1 = input_buffer_1 << 0x01;
-        input_buffer_2 = input_buffer_2 << 0x01;
-        buffer_shift_count++;
+        for(int16_t x = window_x; x < GB_SCREEN_WIDTH; x++){
+            int32_t tile = (get_mem_map_8(map + map_x_offset + (map_y_offset * 32)));
+            if(bg_window_tile_mode == 0) {
+                if(tile >= 0x80){
+                    tile -= 0x100;
+                }
+            }
+            tile *= 16;
+            tile += bg_window_tile_set;  
+            tile += (tile_y_offset*2);
+            
+            uint8_t pixel_1 = (get_mem_map_8(tile) & (0x80 >> tile_x_offset));
+            uint8_t pixel_2 = (get_mem_map_8(tile + 1) & (0x80 >> tile_x_offset));
+            int pix = 0;
+            if(pixel_1){
+                if(pixel_2){
+                    pix = bg_pallet[3];
+                } else {
+                    pix = bg_pallet[1];
+                }
+            } else {
+                if(pixel_2){
+                    pix = bg_pallet[2];
+                } else {
+                    pix = bg_pallet[0];
+                }
+            }
+            gb_display[x][lcd_line] = pix;
+            
+            tile_x_offset++;
+            if(tile_x_offset >= 8){
+                tile_x_offset = 0;
+                map_x_offset++;
+                if(map_x_offset >= 32){
+                    map_x_offset = map_x_offset - 32;
+                }
+            }
+        }
 
-        
+
     }
 }
 
 
 void ppu_h_blank(){
-    gb_mem_map[LCD_LY]++;
+    uint8_t temp = get_mem_map_8(LCD_LY);
+    temp++;
+    set_mem_map_8(LCD_LY,temp);
 }
 
 void ppu_v_blank(){
     //set interrupt
-    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
-    gb_mem_map[LCD_LY]++;
+    set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
+    uint8_t temp = get_mem_map_8(LCD_LY);
+    temp++;
+    set_mem_map_8(LCD_LY,temp);
 }
 
 void oam_dma(){
-    uint16_t source = gb_mem_map[LCD_DMA] * 0x100;
-    memcpy(&gb_mem_map[OAM_TABLE],&gb_mem_map[source],0xA0);
+    uint16_t source = get_mem_map_8(LCD_DMA) * 0x100;
+    for(uint16_t i = 0; i < 0xA0; i++){
+        uint8_t temp = get_mem_map_8(source+i);
+        set_mem_map_8(OAM_TABLE+i,temp);
+    }
 }
 
-uint8_t ppu(){
-    uint8_t ppu_mode = GET_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
 
-    //have we received a oma dma request?
-    if(gb_mem_map[LCD_DMA] != 0){
-        oam_dma();
-        gb_mem_map[LCD_DMA]=0;
-    }
+uint8_t ppu(unsigned long delta_time){
+    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE) ){
+        lcd_enabled = true;
 
-    // if we are in a new mode run the appropriate code
-    if(ppu_cycles == 0){
-        switch(ppu_mode){
-            case LCD_STAT_MODE_OAM:
-                ppu_oam_search();
-                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_OAM_INTR_EN)){
-                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-                }
-            break;
-            case LCD_STAT_MODE_PIXEL_TRANS:
-                ppu_pixel_transfer();
-            break;
-            case LCD_STAT_MODE_HBLNK:
-                ppu_h_blank();
-                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_HBLNK_INTR_EN)){
-                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-                }
-            break;
-            case LCD_STAT_MODE_VBLNK:
-                ppu_v_blank();
-                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_VBLNK_INTR_EN)){
-                    SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
-                }
-            break;
-            default:
-            //error
-            break;
+        //have we received a oma dma request?
+        if(get_mem_map_8(LCD_DMA) != 0){
+            oam_dma();
+            set_mem_map_8(LCD_DMA,0);
         }
-    }
 
-    // get time 
-    unsigned long tick = get_ns();
-    ppu_cycles += tick - prev_tick;
-    prev_tick = tick;
+        // get time
+        ppu_cycles += delta_time;
 
-    // If the cycle time has elapsed set the appropriate flags and change the cycle count
-    if (ppu_cycles > (ppu_cycles_count* CYCLE_TIME)){
-        DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
-        ppu_cycles = 0;
-        switch (ppu_mode){
-            case LCD_STAT_MODE_OAM:
-                CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_PIXEL_TRANS);
-                ppu_cycles_count = PIXEL_TRANSFER_CYCLES;
-            break;
-            case LCD_STAT_MODE_PIXEL_TRANS:
-                CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_HBLNK);
-                ppu_cycles_count = H_BLANK_CYCLES;
-            break;
-            case LCD_STAT_MODE_HBLNK:
-                if(gb_mem_map[LCD_LY] >= GB_SCREEN_HEIGHT){
-                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_VBLNK);
-                    ppu_cycles_count = V_BLANK_STEP_CYCLES;
-                } else {
-                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
-                    ppu_cycles_count = OAM_SEARCH_CYCLES;
-                }
-                if(GET_MEM_MAP(LCD_STAT,LCD_STAT_LCY_INTR_EN)){
-                    if(gb_mem_map[LCD_LY] == gb_mem_map[LCD_LYC]){
-                        SET_MEM_MAP(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+        if (ppu_cycles > (ppu_cycles_count* CYCLE_TIME)){
+            DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
+            ppu_cycles -= (ppu_cycles_count* CYCLE_TIME);
+            switch (get_mem_map_bit(LCD_STAT,LCD_STAT_MODE)){
+                case LCD_STAT_MODE_OAM:
+                    ppu_oam_search();
+                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_OAM_INTR_EN)){
+                        set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
                     }
-                }
-            break;
-            case LCD_STAT_MODE_VBLNK:
-                if(gb_mem_map[LCD_LY] > (GB_SCREEN_HEIGHT + GB_SCREEN_HEIGHT_V_BLANK)){
-                    gb_mem_map[LCD_LY] = 0;
-                    CLR_MEM_MAP(LCD_STAT,LCD_STAT_MODE);
-                    SET_MEM_MAP(LCD_STAT,LCD_STAT_MODE_OAM);
-                    ppu_cycles_count = OAM_SEARCH_CYCLES;
-                }
-            break;
-            default:
-            //error
-            break;
+
+                    //---------------------------------------------------------
+                    clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                    set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_PIXEL_TRANS);
+                    ppu_cycles_count = PIXEL_TRANSFER_CYCLES;
+                break;
+                case LCD_STAT_MODE_PIXEL_TRANS:
+                    set_pallets();
+                    draw_background_line();
+                    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_OBJ_ENABLE)){
+                        draw_sprites_line();
+                    }
+                    if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_WINDOW_ENABLE) && (get_mem_map_8(LCD_LY) >= get_mem_map_8(LCD_WY))){
+                        draw_window_line();
+                    }
+
+                    //---------------------------------------------------------
+                    clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                    set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_HBLNK);
+                    ppu_cycles_count = H_BLANK_CYCLES;
+                break;
+                case LCD_STAT_MODE_HBLNK:
+                    ppu_h_blank();
+                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_HBLNK_INTR_EN)){
+                        set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                    }
+
+                    //---------------------------------------------------------
+                    if(get_mem_map_8(LCD_LY) >= GB_SCREEN_HEIGHT){
+                        clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                        set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_VBLNK);
+                        ppu_cycles_count = V_BLANK_STEP_CYCLES;
+                    } else {
+                        clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                        set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_OAM);
+                        ppu_cycles_count = OAM_SEARCH_CYCLES;
+                    }
+                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_LCY_INTR_EN)){
+                        if(get_mem_map_8(LCD_LY) == get_mem_map_8(LCD_LYC)){
+                            set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                        }
+                    }
+                break;
+                case LCD_STAT_MODE_VBLNK:
+                    ppu_v_blank();
+                    if(get_mem_map_bit(LCD_STAT,LCD_STAT_VBLNK_INTR_EN)){
+                        set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
+                    }
+
+                    //---------------------------------------------------------
+                    if(get_mem_map_8(LCD_LY) > (GB_SCREEN_HEIGHT + GB_SCREEN_HEIGHT_V_BLANK)){
+                        set_mem_map_8(LCD_LY, 0);
+                        clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
+                        set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_OAM);
+                        ppu_cycles_count = OAM_SEARCH_CYCLES;
+                    }
+                break;
+                default:
+                //error
+                break;
+            }
+        }
+    } else {
+        if(lcd_enabled == true){
+            lcd_enabled = false;
+            set_mem_map_8(LCD_LY, 0);
+            set_mem_map_8(LCD_STAT,0x00);
+            set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_OAM);
+            ppu_cycles_count = OAM_SEARCH_CYCLES;
+            ppu_cycles = 0;
+            prev_tick = 0;
+            set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
+            set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_LCD_STAT);
         }
     }
-    return ppu_mode;
+    return 0;
 }
 

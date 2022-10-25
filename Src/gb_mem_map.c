@@ -1,15 +1,15 @@
 #include "gb_mem_map.h"
 #include "debug_print.h"
 #include "gb_cpu.h"
-#include "gb_load.h"
+#include "gb_cart.h"
 #include <string.h>
 
 #define DEBUG
 
 #ifdef DEBUG
-#define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
+#define DEBUG_//PRINT(fmt, args...)   //PRINT(fmt, ## args)
 #else
-#define DEBUG_PRINT(fmt, args...)
+#define DEBUG_//PRINT(fmt, args...)
 #endif
 
 uint8_t gb_mem_map[GB_MEM_SIZE];
@@ -35,7 +35,6 @@ uint8_t gb_bootrom[0x100] = {
 
 void init_mem_map(){
     memset(gb_mem_map,0,GB_MEM_SIZE);
-    load_initial_membanks();
 #if 0 //load boot rom
     memcpy(gb_mem_map,gb_bootrom, 0x100);
 #else // set up memory as if bot rom had run
@@ -79,18 +78,13 @@ void init_mem_map(){
 #endif
 }
 
-// the following functions should only be used by cpu instructions
-// the system itself should directly access memory
-uint8_t get_mem_map_8(uint16_t reg){
+// the following functions should only be used by cpu/opcode instructions
+uint8_t op_get_mem_map_8(uint16_t reg){
+   //PRINT("op_get_mem_map_8\n");
     uint8_t data = 0;
-    if(reg < CART_ROM_1 ){
-        // fixed rom bank
-        data = gb_mem_map[reg];
-
-    } else if(reg >= CART_ROM_1 && reg < TILE_RAM_0 ){
-        // switchable rom bank
-        data = gb_mem_map[reg];
-
+    if(reg < TILE_RAM_0 ){
+        // CART ROM BANKS
+        data = gb_cart_read_rom(reg);
     } else if(reg >= TILE_RAM_0 && reg < CART_RAM){
         // VRAM
         //need to check if VRAM is accessible
@@ -99,7 +93,7 @@ uint8_t get_mem_map_8(uint16_t reg){
 
     } else if(reg >= CART_RAM && reg < GB_RAM_1){
         // CART ram if available
-        data = gb_mem_map[reg];
+        data = gb_cart_read_ram(reg);
 
     } else if(reg >= GB_RAM_1 && reg < GB_RAM_2){
         // Game boy work ram 1
@@ -143,17 +137,20 @@ uint8_t get_mem_map_8(uint16_t reg){
         // Interrupt enable
         data = gb_mem_map[reg];
     } 
-    //DEBUG_PRINT("set_mem_map_8, reg=%04x, data=%02x\n",reg,data);
+    //DEBUG_//PRINT("set_mem_map_8, reg=%04x, data=%02x\n",reg,data);
     return data;
 }
 
 
-bool set_mem_map_8(uint16_t reg, uint8_t data){
-    uint8_t lData = gb_mem_map[reg];
-   if(reg < TILE_RAM_0 ){
-        // rom banks need to check for mbc and other controler chips
+bool op_set_mem_map_8(uint16_t reg, uint8_t data){
+    //PRINT("op_set_mem_map_8\n");
+    uint8_t lData = get_mem_map_8(reg);
+    if(reg < TILE_RAM_0 ){
+        // CART ROM BANKS
+        lData = data;
     } else if(reg >= TILE_RAM_0 && reg < CART_RAM){
         // VRAM
+        //if((gb_mem_map[LCD_STAT] & LCD_STAT_MODE) != LCD_STAT_MODE_PIXEL_TRANS)
         lData = data;
     } else if(reg >= CART_RAM && reg < GB_RAM_1){
         // CART ram if available
@@ -173,7 +170,10 @@ bool set_mem_map_8(uint16_t reg, uint8_t data){
     } else if(reg >= OAM_TABLE && reg < NA_MEM){
         // OAM TAble
         // need to check if OAM is accesible
-        lData = data;
+        uint8_t ppu_mode = get_mem_map_8(LCD_STAT) & LCD_STAT_MODE;
+        if(ppu_mode != LCD_STAT_MODE_PIXEL_TRANS && ppu_mode != LCD_STAT_MODE_OAM)
+            lData = data;
+        
     } else if(reg >= NA_MEM && reg < IO_PORTS){
         // NA MEMORY
         // unusable memory for now just write data 0
@@ -192,17 +192,67 @@ bool set_mem_map_8(uint16_t reg, uint8_t data){
         // Interrupt enable
         lData = data;
     }
-    gb_mem_map[reg] = lData;
+    set_mem_map_8(reg,lData);
     return true;
+}
+
+// following functions are for system/io_ports --------------------------------------------------
+uint8_t get_mem_map_8(uint16_t reg){
+    uint8_t data = 0;
+    if(reg < TILE_RAM_0 ){
+        data = gb_cart_read_rom(reg);
+    } else if(reg >= CART_RAM && reg < GB_RAM_1){
+        // CART ram if available
+        data = gb_cart_read_ram(reg);
+    } else {
+        data = gb_mem_map[reg];
+    }
+    return data;
+}
+
+void set_mem_map_8(uint16_t reg, uint8_t data){
+    //PRINT("set_mem_map_8\n");
+    if(reg < TILE_RAM_0 ){
+
+        gb_cart_write_rom(reg,data);
+    } else if(reg >= CART_RAM && reg < GB_RAM_1){
+        // CART ram if available
+        gb_cart_write_ram(reg,data);
+    } else {
+        gb_mem_map[reg] = data;
+    }
+}
+
+uint8_t get_mem_map_bit(uint16_t reg, uint8_t data){
+    //PRINT("get_mem_map_bit\n");
+    return get_mem_map_8(reg) & data;
+}
+
+void set_mem_map_bit(uint16_t reg, uint8_t data){
+   //PRINT("set_mem_map_bit\n");
+    gb_mem_map[reg] |= data;
+}
+
+void clear_mem_map_bit(uint16_t reg, uint8_t data){
+   //PRINT("clear_mem_map_bit\n");
+    gb_mem_map[reg] &= ~data;
 }
 
 uint16_t get_mem_map_16(uint16_t reg){
-    uint16_t temp = get_mem_map_8(reg);
-    return temp + (get_mem_map_8(reg+1)<<8);
+    return op_get_mem_map_16(reg);
 }
 
 bool set_mem_map_16(uint16_t reg, uint16_t data){
-    set_mem_map_8(reg+1,(uint8_t)(data>>8));
-    set_mem_map_8(reg,(uint8_t)(data&0xFF));
+    return op_set_mem_map_16(reg,data);
+}
+
+uint16_t op_get_mem_map_16(uint16_t reg){
+    return op_get_mem_map_8(reg) + (op_get_mem_map_8(reg+1)<<8);
+}
+
+bool op_set_mem_map_16(uint16_t reg, uint16_t data){
+    op_set_mem_map_8(reg,(uint8_t)(data&0xFF));
+    op_set_mem_map_8(reg+1,(uint8_t)(data>>8));
     return true;
 }
+

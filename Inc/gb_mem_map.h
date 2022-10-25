@@ -45,6 +45,29 @@
 #define CART_ROM_0          0x0000
 
 #define CART_MB_SIZE		0x4000
+#define CART_RAM_MB_SIZE	0x2000
+
+//MBC1
+#define MBC1_REG_RAM_EN 0x2000
+#define MBC1_REG_ROM_BANK_NUM 0x4000
+#define MBC1_REG_RAM_BANK_NUM 0x6000
+#define MBC1_REG_BANK_MODE_SEL 0x8000
+
+//MBC2
+#define MBC2_REG_ROM_BANK_NUM 0x4000
+
+//MBC3
+#define MBC3_REG_RAM_TIMER_EN 0x2000
+#define MBC3_REG_ROM_BANK_NUM 0x4000
+#define MBC3_REG_RAM_BANK_NUM_RTC_SEL 0x6000
+#define MBC3_REG_LATCH_CLK 0x8000
+#define MBC3_REG_RTC 0xC000
+
+//MBC5
+#define MBC5_REG_RAM_TIMER_EN 0x2000
+#define MBC5_REG_ROM_BANK_8_NUM 0x3000
+#define MBC5_REG_ROM_BANK_1_NUM 0x4000
+#define MBC5_REG_RAM_BANK_NUM 0x6000
 
 //interupt and start addr locations
 #define RESTART_ADDR_00		0x0000
@@ -89,6 +112,7 @@
 
 //CART_TYPE
 #define TYPE_ROM						0x02
+#define TYPE_ROM_NO_MBC					0x00
 #define TYPE_ROM_MBC1					0x01
 #define TYPE_ROM_MBC1_RAM				0x02
 #define TYPE_ROM_MBC1_RAM_BAT			0x03
@@ -136,6 +160,7 @@
 #define RAM_SIZE_8KB	0x02
 #define RAM_SIZE_32KB	0x03
 #define RAM_SIZE_128KB	0x04
+#define RAM_SIZE_64KB	0x05
 
 //CART_REGION
 #define REGION_JAP		0x00
@@ -258,15 +283,18 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 #define GET_HIGH_NIBBLE(x) ((x & 0xF0) >> 0x04)
 #define GET_LOW_NIBBLE(x) (x & 0x0F)
 
-extern uint8_t gb_mem_map[GB_MEM_SIZE];
-
-#define GET_MEM_MAP(REG, BIT) (gb_mem_map[REG] & BIT)
-#define SET_MEM_MAP(REG, BIT) (gb_mem_map[REG] |= BIT)
-#define CLR_MEM_MAP(REG, BIT) (gb_mem_map[REG] &= ~BIT)
-
 void init_mem_map();
+
+uint8_t op_get_mem_map_8(uint16_t reg);
+bool op_set_mem_map_8(uint16_t reg, uint8_t data);
+uint16_t op_get_mem_map_16(uint16_t reg);
+bool op_set_mem_map_16(uint16_t reg, uint16_t data);
+
 uint8_t get_mem_map_8(uint16_t reg);
-bool set_mem_map_8(uint16_t reg, uint8_t data);
+void set_mem_map_8(uint16_t reg, uint8_t data);
+void set_mem_map_bit(uint16_t reg, uint8_t data);
+void clear_mem_map_bit(uint16_t reg, uint8_t data);
+uint8_t get_mem_map_bit(uint16_t reg, uint8_t data);
 uint16_t get_mem_map_16(uint16_t reg);
 bool set_mem_map_16(uint16_t reg, uint16_t data);
 

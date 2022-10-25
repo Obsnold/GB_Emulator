@@ -26,3 +26,8 @@ unsigned long get_ns(){
     clock_gettime(CLOCK_REALTIME, &_t);
     return ((_t.tv_sec*1000000000 + lround(_t.tv_nsec)));
 }
+
+void sleep_ns(long ns){
+    struct timespec remaining, request = {0, ns};
+    nanosleep(&request, &remaining);
+}

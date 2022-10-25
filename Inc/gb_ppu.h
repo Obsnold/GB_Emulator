@@ -22,6 +22,6 @@
 
 extern uint32_t gb_display[GB_SCREEN_WIDTH][GB_SCREEN_HEIGHT];
 
-uint8_t ppu();
+uint8_t ppu(unsigned long delta_time);
 
 #endif
