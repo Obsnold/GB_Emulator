@@ -166,6 +166,26 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
         case TYPE_ROM_MBC3:
         case TYPE_ROM_MBC3_RAM:
         case TYPE_ROM_MBC3_RAM_BAT:
+            if(addr < MBC3_REG_RAM_TIMER_EN){ // enable ram
+                if(data == 0x00){
+                    g_enable_ram = false;
+                } else if (data & 0x0A){
+                    g_enable_ram = true;
+                }
+            } else if (addr < MBC3_REG_ROM_BANK_NUM){ // switch rom bank
+                if(data == 0x00) {
+                    g_rom_bank = 0x01;
+                } else {
+                    g_rom_bank = data & 0x7F;
+                }
+            } else if (addr < MBC3_REG_RAM_BANK_NUM_RTC_SEL){ // switch ram bank
+                g_ram_bank = data & 0x03;
+            } else if (addr < MBC3_REG_LATCH_CLK){ // select banking mode
+                g_banking_mode = data;
+            } else if (addr < MBC3_REG_RTC ){
+
+            }
+            break;
         case TYPE_ROM_MBC5:
         case TYPE_ROM_MBC5_RAM:
         case TYPE_ROM_MBC5_RAM_BAT:
