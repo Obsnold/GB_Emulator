@@ -79,18 +79,12 @@ void init_mem_map(){
 }
 
 // the following functions should only be used by cpu/opcode instructions
-// the system itself should directly access memory
 uint8_t op_get_mem_map_8(uint16_t reg){
    //PRINT("op_get_mem_map_8\n");
     uint8_t data = 0;
-    if(reg < CART_ROM_1 ){
-        // fixed rom bank
-        //data = gb_mem_map[reg];
-        data = get_cart_rom_fix_8(reg);
-    } else if(reg >= CART_ROM_1 && reg < TILE_RAM_0 ){
-        // switchable rom bank
-        //data = gb_mem_map[reg];
-        data = get_cart_rom_8(reg);
+    if(reg < TILE_RAM_0 ){
+        // CART ROM BANKS
+        data = gb_cart_read_rom(reg);
     } else if(reg >= TILE_RAM_0 && reg < CART_RAM){
         // VRAM
         //need to check if VRAM is accessible
@@ -99,7 +93,7 @@ uint8_t op_get_mem_map_8(uint16_t reg){
 
     } else if(reg >= CART_RAM && reg < GB_RAM_1){
         // CART ram if available
-        data = gb_mem_map[reg];
+        data = gb_cart_read_ram(reg);
 
     } else if(reg >= GB_RAM_1 && reg < GB_RAM_2){
         // Game boy work ram 1
@@ -152,63 +146,12 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
     //PRINT("op_set_mem_map_8\n");
     uint8_t lData = get_mem_map_8(reg);
     if(reg < TILE_RAM_0 ){
-        // rom banks need to check for mbc and other controler chips
-        switch(get_mem_map_8(CART_TYPE)){
-            case TYPE_ROM_MBC1:
-            case TYPE_ROM_MBC1_RAM:
-            case TYPE_ROM_MBC1_RAM_BAT:
-                if(reg < MBC1_REG_RAM_EN){
-                    if(data == 0x00){
-                        gb_cart_set_ram_enabled(false);
-                    } else if (data & 0x0A){
-                        gb_cart_set_ram_enabled(true);
-                    }
-                } else if (reg < MBC1_REG_ROM_BANK_NUM){
-                  //  if(g_banking_mode == 0x00){
-                       // printf("g_rom_bank = %d\n",data);
-                       gb_cart_switch_rom_bank(data);
-                   /* } else {
-                        // TODO fix this
-                        gb_cart_switch_rom_bank(data);
-                    }*/
-                } else if (reg < MBC1_REG_RAM_BANK_NUM){
-                    //printf("g_rom_bank = %d\n",g_rom_bank);
-                    gb_cart_switch_ram_bank(data);
-                } else if (reg < MBC1_REG_BANK_MODE_SEL){
-                    gb_cart_set_banking_mode(data);
-                }
-                break;
-            case TYPE_ROM_MBC2:
-            case TYPE_ROM_MBC2_BAT:
-            case TYPE_ROM_RAM:
-            case TYPE_ROM_RAM_BAT:
-            case TYPE_ROM_MMM01:
-            case TYPE_ROM_MMM01_SRAM:
-            case TYPE_ROM_MMM01_SRAM_BAT:
-            case TYPE_ROM_MBC3_TIMER_BAT:
-            case TYPE_ROM_MBC3_TIMER_RAM_BAT:
-            case TYPE_ROM_MBC3:
-            case TYPE_ROM_MBC3_RAM:
-            case TYPE_ROM_MBC3_RAM_BAT:
-            case TYPE_ROM_MBC5:
-            case TYPE_ROM_MBC5_RAM:
-            case TYPE_ROM_MBC5_RAM_BAT:
-            case TYPE_ROM_MBC5_RUMBL:
-            case TYPE_ROM_MBC5_RUMBL_SRAM:
-            case TYPE_ROM_MBC5_RUMBL_SRAM_BAT:
-            case TYPE_POCKET_CAM:
-            case TYPE_BANDAI_TAMA5:
-            case TYPE_HUDSON_HUC_3:
-            case TYPE_HUDSON_HUC_1:
-            case TYPE_ROM_NO_MBC:
-            default:
-                //do nothing cannot switch ram bank
-                break;
-    }
+        // CART ROM BANKS
+        lData = data;
     } else if(reg >= TILE_RAM_0 && reg < CART_RAM){
         // VRAM
         //if((gb_mem_map[LCD_STAT] & LCD_STAT_MODE) != LCD_STAT_MODE_PIXEL_TRANS)
-            lData = data;
+        lData = data;
     } else if(reg >= CART_RAM && reg < GB_RAM_1){
         // CART ram if available
         lData = data;
@@ -253,39 +196,36 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
     return true;
 }
 
-// following functions are for system/io_ports 
+// following functions are for system/io_ports --------------------------------------------------
 uint8_t get_mem_map_8(uint16_t reg){
-    uint8_t temp = 0;
-    if(reg < CART_ROM_1 ){
-        // fixed rom bank
-        temp = get_cart_rom_fix_8(reg);
-    } else if(reg >= CART_ROM_1 && reg < TILE_RAM_0 ){
-        // switchable rom bank
-        temp = get_cart_rom_8(reg);
+    uint8_t data = 0;
+    if(reg < TILE_RAM_0 ){
+        data = gb_cart_read_rom(reg);
+    } else if(reg >= CART_RAM && reg < GB_RAM_1){
+        // CART ram if available
+        data = gb_cart_read_ram(reg);
     } else {
-        temp = gb_mem_map[reg];
+        data = gb_mem_map[reg];
     }
-    return temp;
+    return data;
 }
 
 void set_mem_map_8(uint16_t reg, uint8_t data){
-   //PRINT("set_mem_map_8\n");
-   gb_mem_map[reg] = data;
+    //PRINT("set_mem_map_8\n");
+    if(reg < TILE_RAM_0 ){
+
+        gb_cart_write_rom(reg,data);
+    } else if(reg >= CART_RAM && reg < GB_RAM_1){
+        // CART ram if available
+        gb_cart_write_ram(reg,data);
+    } else {
+        gb_mem_map[reg] = data;
+    }
 }
 
 uint8_t get_mem_map_bit(uint16_t reg, uint8_t data){
-   //PRINT("get_mem_map_bit\n");
-   uint8_t temp = 0;
-   if(reg < CART_ROM_1 ){
-        // fixed rom bank
-        temp = get_cart_rom_fix_8(reg);
-    } else if(reg >= CART_ROM_1 && reg < TILE_RAM_0 ){
-        // switchable rom bank
-        temp = get_cart_rom_8(reg);
-    } else {
-        temp = gb_mem_map[reg];
-    }
-    return temp & data;
+    //PRINT("get_mem_map_bit\n");
+    return get_mem_map_8(reg) & data;
 }
 
 void set_mem_map_bit(uint16_t reg, uint8_t data){
@@ -297,9 +237,6 @@ void clear_mem_map_bit(uint16_t reg, uint8_t data){
    //PRINT("clear_mem_map_bit\n");
     gb_mem_map[reg] &= ~data;
 }
-
-
-
 
 uint16_t get_mem_map_16(uint16_t reg){
     return op_get_mem_map_16(reg);

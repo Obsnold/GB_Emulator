@@ -2,6 +2,7 @@
 #include "gb_mem_map.h"
 #include "gb_load.h"
 #include "debug_print.h"
+#include "gb_common.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -11,9 +12,22 @@
 #define DEBUG_PRINT(fmt, args...)
 #endif
 
+// No MBC (32 KiB ROM only)
+// MBC1 (max 2MByte ROM and/or 32 KiB RAM)
+// MBC2 (max 256 KiB ROM and 512x4 bits RAM)
+// MBC3 (max 2MByte ROM and/or 32KByte RAM and Timer)
+// MBC5 It can map up to 64 Mbits (8 MiB) of ROM. similar to MBC1 support GBC double speed
+// MBC6 - some weird chip used in only one game. seems to download minigames
+// MBC7 - 2 axis accelerometer
+// MMM01 - multi game cart
+// M161 - anohter multi game cart
+// HuC1 - hudson infrared cart
+// HUC-3 - more advanced version of the HUC1 but with RTC and other bits
+
+
+
 uint8_t* g_cart;
 unsigned int g_cart_size = 0;
-
 
 bool g_enable_ram = false;
 uint8_t g_rom_bank = 0x01;
@@ -21,8 +35,7 @@ uint8_t g_ram_bank = 0x00;
 uint8_t g_banking_mode = 0x00;
 uint16_t g_number_of_rom_banks;
 uint16_t g_number_of_ram_banks;
-uint8_t* g_ram_banks[16];
-
+uint8_t g_ram_banks[16][CART_RAM_MB_SIZE];
 
 int gb_cart_load(char* filename){
     //load cart rom data
@@ -33,7 +46,7 @@ int gb_cart_load(char* filename){
     PRINT("g_cart_size %u\n",g_cart_size);
 
     // get values from cart header
-    switch(get_mem_map_8(CART_ROM_SIZE)){
+    switch(g_cart[CART_ROM_SIZE]){
         case ROM_SIZE_1_5MB:
         g_number_of_rom_banks = 96;
         break;
@@ -73,7 +86,7 @@ int gb_cart_load(char* filename){
         break;
     }
 
-    switch(get_mem_map_8(CART_RAM_SIZE)){
+    switch(g_cart[CART_RAM_SIZE]){
         case RAM_SIZE_128KB:
         g_number_of_ram_banks = 16;
         break;
@@ -92,63 +105,108 @@ int gb_cart_load(char* filename){
         g_number_of_ram_banks = 0;
         break;
     }
-
-    //init ram memory
-    for(int i = 0; i < g_number_of_ram_banks; i ++){
-        g_ram_banks[i] = (uint8_t *)malloc(CART_RAM_MB_SIZE);
-    }
-
+    PRINT("g_number_of_ram_banks = %02x\n",g_number_of_ram_banks);
+    PRINT("g_number_of_rom_banks = %02x\n",g_number_of_rom_banks);
     return 0;
 }
 
 
-void gb_cart_switch_rom_bank(unsigned int bank){
-    if(bank == 0x00) {
-        g_rom_bank = 0x01;
+void gb_cart_write_rom(uint16_t addr, uint8_t data){
+    // rom banks need to check for mbc and other controler chips
+    switch(g_cart[CART_TYPE]){
+        case TYPE_ROM_MBC1:
+        case TYPE_ROM_MBC1_RAM:
+        case TYPE_ROM_MBC1_RAM_BAT:
+            if(addr < MBC1_REG_RAM_EN){ // enable ram
+                //PRINT("MBC1_REG_RAM_EN %02x\n",data);
+                if(data == 0x00){
+                    g_enable_ram = false;
+                } else if (data & 0x0A){
+                    g_enable_ram = true;
+                }
+            } else if (addr < MBC1_REG_ROM_BANK_NUM){ // switch rom bank
+                //PRINT("MBC1_REG_ROM_BANK_NUM %02x\n",data);
+                if(data == 0x00) {
+                    g_rom_bank = 0x01;
+                } else {
+                    g_rom_bank = data & 0x1F;
+                }
+                if(g_banking_mode == 0x01){
+                    g_rom_bank = g_rom_bank + (g_ram_bank << 0x05);
+                }
+            } else if (addr < MBC1_REG_RAM_BANK_NUM){ // switch ram bank
+                //PRINT("MBC1_REG_RAM_BANK_NUM\n");
+                g_ram_bank = data & 0x03;
+            } else if (addr < MBC1_REG_BANK_MODE_SEL){ // select banking mode
+                //PRINT("MBC1_REG_BANK_MODE_SEL\n");
+                g_banking_mode = data;
+            }
+            break;
+        case TYPE_ROM_MBC2:
+        case TYPE_ROM_MBC2_BAT:
+            if(addr & BIT_8){
+                
+            } else {
+                if(addr < MBC2_REG_ROM_BANK_NUM){
+                    if(data & 0x0A){
+                        g_enable_ram = true;
+                    } else {
+                        g_enable_ram = false;
+                    }
+                } 
+            }
+            break;
+        case TYPE_ROM_RAM:
+        case TYPE_ROM_RAM_BAT:
+        case TYPE_ROM_MMM01:
+        case TYPE_ROM_MMM01_SRAM:
+        case TYPE_ROM_MMM01_SRAM_BAT:
+        case TYPE_ROM_MBC3_TIMER_BAT:
+        case TYPE_ROM_MBC3_TIMER_RAM_BAT:
+        case TYPE_ROM_MBC3:
+        case TYPE_ROM_MBC3_RAM:
+        case TYPE_ROM_MBC3_RAM_BAT:
+        case TYPE_ROM_MBC5:
+        case TYPE_ROM_MBC5_RAM:
+        case TYPE_ROM_MBC5_RAM_BAT:
+        case TYPE_ROM_MBC5_RUMBL:
+        case TYPE_ROM_MBC5_RUMBL_SRAM:
+        case TYPE_ROM_MBC5_RUMBL_SRAM_BAT:
+        case TYPE_POCKET_CAM:
+        case TYPE_BANDAI_TAMA5:
+        case TYPE_HUDSON_HUC_3:
+        case TYPE_HUDSON_HUC_1:
+        case TYPE_ROM_NO_MBC:
+        default:
+            //do nothing cannot switch ram bank
+            break;
+    }
+}
+
+
+uint8_t gb_cart_read_rom(uint16_t addr){
+    uint8_t data = 0;
+    if (addr < CART_ROM_1){
+        // return fixed rom
+        data = g_cart[addr];
     } else {
-        g_rom_bank = bank & 0x1F;
+        data = g_cart[(g_rom_bank * CART_MB_SIZE) + (addr - CART_MB_SIZE)];
     }
-    if(g_banking_mode == 0x01){
-        g_rom_bank = g_rom_bank + (g_ram_bank << 0x05);
+    return data;
+}
+
+
+void gb_cart_write_ram(uint16_t addr, uint8_t data){
+    if (g_enable_ram = true){
+        g_ram_banks[g_ram_bank][addr-CART_RAM] = data;
     }
 }
 
-void gb_cart_switch_ram_bank(unsigned int bank){
-    printf("gb_cart_switch_ram_bank %d\n", bank);
-    if(g_number_of_ram_banks == 0x01){
-        g_ram_bank = bank & 0x03;
-    } else if(bank <= g_number_of_ram_banks){
-        //first save existing ram
-        for(uint16_t i = 0; i < CART_MB_SIZE; i++){
-            g_ram_banks[g_ram_bank-1][i] = get_mem_map_8(CART_RAM+i);
-        }
-        
-        //now load new ram
-        g_ram_bank = bank & 0x03;
-        for(uint16_t i = 0; i < CART_MB_SIZE; i++){
-            set_mem_map_8(CART_RAM+i,g_ram_banks[g_ram_bank-1][i]);
-        }
-        
+
+uint8_t gb_cart_read_ram(uint16_t addr){
+    if (g_enable_ram = true){
+        return g_ram_banks[g_ram_bank][addr-CART_RAM];
     } else {
-        DEBUG_PRINT("Error! trying to switch ram membanks");
+        return 0;
     }
-}
-
-void gb_cart_set_ram_enabled(bool set){
-    //printf("gb_cart_set_ram_enabled %d\n", set);
-    g_enable_ram = set;
-}
-
-void gb_cart_set_banking_mode(uint8_t set){
-    //printf("gb_cart_set_banking_mode %d\n", set);
-    g_banking_mode = set;
-}
-
-uint8_t get_cart_rom_fix_8(uint16_t addr){
-    //PRINT("TEST----- %02x\n",addr);
-    return g_cart[addr];
-}
-
-uint8_t get_cart_rom_8(uint16_t addr){
-    return g_cart[(g_rom_bank * CART_MB_SIZE) + addr - CART_MB_SIZE];
 }
