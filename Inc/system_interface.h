@@ -4,9 +4,9 @@
 #include "gb_common.h"
 
 uint16_t get_key_press();
-void init_screen();
+int init_screen();
 void free_screen();
-void update_screen(uint8_t line);
+int update_screen(uint8_t line);
 void enable_lcd(bool set);
 void debug_screen_init();
 void debug_screen_free();
