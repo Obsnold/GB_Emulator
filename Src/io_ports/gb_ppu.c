@@ -308,15 +308,21 @@ void draw_window_line(){
         }
 
         uint8_t window_line = (lcd_line - get_mem_map_8(LCD_WY));
-        int8_t window_x = get_mem_map_8(LCD_WX) - 7;
+        // WX is unsigned and the left edge is WX-7, so this needs more range
+        // than an int8_t: WX=0xF8 gives 241, which wrapped to -8 and then
+        // clamped to 0, painting the window across the whole scanline.
+        int16_t window_x = (int16_t)get_mem_map_8(LCD_WX) - 7;
         uint16_t map_y_offset = window_line /8;
         uint16_t map_x_offset = 0;
         uint8_t tile_y_offset = window_line % 8;
         uint8_t tile_x_offset = 0;
 
+        if(window_x >= GB_SCREEN_WIDTH){
+            return;     // left edge is off the right of the screen
+        }
         if(window_x < 0){
             window_x = 0;
-        } 
+        }
 
         for(int16_t x = window_x; x < GB_SCREEN_WIDTH; x++){
             int32_t tile = (get_mem_map_8(map + map_x_offset + (map_y_offset * 32)));
