@@ -1,0 +1,11 @@
+# Keeps the workflow's action versions current. Without this, pinning actions
+# to a major tag silently accumulates staleness; with it, the major tags above
+# stay a deliberate choice rather than a default.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci:"

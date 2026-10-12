@@ -1,88 +1,125 @@
 name: ci
 
+# push is limited to main so that a pull request from a branch in this repo
+# triggers one run, not two (a push run and a pull_request run).
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
+# The job only reads the repository. Narrowing this from the default token
+# scope means a compromised dependency cannot push, tag or comment.
+permissions:
+  contents: read
+
+# Superseded runs on the same branch are pointless once a newer commit exists.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # Actions' implicit shell is `bash -e`. Naming bash explicitly also turns
+    # on pipefail, so a failure in the middle of a pipeline is not swallowed.
+    shell: bash
+
 jobs:
   check:
+    name: build, analyse and test
     runs-on: ubuntu-latest
+    # The fuzz stage runs 300 emulator images; cap the job so a hang cannot
+    # sit burning runner minutes.
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install build and analysis dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libsdl2-dev cppcheck
+          sudo apt-get install --no-install-recommends -y \
+            libsdl2-dev \
+            cppcheck
 
-      # A broken build is worth failing fast on; nothing below it can run.
+      # Fail fast here only: none of the stages below can say anything useful
+      # if the tree does not compile.
       - name: Build emulator
+        id: build
         run: make
 
-      # Every stage below reports independently. continue-on-error keeps a
-      # failing stage from skipping the rest, so one run shows every problem
-      # instead of one problem per run; the Gate step at the end still fails
-      # the job. Each stage is its own step so the run summary names what broke
-      # without anyone opening a log.
-      - name: Static analysis
+      # Each stage below is gated on the build rather than on the stage before
+      # it, so one failing stage does not hide the other four. Note the absence
+      # of continue-on-error: that would report a failing stage as a green tick
+      # and leave only a final gate step red. This way every stage shows its
+      # real result and the job fails on its own.
+      #
+      # !cancelled() rather than always(): always() would ignore cancellation
+      # and keep working through all five stages after cancel-in-progress above
+      # has superseded the run.
+      - name: Static analysis (gcc warnings + -fanalyzer)
         id: analyze
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: make analyze
 
-      - name: cppcheck
+      - name: Static analysis (cppcheck)
         id: cppcheck
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: make cppcheck
 
       - name: Unit tests
         id: test
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: make test
 
-      - name: Unit tests under AddressSanitizer + UBSan
+      - name: Unit tests under AddressSanitizer and UBSan
         id: test_asan
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: make test-asan
 
       - name: Fuzz cart images
         id: fuzz
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: make fuzz
 
       - name: Upload analysis log
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: analyze-log
           path: Build/analyze.log
           if-no-files-found: ignore
+          retention-days: 14
 
-      - name: Gate
-        if: always()
+      # Reporting only. The job's pass/fail already follows from the stages
+      # above, so this never changes the outcome; it collects the stages into
+      # one table on the run page so a red build is legible at a glance.
+      - name: Summarise
+        if: ${{ !cancelled() }}
         env:
-          ANALYZE:   ${{ steps.analyze.outcome }}
-          CPPCHECK:  ${{ steps.cppcheck.outcome }}
-          TEST:      ${{ steps.test.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          ANALYZE: ${{ steps.analyze.outcome }}
+          CPPCHECK: ${{ steps.cppcheck.outcome }}
+          TEST: ${{ steps.test.outcome }}
           TEST_ASAN: ${{ steps.test_asan.outcome }}
-          FUZZ:      ${{ steps.fuzz.outcome }}
+          FUZZ: ${{ steps.fuzz.outcome }}
         run: |
-          fail=0
           {
+            echo "### Stages"
+            echo
             echo "| stage | result |"
             echo "| --- | --- |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          for stage in ANALYZE CPPCHECK TEST TEST_ASAN FUZZ; do
-            outcome="${!stage}"
+          for stage in BUILD ANALYZE CPPCHECK TEST TEST_ASAN FUZZ; do
+            outcome="${!stage:-skipped}"
             case "$outcome" in
-              success) mark=":white_check_mark: pass" ;;
-              skipped) mark=":fast_forward: skipped" ;;
-              *)       mark=":x: fail"; fail=1 ;;
+              success)  mark=':white_check_mark: pass' ;;
+              skipped)  mark=':fast_forward: skipped' ;;
+              failure)  mark=':x: fail' ;;
+              *)        mark=":grey_question: $outcome" ;;
             esac
-            echo "| \`$stage\` | $mark |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| \`${stage,,}\` | $mark |" >> "$GITHUB_STEP_SUMMARY"
             printf '%-10s %s\n' "$stage" "$outcome"
           done
-
-          exit $fail
