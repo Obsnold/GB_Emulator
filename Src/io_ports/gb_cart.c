@@ -164,13 +164,18 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
             break;
         case TYPE_ROM_MBC2:
         case TYPE_ROM_MBC2_BAT:
-            if(addr & BIT_8){
-                
-            } else {
-                if(addr < MBC2_REG_ROM_BANK_NUM){
-                    // only 0x0A in the low nibble enables; anything else disables
+            if(addr < MBC2_REG_ROM_BANK_NUM){
+                // Address bit 8 picks the register: set selects the ROM bank,
+                // clear selects the RAM enable.
+                if(addr & BIT_8){
+                    uint8_t bank = data & 0x0F;
+                    if(bank == 0x00){
+                        bank = 0x01;    // bank 0 is already fixed at 0x0000
+                    }
+                    g_rom_bank = rom_bank_in_range(bank);
+                } else {
                     g_enable_ram = ((data & 0x0F) == 0x0A);
-                } 
+                }
             }
             break;
         case TYPE_ROM_RAM:
