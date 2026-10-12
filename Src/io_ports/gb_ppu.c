@@ -156,6 +156,10 @@ void set_pallets(){
 
 void draw_background_line(){
     uint8_t lcd_line = get_mem_map_8(LCD_LY);
+    if(lcd_line >= GB_SCREEN_HEIGHT){
+        return;     // nothing to draw past the bottom of the buffer
+    }
+
     uint8_t screen_y_pos = get_mem_map_8(LCD_SCY);
     uint8_t screen_x_pos = get_mem_map_8(LCD_SCX);
     uint16_t map = 0; // the map address with references to the tiles
@@ -222,6 +226,10 @@ void draw_background_line(){
 
 void draw_sprites_line(){
     uint8_t lcd_line = get_mem_map_8(LCD_LY);
+    if(lcd_line >= GB_SCREEN_HEIGHT){
+        return;     // nothing to draw past the bottom of the buffer
+    }
+
     uint32_t* pallet;
     //check the apllet to use
     uint8_t oam_sprite_size = TILE_SIZE;
@@ -298,6 +306,10 @@ void draw_sprites_line(){
 
 void draw_window_line(){
     uint8_t lcd_line = get_mem_map_8(LCD_LY);
+    if(lcd_line >= GB_SCREEN_HEIGHT){
+        return;     // nothing to draw past the bottom of the buffer
+    }
+
     if(get_mem_map_8(LCD_WY) <= lcd_line){
         uint16_t bg_window_tile_set = 0; //the address of the tile map set
         uint8_t bg_window_tile_mode = get_mem_map_bit(LCD_CTRL, LCD_CTRL_BG_W_TILE_SELECT); // which addressing method are we using
