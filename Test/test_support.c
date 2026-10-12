@@ -79,7 +79,7 @@ void emu_reset_with_cart(unsigned banks, uint8_t cart_type,
     lcd_enabled      = false;
     oam_list_size    = 0;
 
-    previous_keys = 0;
+    previous_keys = 0xFF;   // active low: nothing pressed
 }
 
 void emu_reset(void)

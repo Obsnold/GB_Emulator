@@ -1,11 +1,14 @@
 #include "gb_joypad_input.h"
 #include "gb_mem_map.h"
 
-uint8_t previous_keys = 0;
+// Active low, so 0xFF is "nothing pressed" - the state after reset.
+uint8_t previous_keys = 0xFF;
 
 void gb_input(uint8_t keys){
-    //need to check for key interrupt
-    if(keys != previous_keys){
+    // The joypad interrupt is a high-to-low transition, which with active-low
+    // keys means a key going down. Firing on any change ran a game's input
+    // handler a second time on release.
+    if((previous_keys & (uint8_t)~keys) != 0){
         set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_JOYPAD);
     }
 
