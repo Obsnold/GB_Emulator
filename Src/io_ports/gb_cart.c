@@ -30,7 +30,7 @@ uint8_t* g_cart;
 unsigned int g_cart_size = 0;
 
 bool g_enable_ram = false;
-uint8_t g_rom_bank = 0x01;
+uint16_t g_rom_bank = 0x01;
 uint8_t g_ram_bank = 0x00;
 uint8_t g_banking_mode = 0x00;
 uint16_t g_number_of_rom_banks;
@@ -125,11 +125,11 @@ int gb_cart_load(char* filename){
 
 // A cart only wires as many ROM address lines as it has banks, so a bank
 // number past the end of the image wraps instead of addressing past it.
-static uint8_t rom_bank_in_range(uint8_t bank){
+static uint16_t rom_bank_in_range(uint16_t bank){
     if(g_number_of_rom_banks == 0){
         return 0;
     }
-    return (uint8_t)(bank % g_number_of_rom_banks);
+    return (uint16_t)(bank % g_number_of_rom_banks);
 }
 
 
@@ -207,6 +207,20 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
         case TYPE_ROM_MBC5_RUMBL:
         case TYPE_ROM_MBC5_RUMBL_SRAM:
         case TYPE_ROM_MBC5_RUMBL_SRAM_BAT:
+            if(addr < MBC5_REG_RAM_TIMER_EN){           // 0x0000-0x1FFF
+                g_enable_ram = ((data & 0x0F) == 0x0A);
+            } else if (addr < MBC5_REG_ROM_BANK_8_NUM){ // 0x2000-0x2FFF
+                // low 8 bits of the bank number
+                g_rom_bank = rom_bank_in_range((uint16_t)((g_rom_bank & 0x100) | data));
+            } else if (addr < MBC5_REG_ROM_BANK_1_NUM){ // 0x3000-0x3FFF
+                // bit 8 of the bank number
+                g_rom_bank = rom_bank_in_range((uint16_t)((g_rom_bank & 0x0FF) |
+                                               ((data & 0x01) << 8)));
+            } else if (addr < MBC5_REG_RAM_BANK_NUM){   // 0x4000-0x5FFF
+                g_ram_bank = data & 0x0F;
+            }
+            // MBC5 has no bank 0 translation: bank 0 is selectable here.
+            break;
         case TYPE_POCKET_CAM:
         case TYPE_BANDAI_TAMA5:
         case TYPE_HUDSON_HUC_3:

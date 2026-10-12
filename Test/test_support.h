@@ -39,7 +39,7 @@ extern uint32_t      bg_pallet[4];
 extern uint8_t     *g_cart;
 extern unsigned int g_cart_size;
 extern bool         g_enable_ram;
-extern uint8_t      g_rom_bank;
+extern uint16_t     g_rom_bank;
 extern uint8_t      g_ram_bank;
 extern uint8_t      g_banking_mode;
 extern uint16_t     g_number_of_rom_banks;
