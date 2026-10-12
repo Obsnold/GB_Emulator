@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev cppcheck
+
+      - name: Build emulator
+        run: make
+
+      # Separate steps rather than `make check`, so the run summary shows
+      # which stage failed without opening the log.
+      - name: Static analysis
+        run: make analyze
+
+      - name: cppcheck
+        run: make cppcheck
+
+      - name: Unit tests
+        run: make test
+
+      - name: Unit tests under AddressSanitizer + UBSan
+        run: make test-asan
+
+      - name: Fuzz cart images
+        run: make fuzz
+
+      - name: Upload analysis log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analyze-log
+          path: Build/analyze.log
+          if-no-files-found: ignore

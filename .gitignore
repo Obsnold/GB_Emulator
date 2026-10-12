@@ -1,3 +1,9 @@
 Roms/
 Out/
+Build/
 *.o
+*.d
+
+# Third-party test ROMs are fetched, not committed; see Test/roms/README.md
+Test/roms/*
+!Test/roms/README.md
