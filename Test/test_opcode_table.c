@@ -223,13 +223,16 @@ TEST(bit_opcode_does_not_write_memory)
     uint8_t bytes[2];
     uint16_t at;
 
-    emu_reset();
+    /* An MBC1 cart, so a stray write into ROM actually reaches the mapper and
+     * the test can observe it. A ROM-only cart discards it and passes either
+     * way. */
+    emu_reset_with_cart(4, TYPE_ROM_MBC1, ROM_SIZE_64KB, RAM_SIZE_0);
 
     bytes[0] = 0xCB;
     bytes[1] = 0x46;                   /* BIT 0,(HL) */
     at = emu_place_code(bytes, 2);
 
-    CPU_REG.HL = 0x4000;               /* cart ROM: an MBC bank-number write */
+    CPU_REG.HL = 0x2000;               /* MBC1 ROM bank-number register */
     g_rom_bank = 0x01;
 
     opcode_table[0xCB].operation(at);

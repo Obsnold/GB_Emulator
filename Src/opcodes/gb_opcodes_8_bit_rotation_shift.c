@@ -301,12 +301,16 @@ uint8_t opcode_cb_prefix(uint16_t opcode_address){
             break;
     }
 
-    // get value depending on opcode
-    if(opcode_z == 0x06){
-        op_set_mem_map_8(CPU_REG.HL,value);
-    } else{ 
-        uint8_t *addr = get_reg_8(opcode_z);
-        *addr = value;
+    // BIT only tests a bit, so it must not write its operand back. Doing so
+    // routed a write through the mapper whenever HL pointed into cart ROM,
+    // which could switch banks underneath the running code.
+    if(opcode_x != 0x01){
+        if(opcode_z == 0x06){
+            op_set_mem_map_8(CPU_REG.HL,value);
+        } else{
+            uint8_t *addr = get_reg_8(opcode_z);
+            *addr = value;
+        }
     }
 
     return time;
