@@ -4,6 +4,7 @@
 #include "gb_cpu.h"
 #include "gb_opcodes.h"
 #include "gb_joypad_input.h"
+#include "gb_serial.h"
 #include "gb_timer.h"
 #include "system_interface.h"
 #include "debug_print.h"
@@ -27,11 +28,31 @@ bool run = true;
 unsigned long prev_time = 0;
 unsigned long min_time = 1000;
 
+// Bytes already echoed to stdout, so each one is printed once.
+unsigned int serial_printed = 0;
+
+// Anything a ROM writes to the link port goes to stdout. Test ROMs report
+// their results this way, so running one directly shows its verdict.
+void print_new_serial(){
+   const char *text = gb_serial_text();
+   unsigned int len = gb_serial_length();
+
+   while(serial_printed < len){
+      putchar(text[serial_printed]);
+      serial_printed++;
+   }
+   if(serial_printed > 0){
+      fflush(stdout);
+   }
+}
+
 void gb_init(){
    cpu_init();
    init_screen(); 
    //debug_screen_init();
    init_mem_map();
+   gb_serial_init();
+   serial_printed = 0;
    prev_time = get_ns();
 }
 
@@ -43,6 +64,7 @@ void gb_emu(int keys){
    gb_cpu(time_delta);
    ppu(time_delta);
    gb_input(keys);
+   print_new_serial();
 }
 
 
