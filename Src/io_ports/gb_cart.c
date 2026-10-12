@@ -46,6 +46,14 @@ int gb_cart_load(char* filename){
     if(loaded <= 0){
         return -1;
     }
+    // The header occupies 0x100..0x14F and is read unconditionally below, so
+    // a file too short to hold one has to be rejected before that happens.
+    if(loaded <= CART_CHECK_SUM_2){
+        free(g_cart);
+        g_cart = NULL;
+        return -1;
+    }
+
     g_cart_size = (unsigned int)loaded;
     PRINT("g_cart_size %u\n",g_cart_size);
 
