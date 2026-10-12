@@ -20,7 +20,10 @@
 #define green_3 0x8D61
 #define green_4 0x9DE1*/
 
-extern uint32_t gb_display[GB_SCREEN_WIDTH][GB_SCREEN_HEIGHT];
+// Row-major: one scanline is contiguous. Both producers (the renderers in
+// gb_ppu.c) and the consumer (the texture upload in the OS layer) walk a
+// scanline at a time, so this is the axis order that keeps them sequential.
+extern uint32_t gb_display[GB_SCREEN_HEIGHT][GB_SCREEN_WIDTH];
 
 uint8_t ppu(unsigned long delta_time);
 

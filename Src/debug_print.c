@@ -185,7 +185,7 @@ void print_display_buffer(){
     for(int i =0; i <GB_SCREEN_HEIGHT;i++){
         for(int j =0; j < GB_SCREEN_WIDTH; j++){
             int val = 0;
-            switch(gb_display[j][i]){
+            switch(gb_display[i][j]){
                 case PAL_WHITE:
                     val = 0;
                 break;

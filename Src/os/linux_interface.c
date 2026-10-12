@@ -81,7 +81,7 @@ int update_screen(uint8_t line){
             uint32_t* dst = (uint32_t*)pixels;
             for(int x = 0; x < GB_SCREEN_WIDTH; x++){
                 if(g_enable_lcd){
-                    *dst = gb_display[x][line];
+                    *dst = gb_display[line][x];
                 } else {
                     *dst = rgb888_green_1; //should work out which colour this should be set to
                 }

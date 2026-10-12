@@ -74,14 +74,14 @@ TEST(window_is_not_drawn_when_wx_is_off_screen)
 
     setup_bg_and_window();
     draw_background_line();
-    background = gb_display[0][TEST_LINE];
+    background = gb_display[TEST_LINE][0];
 
     set_mem_map_8(LCD_WX, 0xF8);         /* left edge at x=241, off screen */
     draw_window_line();
 
-    EXPECT_EQ_X(gb_display[0][TEST_LINE],   background);
-    EXPECT_EQ_X(gb_display[80][TEST_LINE],  background);
-    EXPECT_EQ_X(gb_display[159][TEST_LINE], background);
+    EXPECT_EQ_X(gb_display[TEST_LINE][0],   background);
+    EXPECT_EQ_X(gb_display[TEST_LINE][80],  background);
+    EXPECT_EQ_X(gb_display[TEST_LINE][159], background);
 }
 
 TEST(window_is_drawn_from_wx_minus_seven)
@@ -90,13 +90,13 @@ TEST(window_is_drawn_from_wx_minus_seven)
 
     setup_bg_and_window();
     draw_background_line();
-    background = gb_display[0][TEST_LINE];
+    background = gb_display[TEST_LINE][0];
 
     set_mem_map_8(LCD_WX, 87);           /* left edge at x=80 */
     draw_window_line();
 
-    EXPECT_EQ_X(gb_display[79][TEST_LINE], background);
-    EXPECT(gb_display[80][TEST_LINE] != background);
+    EXPECT_EQ_X(gb_display[TEST_LINE][79], background);
+    EXPECT(gb_display[TEST_LINE][80] != background);
 }
 
 TEST(window_covers_the_line_when_wx_is_zero)
@@ -105,13 +105,13 @@ TEST(window_covers_the_line_when_wx_is_zero)
 
     setup_bg_and_window();
     draw_background_line();
-    background = gb_display[0][TEST_LINE];
+    background = gb_display[TEST_LINE][0];
 
     set_mem_map_8(LCD_WX, 0);
     draw_window_line();
 
-    EXPECT(gb_display[0][TEST_LINE] != background);
-    EXPECT(gb_display[159][TEST_LINE] != background);
+    EXPECT(gb_display[TEST_LINE][0] != background);
+    EXPECT(gb_display[TEST_LINE][159] != background);
 }
 
 /* --- sprites ----------------------------------------------------------- */
@@ -166,7 +166,7 @@ TEST(sprite_columns_past_the_right_edge_are_dropped)
     ppu_oam_search();
     draw_sprites_line();
 
-    EXPECT_EQ_X(gb_display[159][TEST_LINE], PAL_L_GRAY);
+    EXPECT_EQ_X(gb_display[TEST_LINE][159], PAL_L_GRAY);
 }
 
 /* Mirror case on the left: at X=4, columns 0..3 are off screen and column 4 is
@@ -185,7 +185,7 @@ TEST(sprite_columns_before_the_left_edge_are_dropped)
     ppu_oam_search();
     draw_sprites_line();
 
-    EXPECT_EQ_X(gb_display[0][TEST_LINE], PAL_D_GRAY);
+    EXPECT_EQ_X(gb_display[TEST_LINE][0], PAL_D_GRAY);
 }
 
 /* A sprite entirely off the left edge must leave the background alone. */
@@ -194,14 +194,14 @@ TEST(fully_offscreen_sprite_does_not_draw)
     uint32_t background;
 
     setup_sprites();
-    background = gb_display[0][TEST_LINE];
+    background = gb_display[TEST_LINE][0];
 
     write_tile(0, 0xFF, 0xFF);
     place_sprite(0, TEST_LINE + 16, 0, 0, 0x00);   /* X=0 is "hidden" on DMG */
     ppu_oam_search();
     draw_sprites_line();
 
-    EXPECT_EQ_X(gb_display[0][TEST_LINE], background);
+    EXPECT_EQ_X(gb_display[TEST_LINE][0], background);
 }
 
 /* In 8x16 mode the hardware ignores bit 0 of the tile index: the pair is
@@ -220,7 +220,7 @@ TEST(tall_sprites_mask_the_low_bit_of_the_tile_index)
     place_sprite(0, TEST_LINE + 16, 20, 2, 0x00);
     ppu_oam_search();
     draw_sprites_line();
-    with_even_index = gb_display[16][TEST_LINE];
+    with_even_index = gb_display[TEST_LINE][16];
 
     setup_sprites();
     set_mem_map_bit(LCD_CTRL, LCD_CTRL_OBJ_SIZE);
@@ -231,7 +231,7 @@ TEST(tall_sprites_mask_the_low_bit_of_the_tile_index)
     ppu_oam_search();
     draw_sprites_line();
 
-    EXPECT_EQ_X(gb_display[16][TEST_LINE], with_even_index);
+    EXPECT_EQ_X(gb_display[TEST_LINE][16], with_even_index);
 }
 
 TEST(oam_search_finds_at_most_ten_sprites_per_line)

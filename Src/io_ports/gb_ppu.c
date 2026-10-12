@@ -53,7 +53,7 @@ and 0 once every 456 dots. Scanlines 144 through 153 are mode 1.*/
 #define TILE_MEM_SIZE 0x10
 
 //uint8_t gb_bg_pixels[BG_SIZE*TILE_SIZE][BG_SIZE*TILE_SIZE];
-uint32_t gb_display[GB_SCREEN_WIDTH][GB_SCREEN_HEIGHT];
+uint32_t gb_display[GB_SCREEN_HEIGHT][GB_SCREEN_WIDTH];
 
 uint32_t display_line[GB_SCREEN_WIDTH];
 
@@ -211,7 +211,7 @@ void draw_background_line(){
                 pix = bg_pallet[0];
             }
         }
-        gb_display[x][lcd_line] = pix;
+        gb_display[lcd_line][x] = pix;
         
         map_x_tile_offset++;
         if(map_x_tile_offset >= 8){
@@ -287,16 +287,16 @@ void draw_sprites_line(){
             // already settled.
             int behind_bg = get_mem_map_bit(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
 
-            if(!behind_bg || (gb_display[x_pos][lcd_line] == bg_pallet[0])){
+            if(!behind_bg || (gb_display[lcd_line][x_pos] == bg_pallet[0])){
                 if(pixel_1){
                     if(pixel_2){
-                        gb_display[x_pos][lcd_line] = pallet[3];
+                        gb_display[lcd_line][x_pos] = pallet[3];
                     } else {
-                        gb_display[x_pos][lcd_line] = pallet[1];
+                        gb_display[lcd_line][x_pos] = pallet[1];
                     }
                 } else {
                     if(pixel_2){
-                        gb_display[x_pos][lcd_line] = pallet[2];
+                        gb_display[lcd_line][x_pos] = pallet[2];
                     } 
                 }
             }
@@ -367,7 +367,7 @@ void draw_window_line(){
                     pix = bg_pallet[0];
                 }
             }
-            gb_display[x][lcd_line] = pix;
+            gb_display[lcd_line][x] = pix;
             
             tile_x_offset++;
             if(tile_x_offset >= 8){
