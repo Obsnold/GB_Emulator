@@ -123,6 +123,16 @@ int gb_cart_load(char* filename){
 }
 
 
+// A cart only wires as many ROM address lines as it has banks, so a bank
+// number past the end of the image wraps instead of addressing past it.
+static uint8_t rom_bank_in_range(uint8_t bank){
+    if(g_number_of_rom_banks == 0){
+        return 0;
+    }
+    return (uint8_t)(bank % g_number_of_rom_banks);
+}
+
+
 void gb_cart_write_rom(uint16_t addr, uint8_t data){
     // rom banks need to check for mbc and other controler chips
     switch(g_cart[CART_TYPE]){
@@ -143,6 +153,7 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
                 if(g_banking_mode == 0x01){
                     g_rom_bank = g_rom_bank + (g_ram_bank << 0x05);
                 }
+                g_rom_bank = rom_bank_in_range(g_rom_bank);
             } else if (addr < MBC1_REG_RAM_BANK_NUM){ // switch ram bank
                 //PRINT("MBC1_REG_RAM_BANK_NUM\n");
                 g_ram_bank = data & 0x03;
@@ -181,6 +192,7 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
                 } else {
                     g_rom_bank = data & 0x7F;
                 }
+                g_rom_bank = rom_bank_in_range(g_rom_bank);
             } else if (addr < MBC3_REG_RAM_BANK_NUM_RTC_SEL){ // switch ram bank
                 g_ram_bank = data & 0x03;
             } else if (addr < MBC3_REG_LATCH_CLK){ // select banking mode
@@ -208,14 +220,21 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
 
 
 uint8_t gb_cart_read_rom(uint16_t addr){
-    uint8_t data = 0;
+    uint32_t offset;
+
     if (addr < CART_ROM_1){
-        // return fixed rom
-        data = g_cart[addr];
+        // bank 0 is always mapped here
+        offset = addr;
     } else {
-        data = g_cart[(g_rom_bank * CART_MB_SIZE) + (addr - CART_MB_SIZE)];
+        offset = ((uint32_t)g_rom_bank * CART_MB_SIZE) + (addr - CART_MB_SIZE);
     }
-    return data;
+
+    // An unmapped read sees an unconnected bus rather than whatever happens to
+    // follow the image in memory.
+    if (g_cart == NULL || offset >= g_cart_size){
+        return 0xFF;
+    }
+    return g_cart[offset];
 }
 
 
