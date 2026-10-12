@@ -3,8 +3,6 @@
 #include "gb_cpu.h"
 #include "debug_print.h"
 
-#define CPU_CYCLE_TIME 238 // the time in nanoseconds it takes to complete one cycle
-
 uint8_t current_cycle_time = 0;
 struct cpu_reg CPU_REG;
 
@@ -76,8 +74,8 @@ void gb_cpu(unsigned long delta_time){
 
     //if no interrupts then process normally
     if(power_mode == PWR_NORMAL){
-        if(cpu_cycles > (current_cycle_time * CPU_CYCLE_TIME)){
-            cpu_cycles -= (current_cycle_time * CPU_CYCLE_TIME);
+        if(cpu_cycles > (current_cycle_time * CYCLE_TIME)){
+            cpu_cycles -= (current_cycle_time * CYCLE_TIME);
             uint8_t opcode = get_mem_map_8(CPU_REG.PC);
             uint16_t temp_pc = CPU_REG.PC;
             CPU_REG.PC += opcode_table[opcode].length;
