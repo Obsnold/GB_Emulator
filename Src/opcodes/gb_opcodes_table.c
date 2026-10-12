@@ -21,7 +21,7 @@ struct gb_opcode opcode_table[OPCODE_TABLE_SIZE] = {
     {"DEC C",       1, CYCLE_1,                 &opcode_8_dec      /* , &CPU_REG.C, NULL, NULL*/},
     {"LD C,u8",     2, CYCLE_2,                 &opcode_8_ld       /* , &CPU_REG.C, &u8_pointer, NULL*/},
     {"RRCA",        1, CYCLE_1,                 &opcode_rrca       /* , NULL, NULL, NULL*/},
-    {"STOP 0",      1, CYCLE_1,                 &opcode_stop       /* , NULL, NULL, NULL*/},
+    {"STOP 0",      2, CYCLE_1,                 &opcode_stop       /* , NULL, NULL, NULL*/},
     {"LD DE,u16",   3, CYCLE_3,                 &opcode_16_ld      /* , &CPU_REG.DE, &u16_pointer, NULL*/},
     {"LD (DE),A",   1, CYCLE_2,                 &opcode_8_ld       /* , de_pointer, &CPU_REG.A, NULL*/},
     {"INC DE",      1, CYCLE_2,                 &opcode_16_inc     /* , &CPU_REG.DE, NULL, NULL*/},
