@@ -183,7 +183,14 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
         // IO_PORTS
         // lots of stuff going on here 
         // for now just write data
-        lData = data;
+        if(reg == LCD_LY){
+            // LY is read-only to the CPU; a write resets the counter. Letting
+            // it through allowed a value past the bottom of the screen, which
+            // the scanline renderers then used to index gb_display.
+            lData = 0;
+        } else {
+            lData = data;
+        }
     } else if(reg >= ZERO_PAGE && reg < INTERRUPT_EN){
         // Zero page
         // basically just fancy ram
