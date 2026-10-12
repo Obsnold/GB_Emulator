@@ -217,14 +217,14 @@ uint8_t gb_cart_read_rom(uint16_t addr){
 
 
 void gb_cart_write_ram(uint16_t addr, uint8_t data){
-    if (g_enable_ram = true){
+    if (g_enable_ram){
         g_ram_banks[g_ram_bank][addr-CART_RAM] = data;
     }
 }
 
 
 uint8_t gb_cart_read_ram(uint16_t addr){
-    if (g_enable_ram = true){
+    if (g_enable_ram){
         return g_ram_banks[g_ram_bank][addr-CART_RAM];
     } else {
         return 0;
