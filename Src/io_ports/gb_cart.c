@@ -55,7 +55,7 @@ int gb_cart_load(char* filename){
     }
 
     g_cart_size = (unsigned int)loaded;
-    PRINT("g_cart_size %u\n",g_cart_size);
+    DEBUG_PRINT("g_cart_size %u\n",g_cart_size);
 
     // get values from cart header
     switch(g_cart[CART_ROM_SIZE]){
@@ -117,8 +117,8 @@ int gb_cart_load(char* filename){
         g_number_of_ram_banks = 0;
         break;
     }
-    PRINT("g_number_of_ram_banks = %02x\n",g_number_of_ram_banks);
-    PRINT("g_number_of_rom_banks = %02x\n",g_number_of_rom_banks);
+    DEBUG_PRINT("g_number_of_ram_banks = %02x\n",g_number_of_ram_banks);
+    DEBUG_PRINT("g_number_of_rom_banks = %02x\n",g_number_of_rom_banks);
     return 0;
 }
 
