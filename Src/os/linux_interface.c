@@ -3,6 +3,7 @@
 #include "gb_ppu.h"
 #include "debug_print.h"
 #include "gb_mem_map.h"
+#include <string.h>
 
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
@@ -78,14 +79,14 @@ int update_screen(uint8_t line){
             PRINT("Couldn't lock texture: %s\n", SDL_GetError());
             return 1;
         } else {
-            uint32_t* dst = (uint32_t*)pixels;
-            for(int x = 0; x < GB_SCREEN_WIDTH; x++){
-                if(g_enable_lcd){
-                    *dst = gb_display[line][x];
-                } else {
-                    *dst = rgb888_green_1; //should work out which colour this should be set to
+            if(g_enable_lcd){
+                // A scanline is contiguous, so the whole row is one copy.
+                memcpy(pixels, gb_display[line], sizeof(gb_display[line]));
+            } else {
+                uint32_t* dst = (uint32_t*)pixels;
+                for(int x = 0; x < GB_SCREEN_WIDTH; x++){
+                    dst[x] = rgb888_green_1;
                 }
-                dst++;
             }
             SDL_UnlockTexture(texture);
         }
