@@ -10,10 +10,19 @@
  *       unchecked bank numbers, short headers and stray writes.
  *
  *   rom_harness ROM.gb [--frames N]
- *       Run one ROM and look for the mooneye-test-suite result signature: the
- *       test ends on a LD B,B breakpoint with the Fibonacci values
- *       3,5,8,13,21,34 in B,C,D,E,H,L for a pass. Needs no serial port, so it
- *       works against the emulator as it stands.
+ *       Run one ROM and watch for either of the two conventions test suites
+ *       use to report a result:
+ *
+ *         blargg  (default) writes its verdict as text to the link port, so
+ *                 the run ends when "Passed" or "Failed" appears there.
+ *         mooneye (--mooneye) ends on a LD B,B breakpoint with the Fibonacci
+ *                 values 3,5,8,13,21,34 in B,C,D,E,H,L for a pass, and on
+ *                 LD D,D for a failure.
+ *
+ *       The convention has to be stated rather than guessed: LD B,B and LD D,D
+ *       are ordinary instructions, and blargg's 06-ld r,r and instr_timing both
+ *       execute them while testing register loads. Treating that as a mooneye
+ *       breakpoint ends the run early and reports a false failure.
  *
  * Exit status is 0 on success, non-zero otherwise.
  */
@@ -28,6 +37,7 @@
 #include "gb_cpu.h"
 #include "gb_mem_map.h"
 #include "gb_ppu.h"
+#include "gb_serial.h"
 #include "gb_timer.h"
 
 #define STEP_NS          1000UL
@@ -47,6 +57,7 @@ static void emu_boot(void)
 {
     cpu_init();
     init_mem_map();
+    gb_serial_init();
 }
 
 static void emu_step(void)
@@ -64,24 +75,49 @@ static int mooneye_registers_pass(void)
            CPU_REG.H == 21 && CPU_REG.L == 34;
 }
 
-static enum run_result run_until_breakpoint(unsigned long max_steps,
-                                            int *saw_breakpoint)
+enum suite { SUITE_BLARGG, SUITE_MOONEYE };
+
+static enum run_result run_until_verdict(unsigned long max_steps,
+                                         enum suite suite,
+                                         const char **how)
 {
+    unsigned int last_len = 0;
     unsigned long i;
 
-    *saw_breakpoint = 0;
+    *how = "no verdict";
 
     for (i = 0; i < max_steps; i++) {
-        uint8_t op = get_mem_map_8(CPU_REG.PC);
+        if (suite == SUITE_MOONEYE) {
+            uint8_t op = get_mem_map_8(CPU_REG.PC);
 
-        if (op == OPCODE_LD_B_B) {
-            *saw_breakpoint = 1;
-            return mooneye_registers_pass() ? RUN_PASS : RUN_FAIL;
+            if (op == OPCODE_LD_B_B) {
+                *how = "mooneye breakpoint";
+                return mooneye_registers_pass() ? RUN_PASS : RUN_FAIL;
+            }
+            if (op == OPCODE_LD_D_D) {
+                *how = "mooneye failure opcode";
+                return RUN_FAIL;
+            }
+        } else {
+            /* blargg: text on the link port. Scanned only when something new
+             * has arrived, so this is not a strstr over a growing buffer on
+             * every step. */
+            unsigned int len = gb_serial_length();
+
+            if (len != last_len) {
+                const char *text = gb_serial_text();
+                last_len = len;
+                if (strstr(text, "Passed") != NULL) {
+                    *how = "blargg serial output";
+                    return RUN_PASS;
+                }
+                if (strstr(text, "Failed") != NULL) {
+                    *how = "blargg serial output";
+                    return RUN_FAIL;
+                }
+            }
         }
-        if (op == OPCODE_LD_D_D) {
-            *saw_breakpoint = 1;
-            return RUN_FAIL;
-        }
+
         emu_step();
     }
     return RUN_TIMEOUT;
@@ -234,10 +270,26 @@ static int run_fuzz(unsigned long count, uint32_t base_seed)
 
 /* --- single ROM -------------------------------------------------------- */
 
-static int run_rom(const char *path, unsigned long frames)
+/* Collapse the port text onto one line so a verdict fits in a log. */
+static void print_serial(void)
+{
+    const char *text = gb_serial_text();
+    int i;
+
+    if (text[0] == '\0') {
+        return;
+    }
+    fprintf(stderr, "      serial: ");
+    for (i = 0; text[i] != '\0'; i++) {
+        fputc((text[i] == '\n' || text[i] == '\r') ? ' ' : text[i], stderr);
+    }
+    fputc('\n', stderr);
+}
+
+static int run_rom(const char *path, unsigned long frames, enum suite suite)
 {
     enum run_result result;
-    int saw_breakpoint = 0;
+    const char *how = "";
 
     if (gb_cart_load((char *)path) < 0) {
         fprintf(stderr, "%s: could not load\n", path);
@@ -245,22 +297,27 @@ static int run_rom(const char *path, unsigned long frames)
     }
     emu_boot();
 
-    result = run_until_breakpoint(frames * STEPS_PER_FRAME, &saw_breakpoint);
+    result = run_until_verdict(frames * STEPS_PER_FRAME, suite, &how);
 
     switch (result) {
     case RUN_PASS:
-        fprintf(stderr, "PASS  %s\n", path);
+        fprintf(stderr, "PASS    %s  (%s)\n", path, how);
         return 0;
     case RUN_FAIL:
-        fprintf(stderr,
-            "FAIL  %s  (B=%u C=%u D=%u E=%u H=%u L=%u, want 3 5 8 13 21 34)\n",
-            path, CPU_REG.B, CPU_REG.C, CPU_REG.D,
-            CPU_REG.E, CPU_REG.H, CPU_REG.L);
+        fprintf(stderr, "FAIL    %s  (%s)\n", path, how);
+        if (strcmp(how, "mooneye breakpoint") == 0) {
+            fprintf(stderr,
+                "      registers: B=%u C=%u D=%u E=%u H=%u L=%u"
+                "  want 3 5 8 13 21 34\n",
+                CPU_REG.B, CPU_REG.C, CPU_REG.D,
+                CPU_REG.E, CPU_REG.H, CPU_REG.L);
+        }
+        print_serial();
         return 1;
     default:
-        fprintf(stderr,
-            "TIMEOUT %s  (no breakpoint within %lu frames, PC=0x%04X)\n",
-            path, frames, CPU_REG.PC);
+        fprintf(stderr, "TIMEOUT %s  (%lu frames, PC=0x%04X)\n",
+                path, frames, CPU_REG.PC);
+        print_serial();
         return 1;
     }
 }
@@ -279,15 +336,26 @@ int main(int argc, char *argv[])
 
     if (argc >= 2) {
         unsigned long frames = 600;        /* ~10 seconds of emulated time */
+        enum suite suite = SUITE_BLARGG;
+        int i;
 
-        if (argc >= 4 && strcmp(argv[2], "--frames") == 0) {
-            frames = strtoul(argv[3], NULL, 10);
+        for (i = 2; i < argc; i++) {
+            if (strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
+                frames = strtoul(argv[++i], NULL, 10);
+            } else if (strcmp(argv[i], "--mooneye") == 0) {
+                suite = SUITE_MOONEYE;
+            } else if (strcmp(argv[i], "--blargg") == 0) {
+                suite = SUITE_BLARGG;
+            } else {
+                fprintf(stderr, "unknown option: %s\n", argv[i]);
+                return 2;
+            }
         }
-        return run_rom(argv[1], frames);
+        return run_rom(argv[1], frames, suite);
     }
 
     fprintf(stderr,
         "usage: rom_harness --fuzz N [--seed S]\n"
-        "       rom_harness ROM.gb [--frames N]\n");
+        "       rom_harness ROM.gb [--frames N] [--blargg|--mooneye]\n");
     return 2;
 }
