@@ -119,11 +119,8 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
         case TYPE_ROM_MBC1_RAM_BAT:
             if(addr < MBC1_REG_RAM_EN){ // enable ram
                 //PRINT("MBC1_REG_RAM_EN %02x\n",data);
-                if(data == 0x00){
-                    g_enable_ram = false;
-                } else if (data & 0x0A){
-                    g_enable_ram = true;
-                }
+                // only 0x0A in the low nibble enables; anything else disables
+                g_enable_ram = ((data & 0x0F) == 0x0A);
             } else if (addr < MBC1_REG_ROM_BANK_NUM){ // switch rom bank
                 //PRINT("MBC1_REG_ROM_BANK_NUM %02x\n",data);
                 if(data == 0x00) {
@@ -148,11 +145,8 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
                 
             } else {
                 if(addr < MBC2_REG_ROM_BANK_NUM){
-                    if(data & 0x0A){
-                        g_enable_ram = true;
-                    } else {
-                        g_enable_ram = false;
-                    }
+                    // only 0x0A in the low nibble enables; anything else disables
+                    g_enable_ram = ((data & 0x0F) == 0x0A);
                 } 
             }
             break;
@@ -167,11 +161,8 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
         case TYPE_ROM_MBC3_RAM:
         case TYPE_ROM_MBC3_RAM_BAT:
             if(addr < MBC3_REG_RAM_TIMER_EN){ // enable ram
-                if(data == 0x00){
-                    g_enable_ram = false;
-                } else if (data & 0x0A){
-                    g_enable_ram = true;
-                }
+                // only 0x0A in the low nibble enables; anything else disables
+                g_enable_ram = ((data & 0x0F) == 0x0A);
             } else if (addr < MBC3_REG_ROM_BANK_NUM){ // switch rom bank
                 if(data == 0x00) {
                     g_rom_bank = 0x01;
