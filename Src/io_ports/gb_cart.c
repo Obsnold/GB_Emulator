@@ -145,10 +145,12 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
                 g_enable_ram = ((data & 0x0F) == 0x0A);
             } else if (addr < MBC1_REG_ROM_BANK_NUM){ // switch rom bank
                 //PRINT("MBC1_REG_ROM_BANK_NUM %02x\n",data);
-                if(data == 0x00) {
+                // The mapper latches 5 bits, and the bank 0 translation
+                // applies to that masked value: 0xA0 masks to 0, so it has to
+                // become bank 1 too.
+                g_rom_bank = data & 0x1F;
+                if(g_rom_bank == 0x00) {
                     g_rom_bank = 0x01;
-                } else {
-                    g_rom_bank = data & 0x1F;
                 }
                 if(g_banking_mode == 0x01){
                     g_rom_bank = g_rom_bank + (g_ram_bank << 0x05);
@@ -192,10 +194,10 @@ void gb_cart_write_rom(uint16_t addr, uint8_t data){
                 // only 0x0A in the low nibble enables; anything else disables
                 g_enable_ram = ((data & 0x0F) == 0x0A);
             } else if (addr < MBC3_REG_ROM_BANK_NUM){ // switch rom bank
-                if(data == 0x00) {
+                // 7 bits here, same masked bank 0 translation as MBC1
+                g_rom_bank = data & 0x7F;
+                if(g_rom_bank == 0x00) {
                     g_rom_bank = 0x01;
-                } else {
-                    g_rom_bank = data & 0x7F;
                 }
                 g_rom_bank = rom_bank_in_range(g_rom_bank);
             } else if (addr < MBC3_REG_RAM_BANK_NUM_RTC_SEL){ // switch ram bank

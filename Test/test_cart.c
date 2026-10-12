@@ -180,3 +180,22 @@ TEST(mbc2_switches_rom_banks)
     gb_cart_write_rom(0x2100, 0x02);
     EXPECT_EQ_X(g_rom_bank, 0x02);
 }
+
+/* The mapper latches only the low bits of the bank number, and the "bank 0
+ * means bank 1" translation applies to that masked value. Testing the raw byte
+ * instead lets a value like 0xA0, which masks to 0, select bank 0. */
+TEST(mbc1_bank_zero_translation_uses_the_masked_value)
+{
+    emu_reset_with_cart(4, TYPE_ROM_MBC1, ROM_SIZE_64KB, RAM_SIZE_0);
+
+    gb_cart_write_rom(0x2000, 0xA0);          /* 0xA0 & 0x1F == 0 */
+    EXPECT_EQ_X(g_rom_bank, 0x01);
+}
+
+TEST(mbc3_bank_zero_translation_uses_the_masked_value)
+{
+    emu_reset_with_cart(4, TYPE_ROM_MBC3, ROM_SIZE_64KB, RAM_SIZE_0);
+
+    gb_cart_write_rom(0x2000, 0x80);          /* 0x80 & 0x7F == 0 */
+    EXPECT_EQ_X(g_rom_bank, 0x01);
+}
