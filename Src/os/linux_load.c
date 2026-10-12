@@ -14,23 +14,35 @@
 
 int load_raw_file(char* filename, uint8_t** data_out){
 	size_t size = 0;
+	uint8_t *buffer = NULL;
 	FILE *f = fopen(filename, "rb");
-	if (f == NULL) 
-	{ 
+	if (f == NULL)
+	{
 		return -1;
-	} 
+	}
 	fseek(f, 0, SEEK_END);
 	size = ftell(f);
 	fseek(f, 0, SEEK_SET);
-	*data_out = (uint8_t *)malloc(size);
-	if (size != fread(*data_out, sizeof(char), size, f)) 
-	{ 
+
+	// Checked before the read: fread into a null pointer is undefined, and a
+	// failed ftell lands here as a huge size, which this catches too.
+	buffer = (uint8_t *)malloc(size);
+	if (buffer == NULL)
+	{
 		fclose(f);
-		if(data_out!=NULL){
-			free(*data_out);
-		}
+		return -3;
+	}
+
+	if (size != fread(buffer, sizeof(char), size, f))
+	{
+		fclose(f);
+		free(buffer);
 		return -2;
 	}
+
 	fclose(f);
+	// Only handed back on success, so a failed load cannot leave the caller
+	// holding a freed pointer.
+	*data_out = buffer;
 	return size;
 }
