@@ -83,6 +83,21 @@ jobs:
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: make fuzz
 
+      # Prebuilt ROMs from a pinned release, so no assembler is needed. Kept a
+      # separate step from the run below so a download problem is not reported
+      # as a test failure.
+      - name: Fetch test ROMs
+        id: fetch_roms
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: make fetch-test-roms
+
+      # Compares against Test/roms/expected.txt, so this fails on a regression
+      # rather than on the suites not being fully passed yet.
+      - name: Test ROMs (blargg and mooneye)
+        id: test_roms
+        if: ${{ !cancelled() && steps.fetch_roms.outcome == 'success' }}
+        run: make test-roms
+
       - name: Upload analysis log
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -104,6 +119,8 @@ jobs:
           TEST: ${{ steps.test.outcome }}
           TEST_ASAN: ${{ steps.test_asan.outcome }}
           FUZZ: ${{ steps.fuzz.outcome }}
+          FETCH_ROMS: ${{ steps.fetch_roms.outcome }}
+          TEST_ROMS: ${{ steps.test_roms.outcome }}
         run: |
           {
             echo "### Stages"
@@ -112,7 +129,8 @@ jobs:
             echo "| --- | --- |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          for stage in BUILD ANALYZE CPPCHECK TEST TEST_ASAN FUZZ; do
+          for stage in BUILD ANALYZE CPPCHECK TEST TEST_ASAN FUZZ \
+                       FETCH_ROMS TEST_ROMS; do
             outcome="${!stage:-skipped}"
             case "$outcome" in
               success)  mark=':white_check_mark: pass' ;;

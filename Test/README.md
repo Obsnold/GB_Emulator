@@ -7,7 +7,7 @@
     make test        97 unit tests, no dependencies, ~1s
     make test-asan   same tests under AddressSanitizer + UBSan
     make fuzz        random cart images under the sanitizers
-    make test-roms   third-party test ROMs from Test/roms/ (see that README)
+    make test-roms   third-party test ROMs vs a baseline (see Test/roms/README.md)
 
     make test TEST_FILTER=timer     run only tests matching a substring
     Build/test_core --no-fork       run in-process, for gdb
@@ -43,6 +43,7 @@ isolation one bad read takes the whole run down and hides every test after it.
 | `test_cart.c` | Header validation, ROM/RAM bank selection and clamping, per-MBC behaviour |
 | `test_ppu.c` | Window and sprite clipping geometry, OAM search limits, palettes, frame sequencing |
 | `test_joypad.c` | Register half-selection and the press/release interrupt edge |
+| `test_serial.c` | Link port transfer, start-bit clear, interrupt, no-cable readback |
 
 `reference_opcodes.h` is generated, not hand-written: it encodes the canonical
 DMG instruction lengths and M-cycle counts so that a transcription error in

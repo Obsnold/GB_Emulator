@@ -1,34 +1,65 @@
 # Test ROMs
 
-This directory is for third-party Game Boy test ROMs. They are **not committed**
-here — fetch them yourself and drop the `.gb` files in this directory (or in
-subdirectories; the runner searches recursively).
+Third-party test ROMs are **not committed** here. They are fetched as a pinned
+release of [c-sp/gameboy-test-roms][bundle], which ships prebuilt `.gb` files,
+so nothing needs an assembler:
 
-    make test-roms
+    make fetch-test-roms      # downloads and extracts into Test/roms/bundle/
+    make test-roms            # runs them against expected.txt
 
-## mooneye-test-suite — works today
+`make test-roms` skips cleanly if the bundle is absent, so `make check` works
+without it.
 
-The harness understands the mooneye result convention, which needs no serial
-port: a test ends on a `LD B,B` breakpoint and passes when the register file
-holds the Fibonacci values `B=3 C=5 D=8 E=13 H=21 L=34`. A `LD D,D` means the
-test failed.
+[bundle]: https://github.com/c-sp/gameboy-test-roms
 
-    https://github.com/Gekkio/mooneye-test-suite
+## expected.txt is a baseline, not a target
 
-Start with `acceptance/timer/` — those pin down exactly the DIV and TIMA
-behaviour the unit tests in `Test/test_timer.c` cover, and `acceptance/bits/`
-and `acceptance/instr/` for the instruction set.
+`expected.txt` records what passes today, one line per ROM:
 
-## blargg's cpu_instrs / instr_timing — needs a serial port first
+    pass    blargg   blargg/cpu_instrs/individual/01-special.gb
+    fail    blargg   blargg/instr_timing/instr_timing.gb
+    timeout mooneye  mooneye-test-suite/acceptance/oam_dma_timing.gb
 
-These are the standard instruction-correctness ROMs, but they report results by
-writing text to the link port at `0xFF01`/`0xFF02`, which this emulator does
-not implement yet. Implementing serial output is small: on a write to `0xFF02`
-with bit 7 set, append `0xFF01` to a buffer and raise the serial interrupt.
-Once that exists, `rom_harness` can match on the strings "Passed" and "Failed"
-and this becomes the most valuable suite in the set.
+The run fails only on a **regression** - a ROM that used to pass and no longer
+does - or on a ROM named in the baseline that is missing from the bundle. A ROM
+that starts passing is reported as an improvement without failing the run:
 
-    https://github.com/retrio/gb-test-roms
+    make test-roms-update     # re-record the baseline
 
-The same ROMs also write a result signature to `0xA000..0xA003` when cart RAM
-is present, which is an alternative to serial if you would rather not add it.
+That is deliberate. Most of the mooneye suite tests cycle-exact behaviour this
+emulator does not model, so gating on a full pass would mean a permanently red
+build that nobody reads.
+
+## Where things stand
+
+19 of 90 ROMs pass. The curated set leaves out blargg's sound tests and the DMG
+OAM bug tests entirely: there is no APU and the OAM bug is not emulated, so
+they would be permanent noise rather than signal.
+
+| suite | result |
+| --- | --- |
+| blargg `cpu_instrs` | **11 / 11 pass** |
+| blargg `instr_timing`, `mem_timing` | fail - no sub-instruction timing |
+| blargg `halt_bug`, `interrupt_time` | timeout |
+| mooneye `acceptance` (DMG-relevant) | 8 / 70 pass |
+
+`cpu_instrs` passing in full is the useful part: it is independent confirmation
+that the instruction set and flag handling are correct.
+
+The mooneye failures are mostly timing-exactness. The dispatcher retires a whole
+instruction at a time, so nothing observes memory or the PPU partway through
+one. Closing those means a cycle-stepped CPU, which is a rewrite of the
+dispatcher rather than a fix.
+
+## How a result is read
+
+The two suites report differently, and the harness has to be told which to
+expect - `LD B,B` and `LD D,D` are ordinary instructions, and blargg's
+`06-ld r,r` executes both while testing register loads:
+
+    Build/rom_harness ROM.gb --blargg     # verdict as text on the link port
+    Build/rom_harness ROM.gb --mooneye    # LD B,B breakpoint + Fibonacci registers
+
+blargg needs the link port, which `Src/io_ports/gb_serial.c` provides. The
+emulator itself also prints that output, so running a test ROM directly shows
+its verdict.

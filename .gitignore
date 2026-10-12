@@ -4,6 +4,8 @@ Build/
 *.o
 *.d
 
-# Third-party test ROMs are fetched, not committed; see Test/roms/README.md
+# Third-party test ROMs are fetched, not committed; see Test/roms/README.md.
+# The expected-results baseline is ours and is tracked.
 Test/roms/*
 !Test/roms/README.md
+!Test/roms/expected.txt

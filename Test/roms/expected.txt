@@ -1,0 +1,105 @@
+# Expected results for the third-party test ROMs, one line per ROM:
+#
+#     <expected> <suite> <path below the bundle root>
+#
+# expected is pass, fail or timeout; suite is blargg or mooneye and selects how
+# the harness reads the ROM's verdict.
+#
+# This is a baseline, not a wish list. make test-roms fails when a ROM that
+# used to pass stops passing, and reports - without failing - when a ROM that
+# used to fail starts passing. Record progress by refreshing this file.
+#
+# The sound tests and the DMG OAM bug tests are left out entirely: there is no
+# APU and the OAM bug is not emulated, so they would be permanent noise.
+#
+# Refresh with:  make test-roms-update
+pass blargg blargg/cpu_instrs/individual/01-special.gb
+pass blargg blargg/cpu_instrs/individual/02-interrupts.gb
+pass blargg blargg/cpu_instrs/individual/03-op sp,hl.gb
+pass blargg blargg/cpu_instrs/individual/04-op r,imm.gb
+pass blargg blargg/cpu_instrs/individual/05-op rp.gb
+pass blargg blargg/cpu_instrs/individual/06-ld r,r.gb
+pass blargg blargg/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb
+pass blargg blargg/cpu_instrs/individual/08-misc instrs.gb
+pass blargg blargg/cpu_instrs/individual/09-op r,r.gb
+pass blargg blargg/cpu_instrs/individual/10-bit ops.gb
+pass blargg blargg/cpu_instrs/individual/11-op a,(hl).gb
+timeout blargg blargg/halt_bug.gb
+fail blargg blargg/instr_timing/instr_timing.gb
+timeout blargg blargg/interrupt_time/interrupt_time.gb
+timeout blargg blargg/mem_timing-2/rom_singles/01-read_timing.gb
+timeout blargg blargg/mem_timing-2/rom_singles/02-write_timing.gb
+timeout blargg blargg/mem_timing-2/rom_singles/03-modify_timing.gb
+fail blargg blargg/mem_timing/individual/01-read_timing.gb
+fail blargg blargg/mem_timing/individual/02-write_timing.gb
+fail blargg blargg/mem_timing/individual/03-modify_timing.gb
+fail mooneye mooneye-test-suite/acceptance/add_sp_e_timing.gb
+fail mooneye mooneye-test-suite/acceptance/bits/mem_oam.gb
+pass mooneye mooneye-test-suite/acceptance/bits/reg_f.gb
+fail mooneye mooneye-test-suite/acceptance/bits/unused_hwio-GS.gb
+fail mooneye mooneye-test-suite/acceptance/boot_div-dmg0.gb
+fail mooneye mooneye-test-suite/acceptance/boot_div-dmgABCmgb.gb
+fail mooneye mooneye-test-suite/acceptance/boot_hwio-dmg0.gb
+fail mooneye mooneye-test-suite/acceptance/boot_hwio-dmgABCmgb.gb
+fail mooneye mooneye-test-suite/acceptance/boot_regs-dmg0.gb
+pass mooneye mooneye-test-suite/acceptance/boot_regs-dmgABC.gb
+fail mooneye mooneye-test-suite/acceptance/boot_regs-mgb.gb
+fail mooneye mooneye-test-suite/acceptance/call_cc_timing.gb
+fail mooneye mooneye-test-suite/acceptance/call_cc_timing2.gb
+fail mooneye mooneye-test-suite/acceptance/call_timing.gb
+fail mooneye mooneye-test-suite/acceptance/call_timing2.gb
+fail mooneye mooneye-test-suite/acceptance/di_timing-GS.gb
+fail mooneye mooneye-test-suite/acceptance/div_timing.gb
+fail mooneye mooneye-test-suite/acceptance/ei_sequence.gb
+fail mooneye mooneye-test-suite/acceptance/ei_timing.gb
+pass mooneye mooneye-test-suite/acceptance/halt_ime0_ei.gb
+fail mooneye mooneye-test-suite/acceptance/halt_ime0_nointr_timing.gb
+pass mooneye mooneye-test-suite/acceptance/halt_ime1_timing.gb
+fail mooneye mooneye-test-suite/acceptance/halt_ime1_timing2-GS.gb
+fail mooneye mooneye-test-suite/acceptance/if_ie_registers.gb
+pass mooneye mooneye-test-suite/acceptance/instr/daa.gb
+fail mooneye mooneye-test-suite/acceptance/interrupts/ie_push.gb
+fail mooneye mooneye-test-suite/acceptance/intr_timing.gb
+fail mooneye mooneye-test-suite/acceptance/jp_cc_timing.gb
+fail mooneye mooneye-test-suite/acceptance/jp_timing.gb
+fail mooneye mooneye-test-suite/acceptance/ld_hl_sp_e_timing.gb
+fail mooneye mooneye-test-suite/acceptance/oam_dma/basic.gb
+pass mooneye mooneye-test-suite/acceptance/oam_dma/reg_read.gb
+fail mooneye mooneye-test-suite/acceptance/oam_dma/sources-GS.gb
+fail mooneye mooneye-test-suite/acceptance/oam_dma_restart.gb
+fail mooneye mooneye-test-suite/acceptance/oam_dma_start.gb
+fail mooneye mooneye-test-suite/acceptance/oam_dma_timing.gb
+fail mooneye mooneye-test-suite/acceptance/pop_timing.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/hblank_ly_scx_timing-GS.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/intr_1_2_timing-GS.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/intr_2_0_timing.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/intr_2_mode0_timing.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/intr_2_mode0_timing_sprites.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/intr_2_mode3_timing.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/intr_2_oam_ok_timing.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/lcdon_timing-GS.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/lcdon_write_timing-GS.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/stat_irq_blocking.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/stat_lyc_onoff.gb
+fail mooneye mooneye-test-suite/acceptance/ppu/vblank_stat_intr-GS.gb
+fail mooneye mooneye-test-suite/acceptance/push_timing.gb
+fail mooneye mooneye-test-suite/acceptance/rapid_di_ei.gb
+timeout mooneye mooneye-test-suite/acceptance/ret_cc_timing.gb
+timeout mooneye mooneye-test-suite/acceptance/ret_timing.gb
+fail mooneye mooneye-test-suite/acceptance/reti_intr_timing.gb
+timeout mooneye mooneye-test-suite/acceptance/reti_timing.gb
+fail mooneye mooneye-test-suite/acceptance/rst_timing.gb
+fail mooneye mooneye-test-suite/acceptance/serial/boot_sclk_align-dmgABCmgb.gb
+fail mooneye mooneye-test-suite/acceptance/timer/div_write.gb
+fail mooneye mooneye-test-suite/acceptance/timer/rapid_toggle.gb
+fail mooneye mooneye-test-suite/acceptance/timer/tim00.gb
+pass mooneye mooneye-test-suite/acceptance/timer/tim00_div_trigger.gb
+fail mooneye mooneye-test-suite/acceptance/timer/tim01.gb
+fail mooneye mooneye-test-suite/acceptance/timer/tim01_div_trigger.gb
+fail mooneye mooneye-test-suite/acceptance/timer/tim10.gb
+fail mooneye mooneye-test-suite/acceptance/timer/tim10_div_trigger.gb
+fail mooneye mooneye-test-suite/acceptance/timer/tim11.gb
+pass mooneye mooneye-test-suite/acceptance/timer/tim11_div_trigger.gb
+fail mooneye mooneye-test-suite/acceptance/timer/tima_reload.gb
+fail mooneye mooneye-test-suite/acceptance/timer/tima_write_reloading.gb
+fail mooneye mooneye-test-suite/acceptance/timer/tma_write_reloading.gb

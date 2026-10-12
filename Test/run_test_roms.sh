@@ -1,40 +1,106 @@
 #!/bin/sh
-# run_test_roms.sh - run every .gb under Test/roms/ through the headless harness.
+# run_test_roms.sh - run the third-party test ROMs and compare against the
+# recorded baseline in Test/roms/expected.txt.
 #
-# Third-party test ROMs are not committed to this repository; see
-# Test/roms/README.md for where to get them. If none are present this exits 0
-# so that `make test-all` stays usable without them.
+#   usage: run_test_roms.sh <harness> [--update]
+#
+# Exits non-zero on a regression: a ROM the baseline says passes but no longer
+# does, or a ROM named in the baseline that is missing from the bundle. A ROM
+# that starts passing is reported but does not fail the run - that is progress,
+# and the baseline should be refreshed to lock it in.
+#
+# With --update, rewrites the baseline from the observed results instead of
+# comparing against it.
+#
+# Exits 0 with a message if the bundle is absent, so `make check` stays usable
+# without it.
 
 set -u
 
 HARNESS="${1:-Build/rom_harness}"
-ROM_DIR="$(dirname "$0")/roms"
+MODE="${2:-}"
+HERE="$(dirname "$0")"
+ROOT="$HERE/roms/bundle"
+EXPECTED="$HERE/roms/expected.txt"
+FRAMES=3000
 
 if [ ! -x "$HARNESS" ]; then
     echo "harness not built: $HARNESS" >&2
     exit 2
 fi
-
-ROMS=$(find "$ROM_DIR" -name '*.gb' 2>/dev/null | sort)
-
-if [ -z "$ROMS" ]; then
-    echo "no test ROMs in $ROM_DIR - skipping (see $ROM_DIR/README.md)"
+if [ ! -f "$EXPECTED" ]; then
+    echo "no baseline at $EXPECTED" >&2
+    exit 2
+fi
+if [ ! -d "$ROOT" ]; then
+    echo "no test ROMs in $ROOT - skipping (run: make fetch-test-roms)"
     exit 0
 fi
 
-pass=0
-fail=0
+# Observed status for one ROM: pass, fail or timeout.
+observe() {
+    _out=$("$HARNESS" "$ROOT/$2" --frames "$FRAMES" "--$1" 2>&1 1>/dev/null \
+           | head -1 | awk '{print $1}')
+    case "$_out" in
+        PASS) echo pass ;;
+        FAIL) echo fail ;;
+        *)    echo timeout ;;
+    esac
+}
 
-for rom in $ROMS; do
-    if "$HARNESS" "$rom" --frames 600 >/dev/null 2>&1; then
-        pass=$((pass + 1))
-        printf 'PASS    %s\n' "$(basename "$rom")"
-    else
-        fail=$((fail + 1))
-        printf 'FAIL    %s\n' "$(basename "$rom")"
-        "$HARNESS" "$rom" --frames 600 2>&1 | sed 's/^/        /'
+if [ "$MODE" = "--update" ]; then
+    TMP=$(mktemp)
+    sed -n '/^#/p' "$EXPECTED" > "$TMP"
+    grep -v '^#' "$EXPECTED" | grep -v '^[[:space:]]*$' | while read -r _exp suite rel; do
+        printf '%s %s %s\n' "$(observe "$suite" "$rel")" "$suite" "$rel"
+    done | sort -k2,2 -k3,3 >> "$TMP"
+    mv "$TMP" "$EXPECTED"
+    echo "baseline refreshed: $EXPECTED"
+    exit 0
+fi
+
+regressions=0
+improvements=0
+missing=0
+matched=0
+
+while read -r expected suite rel; do
+    case "$expected" in ''|\#*) continue ;; esac
+
+    if [ ! -f "$ROOT/$rel" ]; then
+        printf 'MISSING   %s\n' "$rel"
+        missing=$((missing + 1))
+        continue
     fi
-done
 
-printf '\n%d passed, %d failed\n' "$pass" "$fail"
-[ "$fail" -eq 0 ]
+    actual=$(observe "$suite" "$rel")
+
+    if [ "$actual" = "$expected" ]; then
+        matched=$((matched + 1))
+    elif [ "$expected" = "pass" ]; then
+        printf 'REGRESSED %-58s was pass, now %s\n' "$rel" "$actual"
+        regressions=$((regressions + 1))
+    elif [ "$actual" = "pass" ]; then
+        printf 'IMPROVED  %-58s was %s, now pass\n' "$rel" "$expected"
+        improvements=$((improvements + 1))
+    else
+        # fail <-> timeout is not a change in outcome, just in how the ROM
+        # gave up, so it is reported without counting either way.
+        printf 'CHANGED   %-58s was %s, now %s\n' "$rel" "$expected" "$actual"
+        matched=$((matched + 1))
+    fi
+done < "$EXPECTED"
+
+passing=$(grep -c '^pass ' "$EXPECTED")
+total=$(grep -vc -e '^#' -e '^[[:space:]]*$' "$EXPECTED")
+
+printf '\n%s of %s ROMs expected to pass; %s as expected, %s regressed, %s improved' \
+    "$passing" "$total" "$matched" "$regressions" "$improvements"
+[ "$missing" -gt 0 ] && printf ', %s missing' "$missing"
+printf '\n'
+
+if [ "$improvements" -gt 0 ]; then
+    echo "refresh the baseline to lock the improvements in: make test-roms-update"
+fi
+
+[ "$regressions" -eq 0 ] && [ "$missing" -eq 0 ]

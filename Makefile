@@ -58,7 +58,8 @@ clean:
 #   make test        unit tests
 #   make test-asan   unit tests under AddressSanitizer + UBSan
 #   make fuzz        random cart images under the sanitizers
-#   make test-roms   third-party test ROMs placed in Test/roms/
+#   make fetch-test-roms   download the pinned prebuilt test ROM bundle
+#   make test-roms         run them against Test/roms/expected.txt
 #
 # Test objects go under Build/ so they never collide with the in-tree .o files
 # the default build produces, and so the two can use different flags.
@@ -135,9 +136,28 @@ fuzz: $(BUILD_DIR)/rom_harness_asan
 
 harness: $(BUILD_DIR)/rom_harness
 
-# Third-party test ROMs are not vendored; see Test/roms/README.md.
+# Third-party test ROMs are not vendored; they are fetched as a pinned release
+# of c-sp/gameboy-test-roms, which ships prebuilt .gb files so nothing needs an
+# assembler. Test/roms/expected.txt records which ones pass today.
+TEST_ROMS_VERSION = v7.0
+TEST_ROMS_URL = https://github.com/c-sp/gameboy-test-roms/releases/download/$(TEST_ROMS_VERSION)/game-boy-test-roms-$(TEST_ROMS_VERSION).zip
+
+fetch-test-roms:
+	@mkdir -p $(TEST_DIR)/roms
+	@echo "fetching gameboy-test-roms $(TEST_ROMS_VERSION)"
+	@curl -sSLf -o $(TEST_DIR)/roms/bundle.zip "$(TEST_ROMS_URL)"
+	@rm -rf $(TEST_DIR)/roms/bundle
+	@mkdir -p $(TEST_DIR)/roms/bundle
+	@python3 -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" \
+	    $(TEST_DIR)/roms/bundle.zip $(TEST_DIR)/roms/bundle
+	@rm -f $(TEST_DIR)/roms/bundle.zip
+	@echo "extracted to $(TEST_DIR)/roms/bundle"
+
 test-roms: $(BUILD_DIR)/rom_harness
 	@sh $(TEST_DIR)/run_test_roms.sh $(BUILD_DIR)/rom_harness
+
+test-roms-update: $(BUILD_DIR)/rom_harness
+	@sh $(TEST_DIR)/run_test_roms.sh $(BUILD_DIR)/rom_harness --update
 
 # ---------------------------------------------------------------------------
 # Static analysis
@@ -273,6 +293,7 @@ check:
 	 $(MAKE) --no-print-directory test      || fail=1; \
 	 $(MAKE) --no-print-directory test-asan || fail=1; \
 	 $(MAKE) --no-print-directory fuzz      || fail=1; \
+	 $(MAKE) --no-print-directory test-roms || fail=1; \
 	 echo; \
 	 if [ $$fail -eq 0 ]; then \
 	     echo "=========== check: all stages passed ==========="; \
@@ -281,6 +302,7 @@ check:
 	 fi; \
 	 exit $$fail
 
-.PHONY: test test-asan fuzz harness test-roms analyze cppcheck check
+.PHONY: test test-asan fuzz harness test-roms test-roms-update \
+        fetch-test-roms analyze cppcheck check
 
 -include $(shell find $(BUILD_DIR) -name '*.d' 2>/dev/null)
