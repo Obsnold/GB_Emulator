@@ -252,7 +252,14 @@ void draw_sprites_line(){
                 sprite_line_offset = oam_sprite_size - sprite_line_offset -1;
         }
 
-        uint16_t tile_line = TILE_RAM_0 + (get_mem_map_8(oam + OAM_TILE) * TILE_MEM_SIZE) + (sprite_line_offset*2);
+        uint8_t tile_index = get_mem_map_8(oam + OAM_TILE);
+        if(oam_sprite_size == (TILE_SIZE * 2)){
+            // In 8x16 mode the hardware ignores bit 0 of the index: the pair
+            // drawn is (index & 0xFE, index | 0x01).
+            tile_index &= 0xFE;
+        }
+
+        uint16_t tile_line = TILE_RAM_0 + (tile_index * TILE_MEM_SIZE) + (sprite_line_offset*2);
 
         for(int x = 0; x < oam_sprite_size; x++){
             uint8_t pixel_1 = 0;
