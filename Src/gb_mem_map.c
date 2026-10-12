@@ -245,10 +245,6 @@ void clear_mem_map_bit(uint16_t reg, uint8_t data){
     gb_mem_map[reg] &= ~data;
 }
 
-uint16_t get_mem_map_16(uint16_t reg){
-    return op_get_mem_map_16(reg);
-}
-
 bool set_mem_map_16(uint16_t reg, uint16_t data){
     return op_set_mem_map_16(reg,data);
 }

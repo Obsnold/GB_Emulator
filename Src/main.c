@@ -36,7 +36,6 @@ void gb_init(){
 }
 
 void gb_emu(int keys){
-   //sleep_ns(100);
    unsigned long time = get_ns();
    unsigned long time_delta = time - prev_time;
    prev_time = time;

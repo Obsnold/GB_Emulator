@@ -34,8 +34,3 @@ int load_raw_file(char* filename, uint8_t** data_out){
 	fclose(f);
 	return size;
 }
-
-int save_raw_file(char* filename, uint8_t* data_in){
-	return 0;
-}
-
