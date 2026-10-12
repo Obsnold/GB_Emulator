@@ -40,6 +40,14 @@ void gb_cpu(unsigned long delta_time){
         if(get_mem_map_8(INTERRUPT_ENABLE) & get_mem_map_8(INTERRUPT_FLAGS)){
             power_mode = PWR_NORMAL;
         }
+    } else if(power_mode == PWR_STOP){
+        // STOP is left by a joypad input, and that does not depend on IME or
+        // on the interrupt being enabled. Without this the only way out was
+        // interrupt dispatch below, so a STOP with interrupts disabled wedged
+        // the CPU for good.
+        if(get_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_JOYPAD)){
+            power_mode = PWR_NORMAL;
+        }
     }
 
     //check interrupts
