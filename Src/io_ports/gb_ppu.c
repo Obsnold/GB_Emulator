@@ -276,17 +276,20 @@ void draw_sprites_line(){
 
         uint16_t tile_line = TILE_RAM_0 + (tile_index * TILE_MEM_SIZE) + (sprite_line_offset*2);
 
-        for(int x = 0; x < oam_sprite_size; x++){
-            uint8_t pixel_1 = 0;
-            uint8_t pixel_2 = 0;
+        // The two tile bytes and both flag bits are the same for every column
+        // of this sprite, so they are read once rather than four times per
+        // column.
+        uint8_t plane_0 = get_mem_map_8(tile_line);
+        uint8_t plane_1 = get_mem_map_8(tile_line + 1);
+        int x_flip = get_mem_map_bit((oam + OAM_FLAGS), OAM_FLAGS_X_FLIP);
+        // Priority set puts the sprite behind the background, so it only shows
+        // through where the background is colour 0.
+        int behind_bg = get_mem_map_bit(oam + OAM_FLAGS, OAM_FLAGS_OBJ_BG_PRIORITY);
 
-            if(get_mem_map_bit((oam + OAM_FLAGS),OAM_FLAGS_X_FLIP)){
-                pixel_1 = (get_mem_map_8(tile_line) & (0x01 << x));
-                pixel_2 = (get_mem_map_8(tile_line + 1) & (0x01 << x));
-            } else {
-                pixel_1 = (get_mem_map_8(tile_line) & (0x80 >> x));
-                pixel_2 = (get_mem_map_8(tile_line + 1) & (0x80 >> x));
-            }
+        for(int x = 0; x < oam_sprite_size; x++){
+            uint8_t mask = x_flip ? (uint8_t)(0x01 << x) : (uint8_t)(0x80 >> x);
+            uint8_t pixel_1 = plane_0 & mask;
+            uint8_t pixel_2 = plane_1 & mask;
 
             int x_pos = oam_x_pos + x - TILE_SIZE;
             // Drop a column that falls outside the screen. Clamping it to the
@@ -296,11 +299,6 @@ void draw_sprites_line(){
             if(x_pos < 0 || x_pos >= GB_SCREEN_WIDTH){
                 continue;
             }
-            // Priority set puts the sprite behind the background, so it only
-            // shows through where the background is colour 0. The second half
-            // of this test used to re-check the flag, which the first half had
-            // already settled.
-            int behind_bg = get_mem_map_bit(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
 
             if(!behind_bg || (gb_display[lcd_line][x_pos] == bg_pallet[0])){
                 if(pixel_1){
@@ -312,7 +310,7 @@ void draw_sprites_line(){
                 } else {
                     if(pixel_2){
                         gb_display[lcd_line][x_pos] = pallet[2];
-                    } 
+                    }
                 }
             }
         }
