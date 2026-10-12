@@ -267,10 +267,12 @@ void draw_sprites_line(){
             }
 
             int x_pos = oam_x_pos + x - TILE_SIZE;
-            if(x_pos < 0){
-                x_pos = 0;
-            } else if (x_pos >= GB_SCREEN_WIDTH){
-                x_pos = GB_SCREEN_WIDTH -1;
+            // Drop a column that falls outside the screen. Clamping it to the
+            // boundary instead stacked every hidden column onto one pixel, so
+            // the edge showed the last hidden column rather than the last
+            // visible one.
+            if(x_pos < 0 || x_pos >= GB_SCREEN_WIDTH){
+                continue;
             }
             int priority = get_mem_map_bit(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
 
