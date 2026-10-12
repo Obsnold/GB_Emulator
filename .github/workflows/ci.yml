@@ -17,24 +17,38 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libsdl2-dev cppcheck
 
+      # A broken build is worth failing fast on; nothing below it can run.
       - name: Build emulator
         run: make
 
-      # Separate steps rather than `make check`, so the run summary shows
-      # which stage failed without opening the log.
+      # Every stage below reports independently. continue-on-error keeps a
+      # failing stage from skipping the rest, so one run shows every problem
+      # instead of one problem per run; the Gate step at the end still fails
+      # the job. Each stage is its own step so the run summary names what broke
+      # without anyone opening a log.
       - name: Static analysis
+        id: analyze
+        continue-on-error: true
         run: make analyze
 
       - name: cppcheck
+        id: cppcheck
+        continue-on-error: true
         run: make cppcheck
 
       - name: Unit tests
+        id: test
+        continue-on-error: true
         run: make test
 
       - name: Unit tests under AddressSanitizer + UBSan
+        id: test_asan
+        continue-on-error: true
         run: make test-asan
 
       - name: Fuzz cart images
+        id: fuzz
+        continue-on-error: true
         run: make fuzz
 
       - name: Upload analysis log
@@ -44,3 +58,31 @@ jobs:
           name: analyze-log
           path: Build/analyze.log
           if-no-files-found: ignore
+
+      - name: Gate
+        if: always()
+        env:
+          ANALYZE:   ${{ steps.analyze.outcome }}
+          CPPCHECK:  ${{ steps.cppcheck.outcome }}
+          TEST:      ${{ steps.test.outcome }}
+          TEST_ASAN: ${{ steps.test_asan.outcome }}
+          FUZZ:      ${{ steps.fuzz.outcome }}
+        run: |
+          fail=0
+          {
+            echo "| stage | result |"
+            echo "| --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for stage in ANALYZE CPPCHECK TEST TEST_ASAN FUZZ; do
+            outcome="${!stage}"
+            case "$outcome" in
+              success) mark=":white_check_mark: pass" ;;
+              skipped) mark=":fast_forward: skipped" ;;
+              *)       mark=":x: fail"; fail=1 ;;
+            esac
+            echo "| \`$stage\` | $mark |" >> "$GITHUB_STEP_SUMMARY"
+            printf '%-10s %s\n' "$stage" "$outcome"
+          done
+
+          exit $fail
