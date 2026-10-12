@@ -384,8 +384,6 @@ void ppu_h_blank(){
 }
 
 void ppu_v_blank(){
-    //set interrupt
-    set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
     uint8_t temp = get_mem_map_8(LCD_LY);
     temp++;
     set_mem_map_8(LCD_LY,temp);
@@ -454,6 +452,10 @@ uint8_t ppu(unsigned long delta_time){
                         clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
                         set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_VBLNK);
                         ppu_cycles_count = V_BLANK_STEP_CYCLES;
+                        // One v-blank per frame, raised on entry to mode 1.
+                        // Raising it on each of the ten v-blank scanlines ran
+                        // a game's handler ten times a frame.
+                        set_mem_map_bit(INTERRUPT_FLAGS,INTERRUPT_V_BLANK);
                     } else {
                         clear_mem_map_bit(LCD_STAT,LCD_STAT_MODE);
                         set_mem_map_bit(LCD_STAT,LCD_STAT_MODE_OAM);
