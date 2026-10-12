@@ -39,10 +39,14 @@ uint8_t g_ram_banks[16][CART_RAM_MB_SIZE];
 
 int gb_cart_load(char* filename){
     //load cart rom data
-    g_cart_size = load_raw_file(filename, &g_cart);
-    if(g_cart_size <= 0){
+    // load_raw_file reports failure as a negative return, so the result has to
+    // be inspected while it is still signed: assigning it straight into the
+    // unsigned g_cart_size turned -1 into 4294967295 and reported success.
+    int loaded = load_raw_file(filename, &g_cart);
+    if(loaded <= 0){
         return -1;
     }
+    g_cart_size = (unsigned int)loaded;
     PRINT("g_cart_size %u\n",g_cart_size);
 
     // get values from cart header
