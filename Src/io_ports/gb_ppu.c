@@ -355,19 +355,32 @@ void draw_window_line(){
             window_x = 0;
         }
 
+        // Same per-tile fetch as the background: the map entry and the two
+        // tile bytes cover 8 pixels.
+        uint8_t plane_0 = 0;
+        uint8_t plane_1 = 0;
+        int need_fetch = 1;
+
         for(int16_t x = window_x; x < GB_SCREEN_WIDTH; x++){
-            int32_t tile = (get_mem_map_8(map + map_x_offset + (map_y_offset * 32)));
-            if(bg_window_tile_mode == 0) {
-                if(tile >= 0x80){
-                    tile -= 0x100;
+            if(need_fetch){
+                int32_t tile = (get_mem_map_8(map + map_x_offset + (map_y_offset * 32)));
+                if(bg_window_tile_mode == 0) {
+                    if(tile >= 0x80){
+                        tile -= 0x100;
+                    }
                 }
+                tile *= 16;
+                tile += bg_window_tile_set;
+                tile += (tile_y_offset*2);
+
+                plane_0 = get_mem_map_8(tile);
+                plane_1 = get_mem_map_8(tile + 1);
+                need_fetch = 0;
             }
-            tile *= 16;
-            tile += bg_window_tile_set;  
-            tile += (tile_y_offset*2);
-            
-            uint8_t pixel_1 = (get_mem_map_8(tile) & (0x80 >> tile_x_offset));
-            uint8_t pixel_2 = (get_mem_map_8(tile + 1) & (0x80 >> tile_x_offset));
+
+            uint8_t mask = (uint8_t)(0x80 >> tile_x_offset);
+            uint8_t pixel_1 = plane_0 & mask;
+            uint8_t pixel_2 = plane_1 & mask;
             int pix = 0;
             if(pixel_1){
                 if(pixel_2){
@@ -383,7 +396,7 @@ void draw_window_line(){
                 }
             }
             gb_display[lcd_line][x] = pix;
-            
+
             tile_x_offset++;
             if(tile_x_offset >= 8){
                 tile_x_offset = 0;
@@ -391,10 +404,9 @@ void draw_window_line(){
                 if(map_x_offset >= 32){
                     map_x_offset = map_x_offset - 32;
                 }
+                need_fetch = 1;
             }
         }
-
-
     }
 }
 
