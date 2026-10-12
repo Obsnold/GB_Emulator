@@ -273,10 +273,13 @@ void draw_sprites_line(){
             if(x_pos < 0 || x_pos >= GB_SCREEN_WIDTH){
                 continue;
             }
-            int priority = get_mem_map_bit(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
+            // Priority set puts the sprite behind the background, so it only
+            // shows through where the background is colour 0. The second half
+            // of this test used to re-check the flag, which the first half had
+            // already settled.
+            int behind_bg = get_mem_map_bit(oam + OAM_FLAGS,OAM_FLAGS_OBJ_BG_PRIORITY);
 
-            if((priority == 0) || 
-             (gb_display[x_pos][lcd_line] == bg_pallet[0] && priority > 0)){
+            if(!behind_bg || (gb_display[x_pos][lcd_line] == bg_pallet[0])){
                 if(pixel_1){
                     if(pixel_2){
                         gb_display[x_pos][lcd_line] = pallet[3];
