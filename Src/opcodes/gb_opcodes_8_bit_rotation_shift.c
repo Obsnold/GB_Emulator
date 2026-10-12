@@ -252,7 +252,10 @@ uint8_t opcode_cb_prefix(uint16_t opcode_address){
 
     // get value depending on opcode
     if(opcode_z == 0x06){
-        time = CYCLE_1;
+        // An (HL) form pays for the read and the write-back on top of the
+        // register cost, so it is the slowest case rather than the fastest.
+        // BIT is the exception: it only reads.
+        time = (opcode_x == 0x01) ? CYCLE_3 : CYCLE_4;
         value = op_get_mem_map_8(CPU_REG.HL);
     } else {
         value = *get_reg_8(opcode_z);
