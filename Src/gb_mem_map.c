@@ -2,6 +2,7 @@
 #include "debug_print.h"
 #include "gb_cpu.h"
 #include "gb_cart.h"
+#include "gb_serial.h"
 #include <string.h>
 
 #define DEBUG
@@ -195,6 +196,13 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
             // 3 during v-blank and draw a scanline off the end of gb_display.
             lData = (uint8_t)((data & 0x78) |
                               (get_mem_map_8(LCD_STAT) & 0x07));
+        } else if(reg == SERIAL_SC && (data & SERIAL_SC_START)){
+            // Starting a transfer with nothing on the other end: record the
+            // byte and let gb_serial_transfer finish it. The control value is
+            // stored first so the handler sees the clock selection.
+            set_mem_map_8(SERIAL_SC, data);
+            gb_serial_transfer();
+            return true;
         } else {
             lData = data;
         }

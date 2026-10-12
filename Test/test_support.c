@@ -8,6 +8,7 @@
 #include "gb_cart.h"
 #include "gb_cpu.h"
 #include "gb_mem_map.h"
+#include "gb_serial.h"
 
 static uint8_t *g_fixture_cart = NULL;
 
@@ -80,6 +81,8 @@ void emu_reset_with_cart(unsigned banks, uint8_t cart_type,
     oam_list_size    = 0;
 
     previous_keys = 0xFF;   // active low: nothing pressed
+
+    gb_serial_init();
 }
 
 void emu_reset(void)

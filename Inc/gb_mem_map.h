@@ -257,6 +257,13 @@ BB BB 67 63 6E 0E EC CC DD DC 99 9F BB B9 33 3E
 #define JOYPAD_BUT_A		BIT_1	
 #define JOYPAD_BUT_B		BIT_0
 
+//Serial link
+#define SERIAL_SB			0xFF01
+#define SERIAL_SC			0xFF02
+
+#define SERIAL_SC_START			BIT_7
+#define SERIAL_SC_CLOCK_INTERNAL	BIT_0
+
 //Timer / Divider
 #define TIMER_DIV			0xFF04
 #define TIMER_TIMA			0xFF05
