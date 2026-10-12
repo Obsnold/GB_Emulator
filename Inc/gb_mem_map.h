@@ -25,7 +25,7 @@
 
 #define CYCLE_TIME 954 //clock tick in nano seconds based on 1MHz clock
 
-#define GB_MEM_SIZE         0xFFFF
+#define GB_MEM_SIZE         0x10000
 
 #define INTERRUPT_EN   		0xFFFF
 #define ZERO_PAGE           0xFF80
