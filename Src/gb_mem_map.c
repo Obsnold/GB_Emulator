@@ -188,6 +188,13 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
             // it through allowed a value past the bottom of the screen, which
             // the scanline renderers then used to index gb_display.
             lData = 0;
+        } else if(reg == LCD_STAT){
+            // The mode (bits 0-1) and the coincidence flag (bit 2) are driven
+            // by the PPU and read-only to the CPU. Only the interrupt enables
+            // in bits 3-6 are writable; a writable mode let a ROM select mode
+            // 3 during v-blank and draw a scanline off the end of gb_display.
+            lData = (uint8_t)((data & 0x78) |
+                              (get_mem_map_8(LCD_STAT) & 0x07));
         } else {
             lData = data;
         }

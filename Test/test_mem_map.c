@@ -108,3 +108,40 @@ TEST(cart_rom_is_not_writable_through_the_cpu_path)
     op_set_mem_map_8(0x2000, (uint8_t)~before);
     EXPECT_EQ_X(op_get_mem_map_8(0x2000), before);
 }
+
+/* LY is read-only to the CPU and a write resets the counter. Letting a write
+ * through put a value past the bottom of the screen into it, which the
+ * scanline renderers then used to index gb_display. */
+TEST(scanline_counter_is_read_only_to_the_cpu)
+{
+    emu_reset();
+
+    set_mem_map_8(LCD_LY, 100);
+    op_set_mem_map_8(LCD_LY, 200);
+
+    EXPECT_EQ_X(get_mem_map_8(LCD_LY), 0x00);
+}
+
+/* STAT's mode (bits 0-1) and coincidence flag (bit 2) are driven by the PPU and
+ * read-only to the CPU. A writable mode let a ROM select mode 3 while LY was in
+ * v-blank, and the renderer then drew a scanline off the bottom of the buffer. */
+TEST(lcd_stat_mode_bits_are_read_only)
+{
+    emu_reset();
+
+    set_mem_map_8(LCD_STAT, LCD_STAT_MODE_VBLNK);
+    op_set_mem_map_8(LCD_STAT, LCD_STAT_MODE_PIXEL_TRANS);
+
+    EXPECT_EQ_X(get_mem_map_8(LCD_STAT) & LCD_STAT_MODE, LCD_STAT_MODE_VBLNK);
+}
+
+TEST(lcd_stat_interrupt_enables_are_writable)
+{
+    emu_reset();
+
+    op_set_mem_map_8(LCD_STAT,
+                     (uint8_t)(LCD_STAT_VBLNK_INTR_EN | LCD_STAT_HBLNK_INTR_EN));
+
+    EXPECT(get_mem_map_bit(LCD_STAT, LCD_STAT_VBLNK_INTR_EN) != 0);
+    EXPECT(get_mem_map_bit(LCD_STAT, LCD_STAT_HBLNK_INTR_EN) != 0);
+}
