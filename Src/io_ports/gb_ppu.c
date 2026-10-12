@@ -404,7 +404,7 @@ uint8_t ppu(unsigned long delta_time){
         ppu_cycles += delta_time;
 
         if (ppu_cycles > (ppu_cycles_count* CYCLE_TIME)){
-            DEBUG_PRINT("ppu_cycles= %ld ppu_cycles_count = %ld\n",ppu_cycles, ppu_cycles_count*250);
+            DEBUG_PRINT("ppu_cycles= %lu ppu_cycles_count = %lu\n",ppu_cycles, ppu_cycles_count*CYCLE_TIME);
             ppu_cycles -= (ppu_cycles_count* CYCLE_TIME);
             switch (get_mem_map_bit(LCD_STAT,LCD_STAT_MODE)){
                 case LCD_STAT_MODE_OAM:
