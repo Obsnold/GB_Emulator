@@ -88,6 +88,11 @@ void run_frame(int keys){
       }
    }
 
+   // Once more unconditionally: with the LCD off the PPU stops moving LY, so
+   // the branch above never runs and the screen would keep showing the last
+   // frame instead of blanking.
+   enable_lcd(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE) != 0);
+
    print_new_serial();
 }
 
