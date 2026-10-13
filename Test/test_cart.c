@@ -199,3 +199,58 @@ TEST(mbc3_bank_zero_translation_uses_the_masked_value)
     gb_cart_write_rom(0x2000, 0x80);          /* 0x80 & 0x7F == 0 */
     EXPECT_EQ_X(g_rom_bank, 0x01);
 }
+
+/* gb_cart_load_buffer maps an image the caller already holds, which is how a
+ * host without a filesystem - a browser handing over a picked file - loads a
+ * ROM. gb_cart_load is this plus reading the file. */
+TEST(cart_load_buffer_maps_the_image)
+{
+    uint8_t *rom = test_build_rom(0x8000, TYPE_ROM_MBC1,
+                                  ROM_SIZE_64KB, RAM_SIZE_0);
+
+    emu_reset();
+    CHECK(gb_cart_load_buffer(rom, 0x8000) >= 0);
+
+    EXPECT_EQ_U(g_cart_size, 0x8000);
+    EXPECT_EQ_X(gb_cart_read_rom(0x0000), 0xA0);    /* bank 0 fill byte */
+    free(rom);
+}
+
+TEST(cart_load_buffer_rejects_an_image_too_short_for_a_header)
+{
+    uint8_t tiny[0x100] = {0};
+
+    emu_reset();
+    EXPECT(gb_cart_load_buffer(tiny, sizeof(tiny)) < 0);
+}
+
+TEST(cart_load_buffer_rejects_null)
+{
+    emu_reset();
+    EXPECT(gb_cart_load_buffer(NULL, 0x8000) < 0);
+}
+
+/* Loading a cart resets the mapper, so a second ROM does not inherit the
+ * first one's bank selection or its save RAM. */
+TEST(cart_load_buffer_resets_the_mapper)
+{
+    uint8_t *rom = test_build_rom(0x8000, TYPE_ROM_MBC1_RAM_BAT,
+                                  ROM_SIZE_64KB, RAM_SIZE_32KB);
+
+    emu_reset_with_cart(4, TYPE_ROM_MBC1_RAM_BAT, ROM_SIZE_64KB, RAM_SIZE_32KB);
+
+    /* Dirty the mapper the way a running game would. */
+    gb_cart_write_rom(0x0000, 0x0A);          /* enable RAM   */
+    gb_cart_write_rom(0x2000, 0x02);          /* pick a bank  */
+    gb_cart_write_ram(CART_RAM, 0x5A);        /* write a save */
+    CHECK_EQ_X(g_rom_bank, 0x02);
+
+    CHECK(gb_cart_load_buffer(rom, 0x8000) >= 0);
+
+    EXPECT_EQ_X(g_rom_bank, 0x01);
+    EXPECT_EQ_X(g_ram_bank, 0x00);
+    EXPECT_EQ_X(g_enable_ram, false);
+    gb_cart_write_rom(0x0000, 0x0A);          /* re-enable and look */
+    EXPECT_EQ_X(gb_cart_read_ram(CART_RAM), 0x00);
+    free(rom);
+}

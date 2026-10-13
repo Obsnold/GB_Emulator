@@ -37,24 +37,28 @@ uint16_t g_number_of_rom_banks;
 uint16_t g_number_of_ram_banks;
 uint8_t g_ram_banks[16][CART_RAM_MB_SIZE];
 
-int gb_cart_load(char* filename){
-    //load cart rom data
-    // load_raw_file reports failure as a negative return, so the result has to
-    // be inspected while it is still signed: assigning it straight into the
-    // unsigned g_cart_size turned -1 into 4294967295 and reported success.
-    int loaded = load_raw_file(filename, &g_cart);
-    if(loaded <= 0){
-        return -1;
-    }
+int gb_cart_load_buffer(uint8_t* data, unsigned int size){
     // The header occupies 0x100..0x14F and is read unconditionally below, so
-    // a file too short to hold one has to be rejected before that happens.
-    if(loaded <= CART_CHECK_SUM_2){
-        free(g_cart);
-        g_cart = NULL;
+    // an image too short to hold one has to be rejected before that happens.
+    if(data == NULL || size <= CART_CHECK_SUM_2){
         return -1;
     }
 
-    g_cart_size = (unsigned int)loaded;
+    // The caller owns the buffer and has to keep it alive for as long as the
+    // cart is mapped; nothing here frees it. That lets a host hand over memory
+    // it allocated itself - a browser reading a file into the heap, say -
+    // without this having to know how it was allocated.
+    g_cart = data;
+    g_cart_size = size;
+
+    // Loading a cart resets the mapper, so a second ROM does not inherit the
+    // first one's bank selection or its save RAM.
+    g_enable_ram = false;
+    g_rom_bank = 0x01;
+    g_ram_bank = 0x00;
+    g_banking_mode = 0x00;
+    memset(g_ram_banks, 0, sizeof(g_ram_banks));
+
     DEBUG_PRINT("g_cart_size %u\n",g_cart_size);
 
     // get values from cart header
@@ -119,6 +123,23 @@ int gb_cart_load(char* filename){
     }
     DEBUG_PRINT("g_number_of_ram_banks = %02x\n",g_number_of_ram_banks);
     DEBUG_PRINT("g_number_of_rom_banks = %02x\n",g_number_of_rom_banks);
+    return 0;
+}
+
+int gb_cart_load(char* filename){
+    uint8_t* data = NULL;
+    // load_raw_file reports failure as a negative return, so the result has to
+    // be inspected while it is still signed: assigning it straight into an
+    // unsigned size turned -1 into 4294967295 and reported success.
+    int loaded = load_raw_file(filename, &data);
+
+    if(loaded <= 0){
+        return -1;
+    }
+    if(gb_cart_load_buffer(data, (unsigned int)loaded) < 0){
+        free(data);
+        return -1;
+    }
     return 0;
 }
 
