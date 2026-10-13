@@ -38,8 +38,21 @@ int init_screen(){
             return 1;
         }
         
-        SDL_RenderSetScale(renderer, SCREEN_MULT, SCREEN_MULT);
-        SDL_SetWindowSize(window, GB_SCREEN_WIDTH * SCREEN_MULT, GB_SCREEN_HEIGHT * SCREEN_MULT);
+        // Tell the renderer the content is one Game Boy screen and let it map
+        // that onto whatever the output size turns out to be, recomputing if
+        // the output changes. RenderSetScale did this by hand, which only held
+        // while the output was exactly SCREEN_MULT times the content - and the
+        // two conflict, because a logical size sets a scale of its own.
+        SDL_RenderSetLogicalSize(renderer, GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT);
+
+#ifndef __EMSCRIPTEN__
+        // Native: open the window at a whole multiple of the screen. In a
+        // browser the canvas is sized by the page's CSS, so the backing store
+        // is left at the content size and the page scales it - which also
+        // keeps the upscale crisp via image-rendering: pixelated.
+        SDL_SetWindowSize(window, GB_SCREEN_WIDTH * SCREEN_MULT,
+                                  GB_SCREEN_HEIGHT * SCREEN_MULT);
+#endif
         SDL_SetRenderDrawColor(renderer, 0x9B, 0xBC, 0x0F, 0xFF);
         SDL_RenderClear(renderer);
         line_rect.x=0;
