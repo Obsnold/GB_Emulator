@@ -18,6 +18,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Pinned: the cache key and the install step both use it.
+  EMSDK_VERSION: 3.1.69
+
 defaults:
   run:
     # Actions' implicit shell is `bash -e`. Naming bash explicitly also turns
@@ -141,3 +145,66 @@ jobs:
             echo "| \`${stage,,}\` | $mark |" >> "$GITHUB_STEP_SUMMARY"
             printf '%-10s %s\n' "$stage" "$outcome"
           done
+
+  # Builds the browser version and publishes it to GitHub Pages. Only on a push
+  # to main: a pull request cannot deploy, and only one source of truth for the
+  # published page makes sense.
+  #
+  # Needs the repository's Pages source set to "GitHub Actions" (Settings ->
+  # Pages); until that is done this job fails at the deploy step with the build
+  # itself having succeeded.
+  deploy-web:
+    name: build and publish the web version
+    needs: check
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # Installed from upstream rather than through a third-party action, so the
+      # toolchain version is pinned here and there is one less dependency to
+      # trust. Cached because the SDK is large and rarely changes.
+      - name: Cache Emscripten SDK
+        id: emsdk_cache
+        uses: actions/cache@v4
+        with:
+          path: ~/emsdk
+          key: emsdk-${{ env.EMSDK_VERSION }}
+
+      - name: Install Emscripten
+        if: steps.emsdk_cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git ~/emsdk
+          ~/emsdk/emsdk install "$EMSDK_VERSION"
+          ~/emsdk/emsdk activate "$EMSDK_VERSION"
+
+      - name: Build web version
+        run: |
+          # shellcheck disable=SC1091
+          . ~/emsdk/emsdk_env.sh
+          emcc --version | head -1
+          make web
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload page
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: Build/web
+
+      - name: Deploy to Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
