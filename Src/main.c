@@ -73,15 +73,26 @@ void gb_init(){
    //debug_screen_init();
 }
 
+// KEY_EXIT and KEY_DEBUG are sentinels from get_key_press, not pad bits.
+// Narrowed into the pad's byte they read as presses - KEY_EXIT's 0xFE is, with
+// active-low keys, a held right - so they are turned back into "nothing
+// pressed" before the pad ever sees them.
+static uint8_t pad_bits(uint16_t keys){
+   if(keys == KEY_EXIT || keys == KEY_DEBUG){
+      return 0xFF;
+   }
+   return (uint8_t)keys;
+}
+
 // Advance one frame of emulated time and upload each scanline as it is
 // finished. Driven by a fixed budget rather than by measured wall clock: the
 // emulated speed is then a property of the emulator rather than of how fast
 // the host happens to get round the loop.
-void run_frame(int keys){
+void run_frame(uint16_t keys){
    unsigned long elapsed = 0;
    uint8_t prev_line;
 
-   gb_input(keys);
+   gb_input(pad_bits(keys));
    prev_line = get_mem_map_8(LCD_LY);
 
    while(elapsed < FRAME_NS){
