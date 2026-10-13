@@ -26,5 +26,6 @@
 #define BIT_CLEAR 0x00
 
 unsigned long get_ns();
+void sleep_ns(unsigned long ns);
 
 #endif

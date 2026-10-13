@@ -25,8 +25,14 @@ bool boot_rom = true;
 int breakpoint=-1;
 bool run = true;
 
-unsigned long prev_time = 0;
-unsigned long min_time = 1000;
+// One frame of emulated time, and the slice it is advanced in.
+//
+// A slice of one machine cycle is what the PPU needs: it advances at most one
+// mode transition per call, so handing it a whole frame at once would leave
+// most of the frame sitting in its accumulator. 17556 slices per frame gives
+// it far more calls than the ~616 mode transitions it has to make.
+#define FRAME_NS 16742706UL
+#define SLICE_NS CYCLE_TIME
 
 // Bytes already echoed to stdout, so each one is printed once.
 unsigned int serial_printed = 0;
@@ -53,17 +59,35 @@ void gb_init(){
    init_mem_map();
    gb_serial_init();
    serial_printed = 0;
-   prev_time = get_ns();
 }
 
-void gb_emu(int keys){
-   unsigned long time = get_ns();
-   unsigned long time_delta = time - prev_time;
-   prev_time = time;
-   gb_timer(time_delta);
-   gb_cpu(time_delta);
-   ppu(time_delta);
+// Advance one frame of emulated time and upload each scanline as it is
+// finished. Driven by a fixed budget rather than by measured wall clock: the
+// emulated speed is then a property of the emulator rather than of how fast
+// the host happens to get round the loop.
+void run_frame(int keys){
+   unsigned long elapsed = 0;
+   uint8_t prev_line;
+
    gb_input(keys);
+   prev_line = get_mem_map_8(LCD_LY);
+
+   while(elapsed < FRAME_NS){
+      gb_timer(SLICE_NS);
+      gb_cpu(SLICE_NS);
+      ppu(SLICE_NS);
+      elapsed += SLICE_NS;
+
+      // Only when the PPU has moved on a line; update_screen is a no-op
+      // otherwise, and this keeps it to 154 calls a frame instead of 17556.
+      uint8_t line = get_mem_map_8(LCD_LY);
+      if(line != prev_line){
+         enable_lcd(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE) != 0);
+         update_screen(line);
+         prev_line = line;
+      }
+   }
+
    print_new_serial();
 }
 
@@ -82,21 +106,17 @@ int main(int argc, char *argv[])
 
    gb_init();
 
+   // Wall clock the next frame is due at. Pacing against a running schedule
+   // rather than sleeping a fixed amount per frame stops small overruns
+   // accumulating into drift.
+   unsigned long next_frame = get_ns() + FRAME_NS;
+
    while(run){
       
       int keys = get_key_press();
 
       //if escape pressed then exit
       if(keys == KEY_EXIT){
-        // print_lcd();
-        // print_cpu_reg();
-        // print_opcode();
-         //print_memory(CART_RAM,GB_RAM_1);
-        /* print_memory(OAM_TABLE,NA_MEM);
-         print_memory(BG_MAP_1,BG_MAP_2);
-         print_memory(BG_MAP_2,CART_RAM);
-         print_memory(OAM_TABLE,NA_MEM);*/
-         //print_interrupts();
          run = false;
       }
 
@@ -126,23 +146,17 @@ int main(int argc, char *argv[])
          }
       }
 
-      // main loop
-      gb_emu(keys);
-     
-      if(get_mem_map_bit(LCD_CTRL,LCD_CTRL_ENABLE)){
-         enable_lcd(true);
-      } else {
-         enable_lcd(false);
-      }
-      update_screen(get_mem_map_8(LCD_LY));
+      run_frame(keys);
 
-      //PRINT("MAIN1---\n");
-      /*if(temp %100000 == 0){
-         debug_screen();
-         temp=0;
-         //PRINT("DEBUG_PRINT\n");
+      unsigned long now = get_ns();
+      if(next_frame > now){
+         sleep_ns(next_frame - now);
+         next_frame += FRAME_NS;
+      } else {
+         // Behind schedule. Resync instead of trying to make up the shortfall,
+         // so a slow patch does not turn into a burst of fast frames.
+         next_frame = now + FRAME_NS;
       }
-      temp++;*/
    }
    free_screen();
    //debug_screen_free();
