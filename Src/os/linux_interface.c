@@ -15,7 +15,6 @@ SDL_Window* window = NULL;
 SDL_Renderer *renderer;
 SDL_Texture* texture;
 SDL_Rect line_rect;
-SDL_Event event;
 #define SCREEN_MULT 3
 
 
@@ -103,8 +102,36 @@ int update_screen(uint8_t line){
 uint16_t get_key_press(){
     int ret = 0xFF;
     int numkeys = 0;
+    int quit = 0;
+    SDL_Event event;
 
-    SDL_PumpEvents();
+    // Drain the queue, do not just pump it. SDL_PumpEvents fills the queue and
+    // nothing was reading from it, so it grew without bound, the window close
+    // button did nothing, and SIGTERM - which SDL turns into SDL_QUIT rather
+    // than letting it kill the process - was swallowed too.
+    //
+    // SDL_PollEvent pumps when the queue is empty, so this also keeps
+    // SDL_GetKeyboardState below current.
+    while(SDL_PollEvent(&event)){
+        switch(event.type){
+            case SDL_QUIT:
+                quit = 1;
+                break;
+            case SDL_WINDOWEVENT:
+                if(event.window.event == SDL_WINDOWEVENT_CLOSE){
+                    quit = 1;
+                }
+                break;
+            default:
+                // Everything else is read and discarded; the pad is sampled
+                // from the keyboard state rather than from key events.
+                break;
+        }
+    }
+
+    if(quit){
+        return KEY_EXIT;
+    }
 
     const uint8_t *array = SDL_GetKeyboardState(&numkeys);
     
