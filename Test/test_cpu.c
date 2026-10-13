@@ -12,12 +12,18 @@
 #include "gb_mem_map.h"
 #include "gb_opcodes.h"
 
-/* Execute one instruction through the real dispatcher. */
+/* Execute exactly one instruction through the real dispatcher.
+ *
+ * The dispatcher pays for the previous instruction before running the next, so
+ * with current_cycle_time zeroed the first one is free and a single nanosecond
+ * is enough to retire it. The next instruction's real cost is at least one
+ * machine cycle, which that leftover nanosecond cannot cover, so the catch-up
+ * loop stops after one. */
 static void step(void)
 {
     current_cycle_time = 0;
     cpu_cycles         = 0;
-    gb_cpu(1000000);           /* far more than any instruction costs */
+    gb_cpu(1);
 }
 
 static void load_op(const uint8_t *bytes, unsigned len)

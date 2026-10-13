@@ -80,10 +80,11 @@ struct frame_stats {
     int           completed;
 };
 
-/* The step size has to be well under the cost of one instruction: the
- * dispatcher retires at most one instruction per gb_cpu() call, so feeding
- * time in coarse slices caps the retirement rate and understates the real
- * mismatch. 50 ns is roughly 1/15th of the cheapest instruction. */
+/* A fine step keeps the measurement precise. It used to be load-bearing: the
+ * dispatcher retired at most one instruction per gb_cpu() call, so a coarse
+ * slice capped the retirement rate and understated the mismatch. The catch-up
+ * loop drains the accumulator now, so the rate no longer depends on the step
+ * size - this just keeps the frame boundary sharp. */
 static struct frame_stats run_one_frame(unsigned long ns_per_unit)
 {
     const unsigned long step_ns = 50;

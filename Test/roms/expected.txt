@@ -94,7 +94,7 @@ fail mooneye mooneye-test-suite/acceptance/timer/div_write.gb
 fail mooneye mooneye-test-suite/acceptance/timer/rapid_toggle.gb
 fail mooneye mooneye-test-suite/acceptance/timer/tim00.gb
 pass mooneye mooneye-test-suite/acceptance/timer/tim00_div_trigger.gb
-fail mooneye mooneye-test-suite/acceptance/timer/tim01.gb
+pass mooneye mooneye-test-suite/acceptance/timer/tim01.gb
 fail mooneye mooneye-test-suite/acceptance/timer/tim01_div_trigger.gb
 fail mooneye mooneye-test-suite/acceptance/timer/tim10.gb
 fail mooneye mooneye-test-suite/acceptance/timer/tim10_div_trigger.gb
