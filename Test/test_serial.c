@@ -97,3 +97,35 @@ TEST(serial_buffer_is_empty_after_reset)
     EXPECT_EQ_U(gb_serial_length(), 0);
     EXPECT_EQ_X(gb_serial_text()[0], '\0');
 }
+
+/* A transfer only completes if this Game Boy is the one supplying the clock.
+ * With the external clock selected and no cable attached no clock ever arrives,
+ * so the start bit stays set and nothing is shifted - which is how a game
+ * detects that there is no link partner. Completing it regardless makes a game
+ * believe a partner is present. */
+TEST(serial_external_clock_does_not_complete_without_a_cable)
+{
+    emu_reset();
+    clear_mem_map_bit(INTERRUPT_FLAGS, INTERRUPT_SERIAL);
+
+    op_set_mem_map_8(SERIAL_SB, 'x');
+    op_set_mem_map_8(SERIAL_SC, SERIAL_SC_START);   /* external clock: bit 0 clear */
+
+    EXPECT(get_mem_map_bit(SERIAL_SC, SERIAL_SC_START) != 0);
+    EXPECT_EQ_U(gb_serial_length(), 0);
+    EXPECT_EQ_X(get_mem_map_8(SERIAL_SB), 'x');
+    EXPECT_EQ_X(get_mem_map_bit(INTERRUPT_FLAGS, INTERRUPT_SERIAL), 0x00);
+}
+
+TEST(serial_internal_clock_completes)
+{
+    emu_reset();
+
+    op_set_mem_map_8(SERIAL_SB, 'y');
+    op_set_mem_map_8(SERIAL_SC, (uint8_t)(SERIAL_SC_START |
+                                          SERIAL_SC_CLOCK_INTERNAL));
+
+    EXPECT_EQ_X(get_mem_map_bit(SERIAL_SC, SERIAL_SC_START), 0x00);
+    CHECK_EQ_U(gb_serial_length(), 1);
+    EXPECT_EQ_X(gb_serial_text()[0], 'y');
+}

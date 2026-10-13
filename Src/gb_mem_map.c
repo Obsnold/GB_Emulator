@@ -206,10 +206,12 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
             // Only bits 4 and 5 are writable; the low nibble is driven by the
             // key matrix and the top two bits are unused.
             lData = (uint8_t)(0xC0 | (data & (JOYPAD_BUT | JOYPAD_DIR)) | 0x0F);
-        } else if(reg == SERIAL_SC && (data & SERIAL_SC_START)){
-            // Starting a transfer with nothing on the other end: record the
-            // byte and let gb_serial_transfer finish it. The control value is
-            // stored first so the handler sees the clock selection.
+        } else if(reg == SERIAL_SC && (data & SERIAL_SC_START) &&
+                  (data & SERIAL_SC_CLOCK_INTERNAL)){
+            // A transfer only runs if this Game Boy supplies the clock. With
+            // the external clock selected and no cable attached no clock ever
+            // arrives, so the start bit is left set and nothing is shifted -
+            // that is how a game works out there is no link partner.
             set_mem_map_8(SERIAL_SC, data);
             gb_serial_transfer();
             return true;
