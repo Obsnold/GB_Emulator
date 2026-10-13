@@ -8,7 +8,7 @@ currently it can run Tetris and Dr Mario.
   * Select - Space
   * Start - Enter
   * A,B - A,S
-  * Exit - Esc
+  * Exit - Esc, or the window close button
 
 ## Build and Run
 Requires Linux, SDL2 and gcc.
