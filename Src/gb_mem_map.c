@@ -3,6 +3,7 @@
 #include "gb_cpu.h"
 #include "gb_cart.h"
 #include "gb_serial.h"
+#include "gb_joypad_input.h"
 #include <string.h>
 
 #define DEBUG
@@ -127,7 +128,12 @@ uint8_t op_get_mem_map_8(uint16_t reg){
         // IO_PORTS
         // lots of stuff going on here 
         // for now just return data
-        data = gb_mem_map[reg];
+        if(reg == JOYPAD_INPUT){
+            // Driven by the key matrix, not by stored bits.
+            data = gb_joypad_read();
+        } else {
+            data = gb_mem_map[reg];
+        }
 
     } else if(reg >= ZERO_PAGE && reg < INTERRUPT_EN){
         // Zero page
@@ -196,6 +202,10 @@ bool op_set_mem_map_8(uint16_t reg, uint8_t data){
             // 3 during v-blank and draw a scanline off the end of gb_display.
             lData = (uint8_t)((data & 0x78) |
                               (get_mem_map_8(LCD_STAT) & 0x07));
+        } else if(reg == JOYPAD_INPUT){
+            // Only bits 4 and 5 are writable; the low nibble is driven by the
+            // key matrix and the top two bits are unused.
+            lData = (uint8_t)(0xC0 | (data & (JOYPAD_BUT | JOYPAD_DIR)) | 0x0F);
         } else if(reg == SERIAL_SC && (data & SERIAL_SC_START)){
             // Starting a transfer with nothing on the other end: record the
             // byte and let gb_serial_transfer finish it. The control value is
