@@ -58,6 +58,7 @@ clean:
 #   make test        unit tests
 #   make test-asan   unit tests under AddressSanitizer + UBSan
 #   make fuzz        random cart images under the sanitizers
+#   make web               build the browser version into Build/web
 #   make fetch-test-roms   download the pinned prebuilt test ROM bundle
 #   make test-roms         run them against Test/roms/expected.txt
 #
@@ -158,6 +159,39 @@ test-roms: $(BUILD_DIR)/rom_harness
 
 test-roms-update: $(BUILD_DIR)/rom_harness
 	@sh $(TEST_DIR)/run_test_roms.sh $(BUILD_DIR)/rom_harness --update
+
+# ---------------------------------------------------------------------------
+# Web build
+#
+#   make web      builds Build/web/index.html + .js + .wasm
+#
+# The same sources as the native build, SDL and all: Emscripten's SDL2 port
+# covers everything Src/os/linux_interface.c uses. What differs is the loop -
+# the browser owns it, so Src/main.c registers run_frame as a
+# requestAnimationFrame callback instead of pacing it itself - and the cart,
+# which arrives as a buffer from a file input rather than as a path.
+#
+# EMCC can point at an emsdk that is not on PATH:
+#   make web EMCC=/path/to/emsdk/upstream/emscripten/emcc
+# ---------------------------------------------------------------------------
+
+EMCC ?= emcc
+WEB_DIR = Web
+WEB_OUT = $(BUILD_DIR)/web
+
+WEB_CFLAGS = -I./Inc -O2 -sUSE_SDL=2
+
+WEB_LDFLAGS = -sUSE_SDL=2 \
+              -sALLOW_MEMORY_GROWTH=1 \
+              -sEXPORTED_FUNCTIONS=_main,_web_load_rom,_web_rom_loaded,_malloc,_free \
+              -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,HEAPU8 \
+              -sMINIFY_HTML=0 \
+              --shell-file $(WEB_DIR)/shell.html
+
+web:
+	@mkdir -p $(WEB_OUT)
+	$(EMCC) $(WEB_CFLAGS) $(SRC) $(WEB_LDFLAGS) -o $(WEB_OUT)/index.html
+	@echo "built $(WEB_OUT)/index.html"
 
 # ---------------------------------------------------------------------------
 # Static analysis
@@ -303,6 +337,6 @@ check:
 	 exit $$fail
 
 .PHONY: test test-asan fuzz harness test-roms test-roms-update \
-        fetch-test-roms analyze cppcheck check
+        fetch-test-roms analyze cppcheck check web
 
 -include $(shell find $(BUILD_DIR) -name '*.d' 2>/dev/null)

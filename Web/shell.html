@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GB Emulator</title>
+<style>
+  :root { color-scheme: dark; --bg:#13171a; --fg:#c9d4cf; --dim:#7b8a84;
+          --accent:#9bbc0f; --panel:#1b2024; --line:#2c3338; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--fg);
+         font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+         display:flex; flex-direction:column; align-items:center; gap:18px; }
+  h1 { margin:0; font-size:15px; font-weight:600; letter-spacing:.08em;
+       text-transform:uppercase; color:var(--accent); }
+  #screen { background:#0f380f; border:1px solid var(--line); border-radius:4px;
+            image-rendering:pixelated; width:480px; height:432px; max-width:100%;
+            aspect-ratio:160/144; height:auto; display:block; outline:none; }
+  #screen:focus { border-color:var(--accent); }
+  .panel { width:480px; max-width:100%; background:var(--panel);
+           border:1px solid var(--line); border-radius:4px; padding:14px 16px; }
+  .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  label.file { background:var(--accent); color:#13171a; padding:7px 14px;
+               border-radius:3px; cursor:pointer; font-weight:600; }
+  label.file:hover { filter:brightness(1.1); }
+  input[type=file] { display:none; }
+  #status { color:var(--dim); }
+  #status.err { color:#e06c6c; }
+  table { border-collapse:collapse; margin-top:12px; font-size:13px; }
+  td { padding:2px 14px 2px 0; color:var(--dim); }
+  td:first-child { color:var(--fg); }
+  footer { color:var(--dim); font-size:12px; text-align:center; max-width:480px; }
+</style>
+</head>
+<body>
+
+<h1>GB Emulator</h1>
+
+<canvas id="screen" width="160" height="144" tabindex="0"></canvas>
+
+<div class="panel">
+  <div class="row">
+    <label class="file">Open ROM<input type="file" id="rom" accept=".gb,.gbc,.bin"></label>
+    <span id="status">loading emulator&hellip;</span>
+  </div>
+  <table>
+    <tr><td>Arrow keys</td><td>movement</td></tr>
+    <tr><td>A / S</td><td>A / B</td></tr>
+    <tr><td>Enter</td><td>start</td></tr>
+    <tr><td>Space</td><td>select</td></tr>
+  </table>
+</div>
+
+<footer>
+  Your ROM is read in the browser and never uploaded &mdash; this page has no
+  server side. Click the screen first so it receives key presses.
+</footer>
+
+<script>
+  var statusEl = document.getElementById('status');
+  var canvas = document.getElementById('screen');
+  var romPtr = 0;                 // owned here: the emulator keeps the pointer
+  var ready = false;
+
+  function setStatus(text, isError) {
+    statusEl.textContent = text;
+    statusEl.className = isError ? 'err' : '';
+  }
+
+  var Module = {
+    canvas: canvas,
+    print: function (text) { console.log(text); },
+    printErr: function (text) { console.warn(text); },
+    onRuntimeInitialized: function () {
+      ready = true;
+      setStatus('ready — open a ROM');
+    }
+  };
+
+  document.getElementById('rom').addEventListener('change', function (event) {
+    var file = event.target.files[0];
+    if (!file) { return; }
+    if (!ready) { setStatus('emulator still loading', true); return; }
+
+    var reader = new FileReader();
+    reader.onload = function () {
+      var bytes = new Uint8Array(reader.result);
+
+      // The emulator maps the cart straight out of this buffer, so the old one
+      // can only be released once the new one has been handed over.
+      var next = Module._malloc(bytes.length);
+      Module.HEAPU8.set(bytes, next);
+
+      if (Module._web_load_rom(next, bytes.length) !== 0) {
+        Module._free(next);
+        setStatus('not a valid ROM: ' + file.name, true);
+        return;
+      }
+      if (romPtr) { Module._free(romPtr); }
+      romPtr = next;
+
+      setStatus('running ' + file.name);
+      canvas.focus();
+    };
+    reader.onerror = function () { setStatus('could not read ' + file.name, true); };
+    reader.readAsArrayBuffer(file);
+  });
+
+  // SDL reads the keyboard from whatever has focus, so make the screen easy to
+  // give focus to and keep the arrow keys from scrolling the page.
+  canvas.addEventListener('click', function () { canvas.focus(); });
+  window.addEventListener('keydown', function (event) {
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].indexOf(event.key) >= 0) {
+      event.preventDefault();
+    }
+  });
+</script>
+
+{{{ SCRIPT }}}
+
+</body>
+</html>

@@ -15,6 +15,10 @@ Requires Linux and SDL2.
   * browse to directory
   * run make
 
+## Browser version
+`make web` builds a WebAssembly version that runs in a browser and loads a ROM
+from your machine without uploading it. See `Web/README.md`.
+
 ## Run Emulator
   ./Out/gb_emu PATH_TO_ROM
 

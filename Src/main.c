@@ -11,6 +11,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdlib.h>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    PRINT(fmt, ## args)
@@ -52,13 +57,20 @@ void print_new_serial(){
    }
 }
 
-void gb_init(){
+// Machine state only. Kept separate from the screen because the browser build
+// has to put up a canvas before the user has picked a ROM, and then reset the
+// machine for each ROM they pick without recreating the canvas.
+void gb_reset_machine(){
    cpu_init();
-   init_screen(); 
-   //debug_screen_init();
    init_mem_map();
    gb_serial_init();
    serial_printed = 0;
+}
+
+void gb_init(){
+   gb_reset_machine();
+   init_screen(); 
+   //debug_screen_init();
 }
 
 // Advance one frame of emulated time and upload each scanline as it is
@@ -96,6 +108,59 @@ void run_frame(int keys){
    print_new_serial();
 }
 
+
+#ifdef __EMSCRIPTEN__
+
+// --- browser entry points -------------------------------------------------
+//
+// The browser owns the loop, so there is no argv and no ROM at startup: the
+// canvas goes up, requestAnimationFrame starts calling web_frame, and nothing
+// is emulated until the page hands over a file.
+
+static bool rom_loaded = false;
+
+// Called from JS once the user picks a file. The buffer has to stay allocated
+// for as long as the cart is mapped - gb_cart_load_buffer keeps the pointer -
+// so JS allocates it and owns it, and frees the previous one when a new ROM is
+// loaded. Returns 0 on success.
+// Reached from JS, not from C, so the analyser cannot see a caller.
+EMSCRIPTEN_KEEPALIVE
+// cppcheck-suppress unusedFunction
+int web_load_rom(uint8_t *data, int size){
+   if(size <= 0 || gb_cart_load_buffer(data, (unsigned int)size) < 0){
+      rom_loaded = false;
+      return -1;
+   }
+   gb_reset_machine();
+   rom_loaded = true;
+   return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE
+// cppcheck-suppress unusedFunction
+int web_rom_loaded(void){
+   return rom_loaded ? 1 : 0;
+}
+
+static void web_frame(void){
+   if(!rom_loaded){
+      return;
+   }
+   // No pacing here: requestAnimationFrame already calls this at the display
+   // refresh rate, which is what run_frame's fixed budget is sized for.
+   run_frame(get_key_press());
+}
+
+int main(void)
+{
+   init_screen();
+   // 0 fps means "use requestAnimationFrame"; the 1 keeps the runtime alive
+   // after main returns.
+   emscripten_set_main_loop(web_frame, 0, 1);
+   return 0;
+}
+
+#else
 
 int main(int argc, char *argv[])
 {
@@ -166,3 +231,5 @@ int main(int argc, char *argv[])
    free_screen();
    //debug_screen_free();
 }
+
+#endif /* __EMSCRIPTEN__ */
